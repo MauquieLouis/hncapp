@@ -1,39 +1,44 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { Stack } from "expo-router";
+import "@/global.css";
+import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { UserContextProvider, useUserContext } from "../contexts/userContext";
+import Auth from "./auth/Login";
+import { Text } from "react-native";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+const MainStack = () => {
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
+  const { session, loading } = useUserContext();
+  console.log("SESSION:");
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+    <>
+    {loading ? 
+    <Text>LOADING !!</Text>: 
+      <>
+      {session ?
+        <>
+        <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+        </Stack>
+        <StatusBar style="dark" />
+        </> 
+        :
+        <Auth/>
+      }
+      </>
+    }
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <GluestackUIProvider mode="light">
+      <UserContextProvider props={undefined}>
+        <MainStack/>
+      </UserContextProvider>
+    </GluestackUIProvider>
   );
 }
