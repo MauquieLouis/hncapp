@@ -30,22 +30,18 @@ const ConversationScreen = () => {
     const { convId } = useLocalSearchParams();
     const { user } = useUserContext();
     
-    const bottomRef = useRef(isAtBottom);
     const flatListRef = useRef(null);
 
     useEffect(() => {
         const fetchConversationData = async () => {
             try{
                 setLoading(true);
-                console.log("CONVID : ", convId);
                 const { data: conv_data, error: conv_error } = await supabase.rpc('get_conversation_messages2', {'p_conversation_id': convId[0], 'p_user_id':user.id})
                 if(conv_error){
                     console.log('Conv_Error :', conv_error);
                 }
-                console.log('CONV_DATA :', conv_data);
                 setMessages(conv_data.messages);
                 setParticipants(conv_data.participants);
-                console.log("DATASSSS :", conv_data.messages[0].id);
                 readLastMessageStatus(conv_data.messages[0].id)
             }catch(error: unknown){
                 console.log('Error in fetchConversation function in Messagings.tsx', error);
@@ -55,7 +51,6 @@ const ConversationScreen = () => {
         }
         markMessageAsRead();
         fetchConversationData();
-        // subscribeToMessages();
         subscribeToTypingStatus();
         subscrbeToMessagesStatus();
     }, []);
@@ -63,6 +58,9 @@ const ConversationScreen = () => {
     useEffect(() => {
         console.log("is at bottom CHANGE : ", isAtBottom);
         if(isAtBottom) markMessageAsRead();
+        /** ---------------------------------------------------------------
+         *  ==== ====  S U B S C R I B E   T O   M E S S A G E S  ==== ====
+         */
         const channel = supabase.channel(`conversation-messages-${convId[0]}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]},
             (payload) => {
@@ -71,14 +69,11 @@ const ConversationScreen = () => {
                 setOffset((prevOffset) => prevOffset + 1);
                 console.log("IS AT BOTTOM :", isAtBottom);
                 if(payload.new.user_id != user.id && isAtBottom){
-                // console.log("IS AT BOTTOM :", bottomRef.current);
-                // if(payload.new.user_id != user.id && bottomRef.current){
                     console.log("NOT SUPPOSED TO SCROLL TO BOTTOM !!!!");
                     console.log("OFFSET :", offset);
                     markMessageAsRead();
                     // scrollToBottom();
                 }
-                
             }
         ).subscribe();
 
@@ -86,14 +81,13 @@ const ConversationScreen = () => {
             channel.unsubscribe();
         };
     }, [isAtBottom])
+
     /** -------------------------------------------------------
      *  ==== ====  S E N D   T E X T   M E S S A G E  ==== ====
      * @returns 
      */
     const sendTextMessage = async() => {
-      if (text.trim() === '') {
-        return;
-      }
+      if (text.trim() === '') return;
         try{
             setLoadingSend(true);
             const { error: send_error } = await supabase.from('messages').insert({
@@ -109,9 +103,6 @@ const ConversationScreen = () => {
         }catch(error: unknown){
             console.log('Error in sendTextMessage function in conversation.tsx', error);
         }finally{
-            // setOffset(offset+1);
-            // setOffset((prevOffset) => prevOffset + 1);
-            console.log("OFFSEEEETTTT :", offset);
             setIsSeen(false);
             setText('');
             setLoadingSend(false);
@@ -135,7 +126,6 @@ const ConversationScreen = () => {
           if(messages_error){
                   console.log('Error in fetchMessages  when fetching messages in conversation.tsx', messages_error);
                 }
-                console.log('MESSAGES_DATA :', messages_data);
               if(messages_data?.length != 0){
                 setMessages((prev) => [...prev, ...messages_data]);
                 setOffset(offset+PAGE_SIZE);
@@ -152,45 +142,15 @@ const ConversationScreen = () => {
       }
     };
 
-    /** ---------------------------------------------------------------
-     *  ==== ====  S U B S C R I B E   T O   M E S S A G E S  ==== ====
-     */
-    // const handleReceiveMessage = useCallback((payload: any) => {
-        
-    // }, [isAtBottom]);
-
-    // const subscribeToMessages = () => {
-    //     supabase.channel(`conversation-messages-${convId[0]}`)
-    //     .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'messages'},
-    //         (payload) => {
-    //             setIsSeen(false);
-    //             setMessages((prev) => [ payload.new, ...prev]);
-    //             setOffset((prevOffset) => prevOffset + 1);
-    //             console.log("IS AT BOTTOM :", isAtBottom);
-    //             if(payload.new.user_id != user.id && isAtBottom){
-    //             // console.log("IS AT BOTTOM :", bottomRef.current);
-    //             // if(payload.new.user_id != user.id && bottomRef.current){
-    //                 console.log("NOT SUPPOSED TO SCROLL TO BOTTOM !!!!");
-    //                 console.log("OFFSET :", offset);
-    //                 markMessageAsRead();
-    //                 // scrollToBottom();
-    //             }
-                
-    //         }
-    //     ).subscribe();
-    // };
-
     /** ---------------------------------------------------------------------------
      *  ==== ====  S U B S C R I B E   T O   M E S S A G E   S T A T U S  ==== ====
      */
     const subscrbeToMessagesStatus = () => {
         supabase.channel(`conversation-messages-status-${convId[0]}`)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'message_status'},
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'message_status', filter:'conversation_id=eq.'+convId[0]},
             (payload) => {
-                console.log("IS SEENN ADDDDEEEEDDD !!");
                 if(payload.new.user_id != user.id){
                     setIsSeen(true);
-                    console.log("NOT ME SEEING MESSAGE");
                 }
             }
         ).subscribe();
@@ -204,7 +164,6 @@ const ConversationScreen = () => {
         flatListRef.current?.scrollToOffset({ animated: true, offset: 0 });
     };
 
-
     /** -----------------------------------------------
      *  ==== ====  H A N D L E   S C R O L L  ==== ====
      * @param event
@@ -213,11 +172,8 @@ const ConversationScreen = () => {
         const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
         // Check if the user is at the bottom (with a small threshold)
         // const atBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 20;
-        // console.log("AT BOTTOM ? ", atBottom);
         // Check if the user is at the top (small threshold to allow minor scrolling)
         const atTop = contentOffset.y <= 10; // Adjust threshold if needed
-        // console.log("AT TOP?", atTop);
-
         setIsAtBottom(atTop); //It's call bottom here because flatlist is inverted.
       };
 
@@ -250,7 +206,6 @@ const ConversationScreen = () => {
           event: "typing",
           payload: { user: user.id },
         });
-        
         setTimeout(() => setIsTyping(false), 3000); // Reset typing state after delay
       }
     };
@@ -260,17 +215,12 @@ const ConversationScreen = () => {
      */
     const markMessageAsRead = async() => {
         try{
-            //1st select all unread messages
-            console.log("CONVID ", convId, convId[0]);
-
             const { data, error: rpc_error } = await supabase.rpc('mark_messages_as_read', {'p_user_id': user.id, 'p_conversation_id': convId[0]});
             if(rpc_error){
                 console.log('Error in markMessageAsRead when trying to mark message as read function in conversation.tsx', rpc_error);
             }
         }catch(error:unknown){
             console.log('Error in markMessageAsRead function in conversation.tsx', error);
-        }finally{
-            
         }
     }
     
@@ -346,14 +296,6 @@ const ConversationScreen = () => {
                         ListFooterComponent={loadingMoreMessages? <Text>LOADING MORE MESSAGES !</Text> : null}
                         onScroll={handleScroll}
                     />
-                    {/* <HStack space="md" px={4} py={2} alignItems="center" justifyContent="flex-start">
-                        <Box bg={message.sender_id === userId ? "$primary" : "$secondary"} p={3} rounded="lg">
-                            <Text color="white">{message.content}</Text>
-                            {isSeen && (
-                            <Text color="$gray400" fontSize="xs" textAlign="right">✓ Seen</Text>
-                            )}
-                        </Box>
-                    </HStack> */}
                     {isSeen ? 
                         <Box>
                             <Text style={{textAlign:'left'}}>SEEN !</Text>
