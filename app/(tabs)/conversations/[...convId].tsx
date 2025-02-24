@@ -8,6 +8,7 @@ import { useUserContext } from '../../../contexts/userContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../../libs/initSupabase';
 import { useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 const ConversationScreen = () => {
 
@@ -17,6 +18,7 @@ const ConversationScreen = () => {
     const [ messages, setMessages ] = useState(null);
     const [ text, setText ] = useState('');
     const [ participants, setParticipants ] = useState(null);
+    const [ devicesTokens, setDeviceTokens ] = useState([]);
     const [ loadingSend, setLoadingSend ] = useState(false);
     const [ typingUsers, setTypingUsers ] = useState({});
     const [ loadingMoreMessages, setLoadingMoreMessages ] = useState(false);
@@ -42,7 +44,8 @@ const ConversationScreen = () => {
                 }
                 setMessages(conv_data.messages);
                 setParticipants(conv_data.participants);
-                readLastMessageStatus(conv_data.messages[0].id)
+                setDeviceTokens(conv_data.device_tokens);
+                readLastMessageStatus(conv_data.messages[0].id);
             }catch(error: unknown){
                 console.log('Error in fetchConversation function in Messagings.tsx', error);
             }finally{
@@ -103,11 +106,36 @@ const ConversationScreen = () => {
         }catch(error: unknown){
             console.log('Error in sendTextMessage function in conversation.tsx', error);
         }finally{
+            sendPushNotification("ExponentPushToken[LAeDpVJcdT2PZz3kEnrFwj]");
             setIsSeen(false);
             setText('');
             setLoadingSend(false);
         }
     };
+    async function sendPushNotification(expoPushToken: string) {
+        //ExponentPushToken[LAeDpVJcdT2PZz3kEnrFwj]
+        for(let token of expoPushToken){
+            const notif = {
+              to: token,
+              sound: 'default',
+              title: "CONV",
+              body: text,
+              identifier: "notificationId", // Ensures it updates instead of creating a new one
+              data: { someData: 'goes here'},
+    
+            };
+          
+            await fetch('https://exp.host/--/api/v2/push/send', {
+              method: 'POST',
+              headers: {
+                Accept: 'application/json',
+                'Accept-encoding': 'gzip, deflate',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(notif),
+            });
+        }
+      }
 
     /** ----------------------------------------------------------
      *  ==== ====  L O A D   M O R E    M E S S A G E S  ==== ====
@@ -306,12 +334,22 @@ const ConversationScreen = () => {
                         // <Text ml={4} color="$gray400">Someone is typing...</Text>
                     )}
                     <HStack>
-                        <Box style={{borderBlockColor:"red", borderWidth:1}} width={'80%'}>
+                        <Box style={{borderBlockColor:"red", borderWidth:1}} width={'70%'}>
                             <Input variant="outline" size="md">
                                 <InputField placeholder="Write message here..." onChangeText={(text) => {setText(text); sendTypingEvent()}} value={text}/>
                             </Input>
                         </Box>
-                        <Box width={'20%'} style={{borderBlockColor:"red", borderWidth:1}}>
+                        <Box width={'15%'} style={{borderBlockColor:"red", borderWidth:1}}>
+                            {loadingSend ? 
+                            <Text>SEND !</Text>: 
+                            <Button onPress={() => {
+                                console.log('OPEN GALERIE');
+                            }}>
+                                <ButtonText><Ionicons name={'image-sharp'} color={'white'} size={20} /></ButtonText>
+                            </Button>
+                            }
+                        </Box>
+                        <Box width={'15%'} style={{borderBlockColor:"red", borderWidth:1}}>
                             {loadingSend ? 
                             <Text>SEND !</Text>: 
                             <Button onPress={() => {

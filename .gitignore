@@ -38,3 +38,8 @@ yarn-error.*
 app-example
 
 .env
+hncapp-786cc-firebase-adminsdk-fbsvc-be4b1d2ccc.json
+google-services.json
+.easignore
+.vscode/
+eas.json

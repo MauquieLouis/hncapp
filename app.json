@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.hncapp"
+      "package": "com.anonymous.hncapp",
+      "googleServicesFile":"./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -37,6 +38,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "c5554904-a954-4632-811a-4d4d331c46d7"
+      }
+    },
+    "owner": "ashphus"
   }
 }
