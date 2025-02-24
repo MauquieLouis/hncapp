@@ -10,6 +10,19 @@ import { supabase } from '../../../libs/initSupabase';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
+import * as ImagePicker from 'expo-image-picker';
+import { decode } from 'base64-arraybuffer';
+import FlatListMessage from '@/components/conversations/FlatListMessage';
+
+const debounce = (func, delay) => {
+    let debounceTimer;
+    return function(...args) {
+        const context = this;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => func.apply(context, args), delay);
+    }
+}
+
 const ConversationScreen = () => {
 
     const PAGE_SIZE = 20; // If changing this, number, be careful of changing it in the rpc function that retrieve first messages at opening, maybe add a parameter for that.
@@ -27,7 +40,8 @@ const ConversationScreen = () => {
     const [ isTyping, setIsTyping ] = useState(false);
     const [ offset, setOffset ] = useState(PAGE_SIZE);
     const [ isAtBottom, setIsAtBottom ] = useState(true);
-    const [ isSeen, setIsSeen] = useState(false);
+    const [ isSeen, setIsSeen ] = useState(false);
+    const [ images, setImages ] = useState(null);
 
     const { convId } = useLocalSearchParams();
     const { user } = useUserContext();
@@ -59,6 +73,10 @@ const ConversationScreen = () => {
     }, []);
 
     useEffect(() => {
+        console.log("trigger More : ", canTriggerLoadMore);
+    }, [canTriggerLoadMore]);
+
+    useEffect(() => {
         console.log("is at bottom CHANGE : ", isAtBottom);
         if(isAtBottom) markMessageAsRead();
         /** ---------------------------------------------------------------
@@ -87,31 +105,43 @@ const ConversationScreen = () => {
 
     /** -------------------------------------------------------
      *  ==== ====  S E N D   T E X T   M E S S A G E  ==== ====
-     * @returns 
+     * @returns message_id id of the freshly created conversation.
      */
-    const sendTextMessage = async() => {
-      if (text.trim() === '') return;
+    const sendTextMessage = async(has_attachement: boolean, type: string) => {
+        console.log("TEXT TRIM :", text.trim(), 'HAS ATTACH :',has_attachement, 'TYPE :', type);
+        if (text.trim() === '' && has_attachement == false) return;
+        let message_id;
         try{
             setLoadingSend(true);
-            const { error: send_error } = await supabase.from('messages').insert({
+            const { data: send_data, error: send_error } = await supabase.from('messages').insert({
                 content: text,
                 sender_id: user.id,
                 conversation_id: convId[0],
-                type:'text', // Can be text, file, vocal, image, video
-                has_attachment: false,
-            });
+                type: type, // Must be one of the following: 'text', 'attachment', 'file', 'audio', 'other'
+                has_attachment: has_attachement,
+            }).select("id");
+            console.log("SEND DATA :", send_data);
             if(send_error){
-                console.log('Error in sendTextMessage when inserting text message function in conversation.tsx', send_error);
+                console.log('Error in sendTextMessage when inserting text message function in [...convId].tsx', send_error);
+            }else {
+                console.log("SEND DATA:", send_data);
+                message_id = send_data[0].id; // Extract the ID properly
             }
         }catch(error: unknown){
-            console.log('Error in sendTextMessage function in conversation.tsx', error);
+            console.log('Error in sendTextMessage function in [...convId].tsx', error);
         }finally{
             sendPushNotification("ExponentPushToken[LAeDpVJcdT2PZz3kEnrFwj]");
             setIsSeen(false);
             setText('');
             setLoadingSend(false);
         }
+        return message_id;
     };
+
+    /** -----------------------------------------------------------------
+     *  ==== ====  S E N D   P U S H   N O T I F I C A T I O N  ==== ====
+     * @param expoPushToken 
+     */
     async function sendPushNotification(expoPushToken: string) {
         //ExponentPushToken[LAeDpVJcdT2PZz3kEnrFwj]
         for(let token of expoPushToken){
@@ -137,38 +167,50 @@ const ConversationScreen = () => {
         }
       }
 
+
+    const delay = (ms: number): Promise<void> => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+    };
     /** ----------------------------------------------------------
      *  ==== ====  L O A D   M O R E    M E S S A G E S  ==== ====
      * @returns 
      */
-    const loadMoreMessages = async() => {
+    const loadMoreMessages = useCallback(async() => {
         if (!canTriggerLoadMore || loadingMoreMessages || endReached ) return;
       try{
-          setCanTriggerLoadMore(false);
-          setLoadingMoreMessages(true);
-          const { data: messages_data, error: messages_error } = await supabase.from('messages')
-          .select('id, content, created_at, sender_id, type, has_attachment')
-          .eq('conversation_id', convId[0])
-          .order('created_at', { ascending: false})
-          .range(offset,offset+PAGE_SIZE-1);
-          if(messages_error){
-                  console.log('Error in fetchMessages  when fetching messages in conversation.tsx', messages_error);
+            setCanTriggerLoadMore(false);
+            setLoadingMoreMessages(true);
+            const { data: messages_data, error: messages_error } = await supabase.from('messages')
+            .select('id, content, created_at, sender_id, type, has_attachment')
+            .eq('conversation_id', convId[0])
+            .order('created_at', { ascending: false})
+            .range(offset,offset+PAGE_SIZE-1);
+            if(messages_error){
+                  console.log('Error in fetchMessages  when fetching messages in [...convId].tsx', messages_error);
                 }
-              if(messages_data?.length != 0){
-                setMessages((prev) => [...prev, ...messages_data]);
-                setOffset(offset+PAGE_SIZE);
-              }else{
-                console.log("END REACHED NO MORE MESSAGES WILL BE LOADED...");
-                //Here put some infos about users in conv (carroussel with profiles)
-                setEndReached(true);
-              }
+            if(messages_data?.length != 0){
+            setMessages((prev) => {const data = [...prev, ...messages_data]; const uniqueData = Array.from(new Set(data)); return uniqueData});
+            setOffset(offset+PAGE_SIZE);
+            }else{
+            console.log("END REACHED NO MORE MESSAGES WILL BE LOADED...");
+            //Here put some infos about users in conv (carroussel with profiles)
+            setEndReached(true);
+            }
         }catch(error: unknown){
-          console.log('Error in fetchMessages function in conversation.tsx', error);
+          console.log('Error in fetchMessages function in [...convId].tsx', error);
         }finally{
+            // console.log("BEFORE DELAY");
+            // await delay(1200);
+            // console.log("AFTER DELAY");
           setLoadingMoreMessages(false);
           setCanTriggerLoadMore(true);
       }
-    };
+    }, [loadingMoreMessages, offset]);
+
+    const debouncedFetchData = useCallback(debounce(loadMoreMessages, 300), [loadMoreMessages]);
+    const handleLoadMoreMessage = () => {
+        debouncedFetchData();
+    }
 
     /** ---------------------------------------------------------------------------
      *  ==== ====  S U B S C R I B E   T O   M E S S A G E   S T A T U S  ==== ====
@@ -245,10 +287,10 @@ const ConversationScreen = () => {
         try{
             const { data, error: rpc_error } = await supabase.rpc('mark_messages_as_read', {'p_user_id': user.id, 'p_conversation_id': convId[0]});
             if(rpc_error){
-                console.log('Error in markMessageAsRead when trying to mark message as read function in conversation.tsx', rpc_error);
+                console.log('Error in markMessageAsRead when trying to mark message as read function in [...convId].tsx', rpc_error);
             }
         }catch(error:unknown){
-            console.log('Error in markMessageAsRead function in conversation.tsx', error);
+            console.log('Error in markMessageAsRead function in [...convId].tsx', error);
         }
     }
     
@@ -261,19 +303,75 @@ const ConversationScreen = () => {
             console.log("MESSAGE ID :", message_id);
             const { data: last_status, error: error_status } = await supabase.from('message_status').select('*').eq('message_id',message_id).neq('user_id',user.id);
             if(error_status){
-                console.log('Error in readLastMessageStatus when trying to read last message_status function in conversation.tsx', error_status);
+                console.log('Error in readLastMessageStatus when trying to read last message_status function in [...convId].tsx', error_status);
             }
             if(last_status?.length != 0){
                 console.log("LAST_READ_MESSAGE : ", last_status);
                 setIsSeen(true);
             }
         }catch(error:unknown){
-            console.log('Error in readLastMessageStatus function in conversation.tsx', error);
+            console.log('Error in readLastMessageStatus function in [...convId].tsx', error);
         }finally{
 
         }
     }
-    
+
+    /** -----------------------------------------
+     *  ==== ====  P I C K   I M A G E  ==== ====
+     */
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images', 'videos'],
+            allowsEditing: true,
+            aspect: [4,3],
+            quality:1,
+            base64: true
+            // allowsMultipleSelection: true
+        });
+        // console.log(result);
+
+        if(!result.canceled){
+            setImages(result.assets[0].uri);
+            uploadImage(result.assets[0])
+        }
+    }
+
+    /** ---------------------------------------------
+     *  ==== ====  U P L O A D   I M A G E  ==== ====
+     * @param file 
+     */
+    const uploadImage = async (file: ImagePicker.ImagePickerAsset) => {
+        try{
+            //Create the attachement and send Message
+            const message_id = await sendTextMessage(true, 'attachment');
+            console.log("message iD :", message_id);
+            const { data: attach_data, error: attach_error } = await supabase.from('attachments').insert({
+                message_id: message_id,
+                url: file.fileName,
+                type: file.mimeType,
+                size: file.fileSize
+            });
+            if(attach_error){
+                console.log("Error in uploadImage function when inserting new attachement in [...convId].tsx :", attach_error);
+
+            }
+            //Upload the file on supabase
+            // console.log("FILE simple :", file);
+            const {data, error} = await supabase.storage.from('Conversations')
+            .upload(convId+'/'+file.fileName, decode(file.base64 as string),
+             {cacheControl: '3600', upsert:false, contentType:file.mimeType});
+             if(error){
+                console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
+            }
+            console.log("DATA UPLOAD:", data);
+        }catch(error:unknown){
+            console.log("Error in uploadImage function [...convId].tsx :", error);
+        }finally{
+
+        }
+    }
+
+
     return(
         <>
             { loading ?
@@ -286,39 +384,44 @@ const ConversationScreen = () => {
                         data={messages}
                         inverted={true}
                         renderItem={({item}) => (
-                            <Box>
-                                <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:5}}>
-                                    {item.sender_id != user.id ? 
-                                    <Box style={{borderBlockColor:"blue", borderWidth:1}} width={'20%'}>
-                                        <Text>
-                                            {item.sender_id}
-                                        </Text>
-                                    </Box>
-                                        : 
-                                    <></>}
-                                    <Box style={
-                                        item.sender_id == user.id ?
-                                        //My message
-                                        {borderBlockColor:"red", borderWidth:1, backgroundColor:'blue'}
-                                        :
-                                        //Other message
-                                        {borderBlockColor:"blue", borderWidth:1, backgroundColor:'grey'}
-                                    } width={'66%'}>
-                                        <Text style={item.sender_id == user.id ? 
-                                            //My message
-                                            {textAlign:'right', color:'white'} 
-                                            : 
-                                            //Other message
-                                            {textAlign:'left'}}>
-                                            {item.content}
-                                        </Text>
-                                    </Box> 
-                                </HStack>
-                            </Box>
+                            <FlatListMessage message={item}/>
+                        //     <Box>
+                        //     <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:5}}>
+                        //         {item.sender_id != user.id ? 
+                        //         <Box style={{borderBlockColor:"blue", borderWidth:1}} width={'20%'}>
+                        //             <Text>
+                        //                 {item.sender_id}
+                        //             </Text>
+                        //         </Box>
+                        //             : 
+                        //         <></>}
+                        //         <Box style={
+                        //             item.sender_id == user.id ?
+                        //             //My message
+                        //             {borderBlockColor:"red", borderWidth:1, backgroundColor:'blue'}
+                        //             :
+                        //             //Other message
+                        //             {borderBlockColor:"blue", borderWidth:1, backgroundColor:'grey'}
+                        //         } width={'66%'}>
+                        //             <Text style={item.sender_id == user.id ? 
+                        //                 //My message
+                        //                 {textAlign:'right', color:'white'} 
+                        //                 : 
+                        //                 //Other message
+                        //                 {textAlign:'left'}}>
+                        //                 {item.content}
+                        //             </Text>
+                        //         </Box> 
+                        //     </HStack>
+                        // </Box>
                         )}
+                        // keyExtractor={(item, index) => String(index)}
                         keyExtractor={(item) => item.id}
+                        // keyExtractor={(item) => item.id}
+                        extraData={messages}
                         // onContentSizeChange={scrollToBottom} // To use when new message received.
-                        onEndReached={loadMoreMessages}
+                        // onEndReached={loadMoreMessages}
+                        onEndReached={handleLoadMoreMessage}
                         onMomentumScrollBegin={() => {setCanTriggerLoadMore(true)}}
                         onEndReachedThreshold={0.1}
                         ListFooterComponent={loadingMoreMessages? <Text>LOADING MORE MESSAGES !</Text> : null}
@@ -334,18 +437,28 @@ const ConversationScreen = () => {
                         // <Text ml={4} color="$gray400">Someone is typing...</Text>
                     )}
                     <HStack>
-                        <Box style={{borderBlockColor:"red", borderWidth:1}} width={'70%'}>
+                        <Box style={{borderBlockColor:"red", borderWidth:1}} width={'59%'}>
                             <Input variant="outline" size="md">
                                 <InputField placeholder="Write message here..." onChangeText={(text) => {setText(text); sendTypingEvent()}} value={text}/>
                             </Input>
                         </Box>
-                        <Box width={'15%'} style={{borderBlockColor:"red", borderWidth:1}}>
+                        <Box width={'13%'} style={{borderBlockColor:"red", borderWidth:1}}>
                             {loadingSend ? 
                             <Text>SEND !</Text>: 
                             <Button onPress={() => {
-                                console.log('OPEN GALERIE');
+                                pickImage();
                             }}>
-                                <ButtonText><Ionicons name={'image-sharp'} color={'white'} size={20} /></ButtonText>
+                                <ButtonText><Ionicons name={'image-sharp'} color={'white'} size={16} /></ButtonText>
+                            </Button>
+                            }
+                        </Box>
+                        <Box width={'13%'} style={{borderBlockColor:"red", borderWidth:1}}>
+                            {loadingSend ? 
+                            <Text>SEND !</Text>: 
+                            <Button onPress={() => {
+                                console.log('OPEN PHOTO');
+                            }}>
+                                <ButtonText><Ionicons name={'camera-sharp'} color={'white'} size={16} /></ButtonText>
                             </Button>
                             }
                         </Box>
@@ -353,7 +466,7 @@ const ConversationScreen = () => {
                             {loadingSend ? 
                             <Text>SEND !</Text>: 
                             <Button onPress={() => {
-                                sendTextMessage();
+                                sendTextMessage(false, 'text');
                             }}>
                                 <ButtonText>{'->'}</ButtonText>
                             </Button>

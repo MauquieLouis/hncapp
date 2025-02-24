@@ -57,11 +57,16 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
+    const signOut = async () => {
+        await supabase.auth.signOut()
+      }
+
     const value = {
         loading,
         profile,
         session,
         user,
+        signOut,
     };
 
     return(
