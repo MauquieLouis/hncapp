@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import FlatListMessage from '@/components/conversations/FlatListMessage';
+import { v6 as uuidv6 } from 'uuid';
 
 const debounce = (func, delay) => {
     let debounceTimer;
@@ -70,11 +71,9 @@ const ConversationScreen = () => {
         fetchConversationData();
         subscribeToTypingStatus();
         subscrbeToMessagesStatus();
+        // console.log("UUID V6", uuidv6());
     }, []);
 
-    useEffect(() => {
-        console.log("trigger More : ", canTriggerLoadMore);
-    }, [canTriggerLoadMore]);
 
     useEffect(() => {
         console.log("is at bottom CHANGE : ", isAtBottom);
@@ -322,17 +321,17 @@ const ConversationScreen = () => {
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images', 'videos'],
-            allowsEditing: true,
+            // allowsEditing: true,
             aspect: [4,3],
             quality:1,
-            base64: true
-            // allowsMultipleSelection: true
+            base64: true,
+            allowsMultipleSelection: true
         });
         // console.log(result);
 
         if(!result.canceled){
-            setImages(result.assets[0].uri);
-            uploadImage(result.assets[0])
+            // setImages(result.assets[0].uri);
+            uploadImage(result.assets)
         }
     }
 
@@ -340,30 +339,34 @@ const ConversationScreen = () => {
      *  ==== ====  U P L O A D   I M A G E  ==== ====
      * @param file 
      */
-    const uploadImage = async (file: ImagePicker.ImagePickerAsset) => {
+    const uploadImage = async (files: ImagePicker.ImagePickerAsset[]) => {
         try{
             //Create the attachement and send Message
             const message_id = await sendTextMessage(true, 'attachment');
             console.log("message iD :", message_id);
-            const { data: attach_data, error: attach_error } = await supabase.from('attachments').insert({
-                message_id: message_id,
-                url: file.fileName,
-                type: file.mimeType,
-                size: file.fileSize
-            });
-            if(attach_error){
-                console.log("Error in uploadImage function when inserting new attachement in [...convId].tsx :", attach_error);
+            for(let file of files as ImagePicker.ImagePickerAsset[]){
+                // const filename = uuidv6();
+                
+                const { data: attach_data, error: attach_error } = await supabase.from('attachments').insert({
+                    message_id: message_id,
+                    url: file.fileName,
+                    type: file.mimeType,
+                    size: file.fileSize
+                });
+                if(attach_error){
+                    console.log("Error in uploadImage function when inserting new attachement in [...convId].tsx :", attach_error);
 
+                }
+                //Upload the file on supabase
+                // console.log("FILE simple :", file);
+                const {data, error} = await supabase.storage.from('Conversations')
+                .upload(convId+'/'+file.fileName, decode(file.base64 as string),
+                {cacheControl: '3600', upsert:false, contentType:file.mimeType});
+                if(error){
+                    console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
+                }
+                console.log("DATA UPLOAD:", data);
             }
-            //Upload the file on supabase
-            // console.log("FILE simple :", file);
-            const {data, error} = await supabase.storage.from('Conversations')
-            .upload(convId+'/'+file.fileName, decode(file.base64 as string),
-             {cacheControl: '3600', upsert:false, contentType:file.mimeType});
-             if(error){
-                console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
-            }
-            console.log("DATA UPLOAD:", data);
         }catch(error:unknown){
             console.log("Error in uploadImage function [...convId].tsx :", error);
         }finally{

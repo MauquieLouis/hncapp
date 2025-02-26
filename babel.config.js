@@ -13,6 +13,8 @@ module.exports = function(api) {
                 "@": "./",
                 "tailwind.config": "./tailwind.config.js"
             }
-        }]]
+        }],
+        '@babel/plugin-proposal-export-namespace-from', //This is for using in web apparently.
+         "react-native-reanimated/plugin"]
     };
 };

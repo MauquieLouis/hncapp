@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { UserContextProvider, useUserContext } from "../contexts/userContext";
 import { Text, Platform, View, Button } from "react-native";
 import { supabase } from "@/libs/initSupabase";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as Notifications from 'expo-notifications';
 import * as Constants from 'expo-constants';
 import * as Device from 'expo-device';
@@ -193,10 +194,12 @@ const MainStack = () => {
 
 export default function RootLayout() {
   return (
-    <GluestackUIProvider mode="light">
-      <UserContextProvider props={undefined}>
-        <MainStack/>
-      </UserContextProvider>
-    </GluestackUIProvider>
+    <GestureHandlerRootView>
+      <GluestackUIProvider mode="light">
+        <UserContextProvider props={undefined}>
+          <MainStack/>
+        </UserContextProvider>
+      </GluestackUIProvider>
+    </GestureHandlerRootView>
   );
 }

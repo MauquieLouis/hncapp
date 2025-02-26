@@ -4,11 +4,15 @@ import { Text } from "@/components/ui/text";
 import { Box } from "@/components/ui/box";
 import { HStack } from '@/components/ui/hstack';
 import { useUserContext } from "@/contexts/userContext";
+import Attachment from "./attachment";
 
 const FlatListMessage = (props: any) => {
 
     const item = props.message;
     const { user } = useUserContext();
+    if(item.type == 'attachment'){
+        return <Attachment item={item}/>
+    }
     return (
         <Box>
             <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:5}}>
