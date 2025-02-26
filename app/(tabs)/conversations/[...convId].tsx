@@ -349,7 +349,7 @@ const ConversationScreen = () => {
                 
                 const { data: attach_data, error: attach_error } = await supabase.from('attachments').insert({
                     message_id: message_id,
-                    url: file.fileName,
+                    url: convId+'/'+file.fileName,
                     type: file.mimeType,
                     size: file.fileSize
                 });

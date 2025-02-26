@@ -26,13 +26,16 @@ export const SlideItem: React.FC<Props> = (props) => {
     () => props.source || imagesArray[index % imagesArray.length],
     [index, props.source]
   );
+//   console.log("SOURCE :", source);
+//   const source = props.imagesArray;
 
   return (
     <Animated.View testID={testID} style={{ flex: 1 }} {...animatedViewProps}>
       <Animated.Image
         style={[style, styles.container, rounded && { borderRadius: 15 }]}
-        source={source}
+        // source={source}
         resizeMode="cover"
+        src={source}
       />
       <View style={styles.overlay}>
         <View style={styles.overlayTextContainer}>
