@@ -5,6 +5,7 @@ import {
   type StyleProp,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
   type ViewProps,
 } from "react-native";
@@ -17,10 +18,11 @@ interface Props extends AnimatedProps<ViewProps> {
   rounded?: boolean;
   source?: ImageSourcePropType;
   imagesArray?: any;
+  openModal?: Function;
 }
 
 export const SlideItem: React.FC<Props> = (props) => {
-  const { style, index = 0, rounded = false, testID, imagesArray, ...animatedViewProps } = props;
+  const { style, index = 0, rounded = false, testID, imagesArray, openModal, ...animatedViewProps } = props;
 
   const source = useMemo(
     () => props.source || imagesArray[index % imagesArray.length],
@@ -31,12 +33,14 @@ export const SlideItem: React.FC<Props> = (props) => {
 
   return (
     <Animated.View testID={testID} style={{ flex: 1 }} {...animatedViewProps}>
-      <Animated.Image
-        style={[style, styles.container, rounded && { borderRadius: 15 }]}
-        // source={source}
-        resizeMode="cover"
-        src={source}
-      />
+      <TouchableOpacity onPress={() => openModal && openModal()} activeOpacity={1}>
+        <Animated.Image
+          style={[style, styles.container, rounded && { borderRadius: 15 }]}
+          // source={source}
+          resizeMode="cover"
+          src={source}
+        />
+      </TouchableOpacity>
       <View style={styles.overlay}>
         <View style={styles.overlayTextContainer}>
             {imagesArray.length != 1 ?

@@ -10,6 +10,7 @@ import type { ICarouselInstance } from "react-native-reanimated-carousel";
 import Carousel from "react-native-reanimated-carousel";
 import { renderItem } from "./renderItem";
 import { supabase } from "@/libs/initSupabase";
+import { Modal, ModalBackdrop, ModalContent } from "../ui/modal";
 
 const ImageDisplay = (props: any) => {
 
@@ -92,7 +93,7 @@ const ImageDisplay = (props: any) => {
                 }}
                 // enabled={false}
                 customConfig={() => ({ type: "positive", viewCount: 5 })}
-                renderItem={renderItem({rounded: true, imagesArray:images})}
+                renderItem={renderItem({rounded: true, imagesArray:images, openModalFunction:props.openModal})}
                 scrollAnimationDuration={660}
                 onConfigurePanGesture={(gesture) => {
                     gesture.activeOffsetX([-50,50]);
@@ -138,6 +139,10 @@ const ImageDisplay = (props: any) => {
 
 const Attachment = (props: any) => {
 
+    const [ openModal, setOpenModal ] = useState(false);
+    const onCloseModal = () => setOpenModal(false);
+    const openModalFunction = () => setOpenModal(true);
+
     const item = props.item;
     const { user } = useUserContext();
     return(
@@ -152,10 +157,18 @@ const Attachment = (props: any) => {
                     {borderBlockColor:"blue", borderWidth:1, backgroundColor:'lime'}
                 } width={'76%'}>
                     <Box> 
-                        <ImageDisplay attachment={item}/>
+                        <ImageDisplay attachment={item} openModal={openModalFunction}/>
                     </Box>
                 </Box> 
             </HStack>
+            <Modal
+                isOpen={openModal}
+                onClose={onCloseModal} >
+                <ModalBackdrop/>
+                <ModalContent>
+                    <Text>MODAL TEST</Text>
+                </ModalContent> 
+            </Modal>
         </Box>
     )
 }
