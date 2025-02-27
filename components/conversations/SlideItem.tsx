@@ -39,7 +39,11 @@ export const SlideItem: React.FC<Props> = (props) => {
       />
       <View style={styles.overlay}>
         <View style={styles.overlayTextContainer}>
-          <Text style={styles.overlayText}>{index}</Text>
+            {imagesArray.length != 1 ?
+                <Text style={styles.overlayText}>{index+1}/{imagesArray.length}</Text>
+            :
+                <></>
+            }
         </View>
       </View>
     </Animated.View>
@@ -59,18 +63,21 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-  },
-  overlayText: {
+},
+overlayText: {
     color: "white",
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: "bold",
-  },
-  overlayTextContainer: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+},
+overlayTextContainer: {
+    position:"absolute",
+    right: 6,
+    bottom: 6,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
     padding: 10,
     borderRadius: 10,
-    minWidth: 40,
-    minHeight: 40,
+    minWidth: 30,
+    minHeight: 30,
     justifyContent: "center",
     alignItems: "center",
   },

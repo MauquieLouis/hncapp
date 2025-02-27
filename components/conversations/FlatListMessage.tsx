@@ -9,6 +9,7 @@ import Attachment from "./attachment";
 const FlatListMessage = (props: any) => {
 
     const item = props.message;
+    // console.log("FLAT LIST ELEM PROPS", item);
     const { user } = useUserContext();
     if(item.type == 'attachment'){
         return <Attachment item={item}/>

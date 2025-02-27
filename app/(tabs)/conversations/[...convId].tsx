@@ -386,6 +386,7 @@ const ConversationScreen = () => {
                         ref={flatListRef}
                         data={messages}
                         inverted={true}
+                        nestedScrollEnabled={true}
                         renderItem={({item}) => (
                             <FlatListMessage message={item}/>
                         //     <Box>
