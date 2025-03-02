@@ -11,6 +11,7 @@ import Carousel from "react-native-reanimated-carousel";
 import { renderItem } from "./renderItem";
 import { supabase } from "@/libs/initSupabase";
 import { Modal, ModalBackdrop, ModalContent } from "../ui/modal";
+import { Video } from "expo-av";
 
 const ImageDisplay = (props: any) => {
 
@@ -28,7 +29,7 @@ const ImageDisplay = (props: any) => {
 
             // console.log("MAP ATTACHED :", attachments.attachments)
             const urls = attachments.attachments.map((attachment: { url: any; }) => attachment.url);
-            console.log(urls);
+            // console.log(urls);
             
             const { data, error } = await supabase.storage.from('Conversations').createSignedUrls(urls, 5400);
             if(error){
@@ -58,8 +59,8 @@ const ImageDisplay = (props: any) => {
     }
 
     const ref = useRef<ICarouselInstance>(null);
-    // console.log("IMAGES :", attachments);
-    console.log("IMAGES :", images);
+    console.log("IMAGES :", attachments);
+    // console.log("IMAGES :", images);
     return (
         // <Text>ATTACHMENTS</Text>
         <Box id={"carousel-component"+props.id}>
@@ -93,7 +94,7 @@ const ImageDisplay = (props: any) => {
                 }}
                 // enabled={false}
                 customConfig={() => ({ type: "positive", viewCount: 5 })}
-                renderItem={renderItem({rounded: true, imagesArray:images, openModalFunction:props.openModal})}
+                renderItem={renderItem({rounded: true, imagesArray:images, openModalFunction:props.openModal, attachments:attachments.attachments})}
                 scrollAnimationDuration={660}
                 onConfigurePanGesture={(gesture) => {
                     gesture.activeOffsetX([-50,50]);
@@ -117,10 +118,27 @@ const ImageDisplay = (props: any) => {
                             width:"100%",
                             borderColor:'green', borderWidth:1
                              }}>
-                        <Image
+                        {attachments.attachments[0].type.startsWith("video/") ? 
+                        <>
+                            { console.log("THIS IS A VIDEO :", attachments.attachments[0].type, images[0]) }
+                            <Video
+                                source={{uri: images[0]}}
+                                rate={1.0}
+                                volume={1.0}
+                                isMuted={false}
+                                resizeMode="cover"
+                                shouldPlay={false}
+                                useNativeControls
+                                style={{ width: '90%', height: 220, borderRadius: 15 }}
+                            />
+                        </>
+                        : 
+                        <>
+                            { console.log("THIS NOT IS A VIDEO :", attachments.attachments[0].type, images[0]) }
+                            <Image
                             width="90%"
                             height={220}
-                        
+                            
                             // style={[{}]}
                             borderRadius={15}
                             size='none'
@@ -128,6 +146,8 @@ const ImageDisplay = (props: any) => {
                             alt={"One CenteredPicture sended"}
                             resizeMode="cover"
                             />
+                        </>
+                        }
                         </Center>
                         :
                         <></> }
@@ -140,8 +160,9 @@ const ImageDisplay = (props: any) => {
 const Attachment = (props: any) => {
 
     const [ openModal, setOpenModal ] = useState(false);
+    const [ indexOpenModal, setIndexOpenModal ] = useState(0);
     const onCloseModal = () => setOpenModal(false);
-    const openModalFunction = () => setOpenModal(true);
+    const openModalFunction = (_index: any) => {setOpenModal(true); setIndexOpenModal(_index); console.log("INDEX OPEN :", _index)};
 
     const item = props.item;
     const { user } = useUserContext();
@@ -161,6 +182,7 @@ const Attachment = (props: any) => {
                     </Box>
                 </Box> 
             </HStack>
+            {/* --------- MODAL FOR CAROUSEL --------- */}
             <Modal
                 isOpen={openModal}
                 onClose={onCloseModal} >

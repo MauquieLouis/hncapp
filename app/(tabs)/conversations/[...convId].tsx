@@ -11,7 +11,9 @@ import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system';
 import FlatListMessage from '@/components/conversations/FlatListMessage';
 import { v6 as uuidv6 } from 'uuid';
 
@@ -129,7 +131,7 @@ const ConversationScreen = () => {
         }catch(error: unknown){
             console.log('Error in sendTextMessage function in [...convId].tsx', error);
         }finally{
-            sendPushNotification("ExponentPushToken[LAeDpVJcdT2PZz3kEnrFwj]");
+            // sendPushNotification(["ExponentPushToken[LAeDpVJcdT2PZz3kEnrFwj]"]);
             setIsSeen(false);
             setText('');
             setLoadingSend(false);
@@ -141,7 +143,7 @@ const ConversationScreen = () => {
      *  ==== ====  S E N D   P U S H   N O T I F I C A T I O N  ==== ====
      * @param expoPushToken 
      */
-    async function sendPushNotification(expoPushToken: string) {
+    async function sendPushNotification(expoPushToken: string[]) {
         //ExponentPushToken[LAeDpVJcdT2PZz3kEnrFwj]
         for(let token of expoPushToken){
             const notif = {
@@ -357,15 +359,35 @@ const ConversationScreen = () => {
                     console.log("Error in uploadImage function when inserting new attachement in [...convId].tsx :", attach_error);
 
                 }
-                //Upload the file on supabase
-                // console.log("FILE simple :", file);
-                const {data, error} = await supabase.storage.from('Conversations')
-                .upload(convId+'/'+file.fileName, decode(file.base64 as string),
-                {cacheControl: '3600', upsert:false, contentType:file.mimeType});
-                if(error){
-                    console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
+                console.log("FILE simple :", file);
+                if(file.type == 'video'){
+                    console.log("VIDEO FILE :", file);
+                    // const video = await DocumentPicker.getDocumentAsync({type: 'video/*', copyToCacheDirectory: true});
+                    // const videoBlob = await fetch(file.uri).then((res) => res.blob());
+                    // const video = new Blob([file.uri], {type: file.mimeType});
+                    // 
+                    // const videoBlob = URL.createObjectURL(video);
+                    // console.log("VIDEO NBLOB :", video);
+                    const fileContent = await FileSystem.readAsStringAsync(file.uri, {encoding: FileSystem.EncodingType.Base64});
+
+                    const {data, error} = await supabase.storage.from('Conversations')
+                    .upload(convId+'/'+file.fileName, decode(fileContent),
+                    {cacheControl: '3600', upsert:false, contentType:file.mimeType});
+                    if(error){
+                        console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
+                    }
+                    console.log("DATA UPLOAD:", data);
+                }else{
+                    console.log("NOT A VIDEO :");
+                    const {data, error} = await supabase.storage.from('Conversations')
+                    .upload(convId+'/'+file.fileName, decode(file.base64 as string),
+                    {cacheControl: '3600', upsert:false, contentType:file.mimeType});
+                    if(error){
+                        console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
+                    }
+                    console.log("DATA UPLOAD:", data);
                 }
-                console.log("DATA UPLOAD:", data);
+                //Upload the file on supabase
             }
         }catch(error:unknown){
             console.log("Error in uploadImage function [...convId].tsx :", error);

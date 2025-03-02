@@ -8,10 +8,11 @@ interface Options {
   style?: StyleProp<ImageStyle>;
   imagesArray?: any;
   openModalFunction?: Function;
+  attachments?: any
 }
 
 export const renderItem =
-  ({ rounded = false, style, imagesArray, openModalFunction }: Options = {}): CarouselRenderItem<any> =>
+  ({ rounded = false, style, imagesArray, openModalFunction, attachments }: Options = {}): CarouselRenderItem<any> =>
   ({ index }: { index: number }) => (
-      <SlideItem key={index} index={index} rounded={rounded} style={style} imagesArray={imagesArray} openModal={openModalFunction} />
+      <SlideItem key={index} index={index} rounded={rounded} style={style} imagesArray={imagesArray} openModal={openModalFunction} attachments={attachments} />
   );

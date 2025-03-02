@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import type { AnimatedProps } from "react-native-reanimated";
 import Animated from "react-native-reanimated";
+import { Video } from "expo-av";
 
 interface Props extends AnimatedProps<ViewProps> {
   style?: StyleProp<ImageStyle>;
@@ -19,27 +20,44 @@ interface Props extends AnimatedProps<ViewProps> {
   source?: ImageSourcePropType;
   imagesArray?: any;
   openModal?: Function;
+  attachments?: any;
 }
 
 export const SlideItem: React.FC<Props> = (props) => {
-  const { style, index = 0, rounded = false, testID, imagesArray, openModal, ...animatedViewProps } = props;
+  const { style, index = 0, rounded = false, testID, imagesArray, openModal, attachments, ...animatedViewProps } = props;
 
   const source = useMemo(
     () => props.source || imagesArray[index % imagesArray.length],
     [index, props.source]
+
   );
-//   console.log("SOURCE :", source);
-//   const source = props.imagesArray;
+  const type = useMemo(
+    () => attachments[index % attachments.length].type,
+    [attachments[index % attachments.length].type]
+  );
 
   return (
     <Animated.View testID={testID} style={{ flex: 1 }} {...animatedViewProps}>
-      <TouchableOpacity onPress={() => openModal && openModal()} activeOpacity={1}>
-        <Animated.Image
+      <TouchableOpacity onPress={() => openModal && openModal(index)} activeOpacity={1}>
+        {type.startsWith("video/") ? 
+          <Video
+          source={{uri: source}}
+          rate={1.0}
+          volume={1.0}
+          isMuted={false}
+          resizeMode="cover"
+          shouldPlay={false}
+          useNativeControls
+          style={{ width: '100%', height: 220, borderRadius: 15 }}
+          />
+          : 
+          <Animated.Image
           style={[style, styles.container, rounded && { borderRadius: 15 }]}
           // source={source}
           resizeMode="cover"
           src={source}
-        />
+          />
+        }
       </TouchableOpacity>
       <View style={styles.overlay}>
         <View style={styles.overlayTextContainer}>
