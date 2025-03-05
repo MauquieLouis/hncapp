@@ -1,4 +1,4 @@
-import React, { Dimensions, View } from "react-native";
+import React, { Dimensions, TouchableOpacity } from "react-native";
 import * as RN from "react-native";
 import { Image } from "@/components/ui/image";
 import { useEffect, useRef, useState } from "react";
@@ -11,8 +11,9 @@ import type { ICarouselInstance } from "react-native-reanimated-carousel";
 import Carousel from "react-native-reanimated-carousel";
 import { renderItem } from "./renderItem";
 import { supabase } from "@/libs/initSupabase";
-import { Modal, ModalBackdrop, ModalContent } from "../ui/modal";
+import { Modal, ModalBackdrop, ModalContent, ModalHeader } from "../ui/modal";
 import { Video } from "expo-av";
+import { Ionicons } from "@expo/vector-icons";
 
 const ImageDisplay = (props: any) => {
 
@@ -25,12 +26,13 @@ const ImageDisplay = (props: any) => {
         index = 0;
     }
     // RN.Image.getSize()
-    let height, height2, width, moveSize, resizeMode, mode;
+    let height, height2, width, moveSize, resizeMode;
+    let mode: "horizontal-stack" | "vertical-stack" | undefined;
     if(props.modal == true){
         // RN.Image.getSize()
-        height=Dimensions.get('window').height * 0.9;
+        height=Dimensions.get('window').height * 0.85;
         height2=height;
-        width=Dimensions.get('window').width * 0.79;
+        width=Dimensions.get('window').width * 0.9;
         moveSize=Dimensions.get('window').width * 2,5;
         resizeMode="contain";
         mode="left-align";
@@ -62,8 +64,6 @@ const ImageDisplay = (props: any) => {
                     justifyContent: "center",
                     width: "100%",
                     height: height2,
-                    borderWidth:2,
-                    borderColor:"purple"
                 }}
                 mode={mode}
                 modeConfig={{
@@ -82,7 +82,7 @@ const ImageDisplay = (props: any) => {
                     attachments:attachments.attachments,
                     resizeMode:resizeMode
                 })}
-                scrollAnimationDuration={660}
+                scrollAnimationDuration={460}
                 onConfigurePanGesture={(gesture) => {
                     gesture.activeOffsetX([-50,50]);
                     // gesture.minVelocity(0);
@@ -94,49 +94,42 @@ const ImageDisplay = (props: any) => {
                 //onSnapToItem //use to remember the item of the id when opening modal carousel.
                 />
                 :
-                // <></>
                 <>
                     {attachmentsUrls != null && attachmentsUrls.length && attachmentsUrls[0] != 'null' ? 
+                        <TouchableOpacity onPress={props.openModal} activeOpacity={1}>
                         <Center style={{ 
                             alignItems: "center",
                             justifyContent: "center",
-                            width: Dimensions.get('window').width * 0.64,
-                            height: 240,
                             width:"100%",
-                            borderColor:'green', borderWidth:1
+                            height: height2,
                              }}>
-                        {attachments.attachments[0].type.startsWith("video/") ? 
-                        <>
-                            { console.log("THIS IS A VIDEO :", attachments.attachments[0].type, attachmentsUrls[0]) }
-                            <Video
-                                source={{uri: attachmentsUrls[0]}}
-                                rate={1.0}
-                                volume={1.0}
-                                isMuted={false}
-                                resizeMode="cover"
-                                shouldPlay={false}
-                                useNativeControls
-                                style={{ width: '88%', height: 220, borderRadius: 15 }}
-                            />
-                        </>
-                        : 
-                        <>
-                            { console.log("THIS NOT IS A VIDEO :", attachments.attachments[0].type, attachmentsUrls[0]) }
-                            <Image
-                            width="88%"
-                            height={220}
-                            // style={[{}]}
-                            borderRadius={15}
-                            size='none'
-                            source={attachmentsUrls[0]}
-                            alt={"One CenteredPicture sended"}
-                            resizeMode="cover"
-                            />
-                        </>
-                        }
+                                {attachments.attachments[0].type.startsWith("video/") ? 
+                                    <Video
+                                        source={{uri: attachmentsUrls[0]}}
+                                        rate={1.0}
+                                        volume={1.0}
+                                        isMuted={false}
+                                        resizeMode={resizeMode}
+                                        shouldPlay={false}
+                                        useNativeControls
+                                        style={{ width: width, height: height, borderRadius: 15 }}
+                                    />
+                                : 
+                                    <Image
+                                    width={width}
+                                    height={height}
+                                    // style={[{}]}
+                                    borderRadius={15}
+                                    size='none'
+                                    source={attachmentsUrls[0]}
+                                    alt={"One CenteredPicture sended"}
+                                    resizeMode={resizeMode}
+                                    />
+                                }
                         </Center>
+                        </TouchableOpacity>
                         :
-                        <></> }
+                        <></>}
                 </>
                 }
         </Box>
@@ -205,11 +198,13 @@ const Attachment = (props: any) => {
                 style={{ borderColor:'red', borderWidth:1}}
                 isOpen={openModal}
                 onClose={onCloseModal} >
-                <ModalBackdrop/>
-                <ModalContent style={{width: '90%', height: '90%', borderColor:'lime', borderWidth:1}}>
+                <ModalContent style={{width: '90%', height: '90%', backgroundColor:'rgba(0,0,0,0.9)', padding:0, borderWidth:0}}>
+                    <ModalHeader style={{padding:10}}>
+                        <Ionicons name="arrow-back-outline" size={32} color="white" onPress={onCloseModal}/>
+                        <Ionicons name="menu-outline" size={32} color="white"/>
+                    </ModalHeader>
                     <ImageDisplay attachment={item} openModal={openModalFunction} attachmentsUrls={attachmentsUrls} index={indexOpenModal} modal={true}/>
 
-                    <Text>MODAL TEST</Text>
                 </ModalContent> 
             </Modal>
         </>

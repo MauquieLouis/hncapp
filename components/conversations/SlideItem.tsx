@@ -47,10 +47,10 @@ export const SlideItem: React.FC<Props> = (props) => {
           rate={1.0}
           volume={1.0}
           isMuted={false}
-          resizeMode="cover"
+          resizeMode={resizeMode}
           shouldPlay={false}
           useNativeControls
-          style={{ width: '100%', height: 220, borderRadius: 15 }}
+          style={{ width: '100%', height:'100%', borderRadius: 15 }}
           />
           : 
           <Animated.Image
