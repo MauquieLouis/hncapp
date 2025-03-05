@@ -8,12 +8,13 @@ interface Options {
   style?: StyleProp<ImageStyle>;
   imagesArray?: any;
   openModalFunction?: Function;
-  attachments?: any
+  attachments?: any;
   resizeMode?: string;
+  modalOpen?: boolean;
 }
 
 export const renderItem =
-  ({ rounded = false, style, imagesArray, openModalFunction, attachments, resizeMode }: Options = {}): CarouselRenderItem<any> =>
+  ({ rounded = false, style, imagesArray, openModalFunction, attachments, resizeMode, modalOpen }: Options = {}): CarouselRenderItem<any> =>
   ({ index }: { index: number }) => (
       <SlideItem 
         key={index} 
@@ -23,5 +24,6 @@ export const renderItem =
         imagesArray={imagesArray} 
         openModal={openModalFunction} 
         attachments={attachments} 
-        resizeMode={resizeMode}/>
+        resizeMode={resizeMode}
+        modalOpen={modalOpen}/>
   );

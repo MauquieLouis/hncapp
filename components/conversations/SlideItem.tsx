@@ -13,6 +13,8 @@ import type { AnimatedProps } from "react-native-reanimated";
 import Animated from "react-native-reanimated";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
+import VideoPlayer from "./video";
+import VideoThumbNail from "./videoThumbnail";
 
 interface Props extends AnimatedProps<ViewProps> {
   style?: StyleProp<ImageStyle>;
@@ -23,11 +25,13 @@ interface Props extends AnimatedProps<ViewProps> {
   openModal?: Function;
   attachments?: any;
   resizeMode?: string;
+  modalOpen?: boolean;
 }
 
 export const SlideItem: React.FC<Props> = (props) => {
-  const { style, index = 0, rounded = false, testID, imagesArray, openModal, attachments, resizeMode, ...animatedViewProps } = props;
+  const { style, index = 0, rounded = false, testID, imagesArray, openModal, attachments, resizeMode, modalOpen, ...animatedViewProps } = props;
 
+  console.log("MODAL OPEN ? :",modalOpen);
   const source = useMemo(
     () => props.source || imagesArray[index % imagesArray.length],
     [index, props.source]
@@ -40,18 +44,27 @@ export const SlideItem: React.FC<Props> = (props) => {
 
   return (
     <Animated.View testID={testID} style={{ flex: 1 }} {...animatedViewProps}>
-      <TouchableOpacity onPress={() => openModal && openModal(index)} activeOpacity={1}>
+      <TouchableOpacity onPress={() => openModal && openModal(index)} activeOpacity={1} style={{ height:"100%" }}>
         {type.startsWith("video/") ? 
-          <Video
-          source={{uri: source}}
-          rate={1.0}
-          volume={1.0}
-          isMuted={false}
-          resizeMode={resizeMode}
-          shouldPlay={false}
-          useNativeControls
-          style={{ width: '100%', height:'100%', borderRadius: 15 }}
-          />
+          // <Video
+          // source={{uri: source}}
+          // rate={1.0}
+          // volume={1.0}
+          // isMuted={false}
+          // resizeMode={resizeMode}
+          // shouldPlay={false}
+          // useNativeControls
+          // style={{ width: '100%', height:'100%', borderRadius: 15 }}
+          // />
+          <>
+          {modalOpen == false ?
+              <VideoThumbNail uri={source} width={'100%'} height={'100%'} borderRadius={15} resizeMode={resizeMode}/>
+          : 
+              // <VideoPlayer uri={attachmentsUrls[0]} width={width} height={height} borderRadius={15} resizeMode={resizeMode}/>
+              <VideoPlayer uri={source} width={'100%'} height={'100%'} borderRadius={15} resizeMode={resizeMode}/>
+          }
+          </>
+
           : 
           <Animated.Image
           style={[style, styles.container, rounded && { borderRadius: 15 }]}
@@ -60,21 +73,29 @@ export const SlideItem: React.FC<Props> = (props) => {
           src={source}
           />
         }
-      </TouchableOpacity>
-      <View style={styles.overlay}>
-        <View style={styles.overlayTextContainer}>
-            {imagesArray.length != 1 ?
-              <>
-                <Text style={styles.overlayText}>{index+1}/{imagesArray.length}</Text>
-                { attachments[index % attachments.length].type.startsWith("video/") ? 
-                <Ionicons name={'videocam-outline'} color={'white'} size={16} /> :<></> }
-              </>
-                
-            :
-                <></>
-            }
+        <View style={styles.overlay}>
+          <View style={styles.overlayTextContainer}>
+              {imagesArray.length != 1 ?
+                <>
+                  <Text style={styles.overlayText}>{index+1}/{imagesArray.length}</Text>
+                </>
+                  
+              :
+                  <></>
+              }
+          </View>
+          {type.startsWith("video/") ? 
+            <>
+            {modalOpen == false ?
+            <View style={styles.overlayVideo}>
+                <Ionicons name={'videocam-outline'} color={'white'} size={26}/>
+            </View>
+            :<></>}
+            </>
+              :<></>
+          }
         </View>
-      </View>
+      </TouchableOpacity>
     </Animated.View>
   );
 };
@@ -93,6 +114,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
 },
+  overlayVideo: {
+    backgroundColor: "rgba(0, 0, 0, 0.56)",
+    padding: 14,
+    borderRadius: 10,
+    minWidth: 30,
+    minHeight: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    borderColor: "rgba(255, 255, 255, 0.56)",
+    borderWidth: 2
+},
+
 overlayText: {
     color: "white",
     fontSize: 14,

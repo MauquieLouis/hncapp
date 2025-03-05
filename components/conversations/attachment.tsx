@@ -1,5 +1,4 @@
-import React, { Dimensions, TouchableOpacity } from "react-native";
-import * as RN from "react-native";
+import React, { Dimensions, TouchableOpacity, View, StyleSheet } from "react-native";
 import { Image } from "@/components/ui/image";
 import { useEffect, useRef, useState } from "react";
 import { Text } from "@/components/ui/text";
@@ -14,8 +13,12 @@ import { supabase } from "@/libs/initSupabase";
 import { Modal, ModalBackdrop, ModalContent, ModalHeader } from "../ui/modal";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
+import VideoPlayer from "./video";
+import VideoThumbNail from "./videoThumbnail";
 
 const ImageDisplay = (props: any) => {
+
+    
 
     const attachments = props.attachment;
     const attachmentsUrls = props.attachmentsUrls;
@@ -25,11 +28,9 @@ const ImageDisplay = (props: any) => {
     }else{
         index = 0;
     }
-    // RN.Image.getSize()
     let height, height2, width, moveSize, resizeMode;
     let mode: "horizontal-stack" | "vertical-stack" | undefined;
     if(props.modal == true){
-        // RN.Image.getSize()
         height=Dimensions.get('window').height * 0.85;
         height2=height;
         width=Dimensions.get('window').width * 0.9;
@@ -80,7 +81,8 @@ const ImageDisplay = (props: any) => {
                     imagesArray:attachmentsUrls,
                     openModalFunction:props.openModal, 
                     attachments:attachments.attachments,
-                    resizeMode:resizeMode
+                    resizeMode:resizeMode,
+                    modalOpen:props.modal
                 })}
                 scrollAnimationDuration={460}
                 onConfigurePanGesture={(gesture) => {
@@ -104,16 +106,30 @@ const ImageDisplay = (props: any) => {
                             height: height2,
                              }}>
                                 {attachments.attachments[0].type.startsWith("video/") ? 
-                                    <Video
-                                        source={{uri: attachmentsUrls[0]}}
-                                        rate={1.0}
-                                        volume={1.0}
-                                        isMuted={false}
-                                        resizeMode={resizeMode}
-                                        shouldPlay={false}
-                                        useNativeControls
-                                        style={{ width: width, height: height, borderRadius: 15 }}
-                                    />
+                                <>
+                                    {props.modal == false ?
+                                        <>
+                                        <VideoThumbNail uri={attachmentsUrls[0]} width={width} height={height} borderRadius={15} resizeMode={resizeMode}/>
+                                            <View style={styles.overlay}>
+                                                <View style={styles.overlayVideo}>
+                                                    <Ionicons name={'videocam-outline'} color={'white'} size={26}/>
+                                                </View>
+                                            </View>
+                                        </>
+                                    : 
+                                        <VideoPlayer uri={attachmentsUrls[0]} width={width} height={height} borderRadius={15} resizeMode={resizeMode}/>
+                                    }
+                                </>
+                                    // <Video
+                                    //     source={{uri: attachmentsUrls[0]}}
+                                    //     rate={1.0}
+                                    //     volume={1.0}
+                                    //     isMuted={false}
+                                    //     resizeMode={resizeMode}
+                                    //     shouldPlay={false}
+                                    //     useNativeControls
+                                    //     style={{ width: width, height: height, borderRadius: 15 }}
+                                    // />
                                 : 
                                     <Image
                                     width={width}
@@ -147,7 +163,6 @@ const Attachment = (props: any) => {
     const openModalFunction = (_index: any) => {
         setOpenModal(true); 
         setIndexOpenModal(_index); 
-        console.log("INDEX OPEN :", _index); 
     };
 
     const item = props.item;
@@ -213,3 +228,26 @@ const Attachment = (props: any) => {
 }
 
 export default Attachment;
+
+const styles = StyleSheet.create({
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+},
+  overlayVideo: {
+    backgroundColor: "rgba(0, 0, 0, 0.56)",
+    padding: 14,
+    borderRadius: 10,
+    minWidth: 30,
+    minHeight: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    borderColor: "rgba(255, 255, 255, 0.56)",
+    borderWidth: 2
+},
+});

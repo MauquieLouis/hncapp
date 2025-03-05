@@ -17,7 +17,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.hncapp",
-      "googleServicesFile":"./google-services.json"
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -34,7 +34,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true
