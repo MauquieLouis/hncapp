@@ -11,7 +11,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system';
 import FlatListMessage from '@/components/conversations/FlatListMessage';
@@ -411,42 +410,10 @@ const ConversationScreen = () => {
                         nestedScrollEnabled={true}
                         renderItem={({item}) => (
                             <FlatListMessage message={item}/>
-                        //     <Box>
-                        //     <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:5}}>
-                        //         {item.sender_id != user.id ? 
-                        //         <Box style={{borderBlockColor:"blue", borderWidth:1}} width={'20%'}>
-                        //             <Text>
-                        //                 {item.sender_id}
-                        //             </Text>
-                        //         </Box>
-                        //             : 
-                        //         <></>}
-                        //         <Box style={
-                        //             item.sender_id == user.id ?
-                        //             //My message
-                        //             {borderBlockColor:"red", borderWidth:1, backgroundColor:'blue'}
-                        //             :
-                        //             //Other message
-                        //             {borderBlockColor:"blue", borderWidth:1, backgroundColor:'grey'}
-                        //         } width={'66%'}>
-                        //             <Text style={item.sender_id == user.id ? 
-                        //                 //My message
-                        //                 {textAlign:'right', color:'white'} 
-                        //                 : 
-                        //                 //Other message
-                        //                 {textAlign:'left'}}>
-                        //                 {item.content}
-                        //             </Text>
-                        //         </Box> 
-                        //     </HStack>
-                        // </Box>
                         )}
-                        // keyExtractor={(item, index) => String(index)}
                         keyExtractor={(item) => item.id}
-                        // keyExtractor={(item) => item.id}
                         extraData={messages}
                         // onContentSizeChange={scrollToBottom} // To use when new message received.
-                        // onEndReached={loadMoreMessages}
                         onEndReached={handleLoadMoreMessage}
                         onMomentumScrollBegin={() => {setCanTriggerLoadMore(true)}}
                         onEndReachedThreshold={0.1}
@@ -474,7 +441,7 @@ const ConversationScreen = () => {
                             <Button onPress={() => {
                                 pickImage();
                             }}>
-                                <ButtonText><Ionicons name={'image-sharp'} color={'white'} size={16} /></ButtonText>
+                                <ButtonText><Ionicons name={'image-outline'} color={'white'} size={16} /></ButtonText>
                             </Button>
                             }
                         </Box>
@@ -484,7 +451,7 @@ const ConversationScreen = () => {
                             <Button onPress={() => {
                                 console.log('OPEN PHOTO');
                             }}>
-                                <ButtonText><Ionicons name={'camera-sharp'} color={'white'} size={16} /></ButtonText>
+                                <ButtonText><Ionicons name={'camera-outline'} color={'white'} size={16} /></ButtonText>
                             </Button>
                             }
                         </Box>
@@ -494,7 +461,7 @@ const ConversationScreen = () => {
                             <Button onPress={() => {
                                 sendTextMessage(false, 'text');
                             }}>
-                                <ButtonText>{'->'}</ButtonText>
+                                <ButtonText><Ionicons name={'send-outline'} color={'white'} size={16} /></ButtonText>
                             </Button>
                             }
                         </Box>

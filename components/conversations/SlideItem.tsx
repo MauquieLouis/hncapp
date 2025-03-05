@@ -12,6 +12,7 @@ import {
 import type { AnimatedProps } from "react-native-reanimated";
 import Animated from "react-native-reanimated";
 import { Video } from "expo-av";
+import { Ionicons } from "@expo/vector-icons";
 
 interface Props extends AnimatedProps<ViewProps> {
   style?: StyleProp<ImageStyle>;
@@ -21,10 +22,11 @@ interface Props extends AnimatedProps<ViewProps> {
   imagesArray?: any;
   openModal?: Function;
   attachments?: any;
+  resizeMode?: string;
 }
 
 export const SlideItem: React.FC<Props> = (props) => {
-  const { style, index = 0, rounded = false, testID, imagesArray, openModal, attachments, ...animatedViewProps } = props;
+  const { style, index = 0, rounded = false, testID, imagesArray, openModal, attachments, resizeMode, ...animatedViewProps } = props;
 
   const source = useMemo(
     () => props.source || imagesArray[index % imagesArray.length],
@@ -54,7 +56,7 @@ export const SlideItem: React.FC<Props> = (props) => {
           <Animated.Image
           style={[style, styles.container, rounded && { borderRadius: 15 }]}
           // source={source}
-          resizeMode="cover"
+          resizeMode={resizeMode}
           src={source}
           />
         }
@@ -62,7 +64,12 @@ export const SlideItem: React.FC<Props> = (props) => {
       <View style={styles.overlay}>
         <View style={styles.overlayTextContainer}>
             {imagesArray.length != 1 ?
+              <>
                 <Text style={styles.overlayText}>{index+1}/{imagesArray.length}</Text>
+                { attachments[index % attachments.length].type.startsWith("video/") ? 
+                <Ionicons name={'videocam-outline'} color={'white'} size={16} /> :<></> }
+              </>
+                
             :
                 <></>
             }
