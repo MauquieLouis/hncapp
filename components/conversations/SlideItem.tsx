@@ -31,7 +31,6 @@ interface Props extends AnimatedProps<ViewProps> {
 export const SlideItem: React.FC<Props> = (props) => {
   const { style, index = 0, rounded = false, testID, imagesArray, openModal, attachments, resizeMode, modalOpen, ...animatedViewProps } = props;
 
-  console.log("MODAL OPEN ? :",modalOpen);
   const source = useMemo(
     () => props.source || imagesArray[index % imagesArray.length],
     [index, props.source]
@@ -46,21 +45,10 @@ export const SlideItem: React.FC<Props> = (props) => {
     <Animated.View testID={testID} style={{ flex: 1 }} {...animatedViewProps}>
       <TouchableOpacity onPress={() => openModal && openModal(index)} activeOpacity={1} style={{ height:"100%" }}>
         {type.startsWith("video/") ? 
-          // <Video
-          // source={{uri: source}}
-          // rate={1.0}
-          // volume={1.0}
-          // isMuted={false}
-          // resizeMode={resizeMode}
-          // shouldPlay={false}
-          // useNativeControls
-          // style={{ width: '100%', height:'100%', borderRadius: 15 }}
-          // />
           <>
           {modalOpen == false ?
               <VideoThumbNail uri={source} width={'100%'} height={'100%'} borderRadius={15} resizeMode={resizeMode}/>
           : 
-              // <VideoPlayer uri={attachmentsUrls[0]} width={width} height={height} borderRadius={15} resizeMode={resizeMode}/>
               <VideoPlayer uri={source} width={'100%'} height={'100%'} borderRadius={15} resizeMode={resizeMode}/>
           }
           </>
@@ -68,7 +56,6 @@ export const SlideItem: React.FC<Props> = (props) => {
           : 
           <Animated.Image
           style={[style, styles.container, rounded && { borderRadius: 15 }]}
-          // source={source}
           resizeMode={resizeMode}
           src={source}
           />
@@ -78,10 +65,11 @@ export const SlideItem: React.FC<Props> = (props) => {
               {imagesArray.length != 1 ?
                 <>
                   <Text style={styles.overlayText}>{index+1}/{imagesArray.length}</Text>
+                  { attachments[index % attachments.length].type.startsWith("video/") ? 
+                  <Ionicons name={'videocam-outline'} color={'white'} size={16} /> :<></> }
                 </>
-                  
               :
-                  <></>
+                <></>
               }
           </View>
           {type.startsWith("video/") ? 

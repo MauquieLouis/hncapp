@@ -18,8 +18,6 @@ import VideoThumbNail from "./videoThumbnail";
 
 const ImageDisplay = (props: any) => {
 
-    
-
     const attachments = props.attachment;
     const attachmentsUrls = props.attachmentsUrls;
     let index;

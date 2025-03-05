@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEvent } from 'expo';
@@ -10,7 +10,9 @@ const VideoPlayer: React.FC = (props: any) => {
 
     const player = useVideoPlayer(videoSource, player => {
         player.loop=true;
-        player.play();
+        if(props.startVideo && props.startVideo == true){
+            player.play();
+        }
     });
 
     const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing});
@@ -35,7 +37,7 @@ const VideoPlayer: React.FC = (props: any) => {
     
     return (
         <View style={styles.container}>
-            <VideoView style={styles.video} player={player} allowsFullscreen allowsPictureInPicture contentFit={props.resizeMode}/>
+            <VideoView style={styles.video} player={player} allowsPictureInPicture contentFit={props.resizeMode}/>
             {/* <View style={styles.controlsContainer}>
                 <Button onPress={() => {if(isPlaying){player.pause()}else{player.play()}}}>
                     <ButtonText>{isPlaying ? 'Pause' : 'Play'}</ButtonText>
@@ -46,4 +48,4 @@ const VideoPlayer: React.FC = (props: any) => {
 };
 
 
-export default VideoPlayer;
+export default memo(VideoPlayer);
