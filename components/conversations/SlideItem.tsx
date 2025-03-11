@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ImageSourcePropType,
   type ImageStyle,
@@ -13,8 +13,11 @@ import type { AnimatedProps } from "react-native-reanimated";
 import Animated from "react-native-reanimated";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from 'expo-haptics';
 import VideoPlayer from "./video";
 import VideoThumbNail from "./videoThumbnail";
+import { Actionsheet, ActionsheetContent } from "../ui/actionsheet";
+import MessageActionSheet from "./messageActionSheet";
 
 interface Props extends AnimatedProps<ViewProps> {
   style?: StyleProp<ImageStyle>;
@@ -26,10 +29,18 @@ interface Props extends AnimatedProps<ViewProps> {
   attachments?: any;
   resizeMode?: string;
   modalOpen?: boolean;
+  actionSheetTable?: object;
 }
 
 export const SlideItem: React.FC<Props> = (props) => {
-  const { style, index = 0, rounded = false, testID, imagesArray, openModal, attachments, resizeMode, modalOpen, ...animatedViewProps } = props;
+
+  const [ showActionSheet, setShowActionSheet ] = useState(false);
+  
+      const onCloseActionSheet = () => setShowActionSheet(false);
+      const openActionSheetFunction = (_index: any) => { 
+          setShowActionSheet(true); 
+      };
+  const { style, index = 0, rounded = false, testID, imagesArray, openModal, attachments, resizeMode, modalOpen, actionSheetTable, ...animatedViewProps } = props;
 
   const source = useMemo(
     () => props.source || imagesArray[index % imagesArray.length],
@@ -41,9 +52,10 @@ export const SlideItem: React.FC<Props> = (props) => {
     [attachments[index % attachments.length].type]
   );
 
+
   return (
-    <Animated.View testID={testID} style={{ flex: 1 }} {...animatedViewProps}>
-      <TouchableOpacity onPress={() => openModal && openModal(index)} activeOpacity={1} style={{ height:"100%" }}>
+    <Animated.View testID={testID} style={{ flex: 1, elevation:5, borderRadius:15 }} {...animatedViewProps}>
+      <TouchableOpacity onPress={() => openModal && openModal(index)} activeOpacity={1} style={{ height:"100%"}} onLongPress={() => {console.log("Long Pressed", index);  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); openActionSheetFunction(index)}}>
         {type.startsWith("video/") ? 
           <>
           {modalOpen == false ?
@@ -54,11 +66,11 @@ export const SlideItem: React.FC<Props> = (props) => {
           </>
 
           : 
-          <Animated.Image
-          style={[style, styles.container, rounded && { borderRadius: 15 }]}
-          resizeMode={resizeMode}
-          src={source}
-          />
+            <Animated.Image
+            style={[style, styles.container, rounded && { borderRadius: 15 }]}
+            resizeMode={resizeMode}
+            src={source}
+            />
         }
         <View style={styles.overlay}>
           <View style={styles.overlayTextContainer}>
@@ -84,6 +96,13 @@ export const SlideItem: React.FC<Props> = (props) => {
           }
         </View>
       </TouchableOpacity>
+      <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
+
+      {/* <Actionsheet isOpen={showActionSheet} onClose={onCloseActionSheet} useRNModal={true}>
+        <ActionsheetContent>
+          <Text>TEST TEST ACTION SHEET</Text>
+        </ActionsheetContent>
+      </Actionsheet> */}
     </Animated.View>
   );
 };

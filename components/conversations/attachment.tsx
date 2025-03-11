@@ -15,6 +15,10 @@ import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import VideoPlayer from "./video";
 import VideoThumbNail from "./videoThumbnail";
+import * as Haptics from "expo-haptics";
+import { Actionsheet, ActionsheetBackdrop, ActionsheetContent } from "../ui/actionsheet";
+import ZoomableImage from "./ZoomableImage";
+import MessageActionSheet from "./messageActionSheet";
 
 const ImageDisplay = (props: any) => {
 
@@ -80,7 +84,8 @@ const ImageDisplay = (props: any) => {
                     openModalFunction:props.openModal, 
                     attachments:attachments.attachments,
                     resizeMode:resizeMode,
-                    modalOpen:props.modal
+                    modalOpen:props.modal,
+                    actionSheetTable:props.actionSheetTable
                 })}
                 scrollAnimationDuration={460}
                 onConfigurePanGesture={(gesture) => {
@@ -96,7 +101,7 @@ const ImageDisplay = (props: any) => {
                 :
                 <>
                     {attachmentsUrls != null && attachmentsUrls.length && attachmentsUrls[0] != 'null' ? 
-                        <TouchableOpacity onPress={props.openModal} activeOpacity={1}>
+                        <TouchableOpacity onPress={props.openModal} activeOpacity={1} onLongPress={() => {Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);props.openActionSheetFunction(1);}}>
                         <Center style={{ 
                             alignItems: "center",
                             justifyContent: "center",
@@ -118,27 +123,24 @@ const ImageDisplay = (props: any) => {
                                         <VideoPlayer uri={attachmentsUrls[0]} width={width} height={height} borderRadius={15} resizeMode={resizeMode}/>
                                     }
                                 </>
-                                    // <Video
-                                    //     source={{uri: attachmentsUrls[0]}}
-                                    //     rate={1.0}
-                                    //     volume={1.0}
-                                    //     isMuted={false}
-                                    //     resizeMode={resizeMode}
-                                    //     shouldPlay={false}
-                                    //     useNativeControls
-                                    //     style={{ width: width, height: height, borderRadius: 15 }}
-                                    // />
                                 : 
                                     <Image
                                     width={width}
                                     height={height}
                                     // style={[{}]}
                                     borderRadius={15}
+                                    elevation={5}
                                     size='none'
                                     source={attachmentsUrls[0]}
                                     alt={"One CenteredPicture sended"}
                                     resizeMode={resizeMode}
                                     />
+                                    // <ZoomableImage
+                                    //     uri={attachmentsUrls[0]}
+                                    //     width={width}
+                                    //     height={height}
+                                    //     resizeMode={resizeMode}
+                                    // />
                                 }
                         </Center>
                         </TouchableOpacity>
@@ -156,11 +158,17 @@ const Attachment = (props: any) => {
     const [ indexOpenModal, setIndexOpenModal ] = useState(0);
     const [ loadingUrls, setLoadingUrls ] = useState(false);
     const [ attachmentsUrls, setAttachmentsUrls ] = useState([]);
+    const [ showActionSheet, setShowActionSheet ] = useState(false);
 
     const onCloseModal = () => setOpenModal(false);
+    const onCloseActionSheet = () => setShowActionSheet(false);
     const openModalFunction = (_index: any) => {
         setOpenModal(true); 
         setIndexOpenModal(_index); 
+    };
+    const openActionSheetFunction = (_index: any) => { 
+        setShowActionSheet(true); 
+        setIndexOpenModal(_index);
     };
 
     const item = props.item;
@@ -188,6 +196,23 @@ const Attachment = (props: any) => {
         }
     }
 
+    const actionSheetTable: { [key: string]: { icon: string; onPress: () => void; } } = {
+        "info": {
+            icon: "information-circle-outline",
+            onPress: () => {console.log("Info Pressed")},
+        },
+        "download": {
+            icon: "download-outline",
+            onPress: () => {console.log("DL Pressed")},
+        }
+    }
+    if(item.sender_id == user.id){
+        actionSheetTable["delete"] = {
+            icon: "trash-outline",
+            onPress: () => {console.log("Delete Pressed")},
+        }
+    }
+    // console.log("ITEM USER AND USER : ",item, " / USER :",user.id);
     return(
         <>
             <Box>
@@ -195,31 +220,56 @@ const Attachment = (props: any) => {
                     <Box style={
                         item.sender_id == user.id ?
                         //My message
-                        {borderBlockColor:"red", borderWidth:1}
+                        {}
                         :
                         //Other message
-                        {borderBlockColor:"blue", borderWidth:1, backgroundColor:'lime'}
+                        {}
                     } width={'76%'}>
                         <Box> 
-                            <ImageDisplay attachment={item} openModal={openModalFunction} attachmentsUrls={attachmentsUrls} modal={false}/>
+                            <ImageDisplay 
+                                attachment={item} 
+                                openModal={openModalFunction} 
+                                attachmentsUrls={attachmentsUrls} 
+                                modal={false} 
+                                openActionSheetFunction={openActionSheetFunction} 
+                                actionSheetTable={actionSheetTable}/>
                         </Box>
                     </Box> 
                 </HStack>
                 {/* --------- MODAL FOR CAROUSEL --------- */}
             </Box>
             <Modal
-                style={{ borderColor:'red', borderWidth:1}}
+                style={{}}
                 isOpen={openModal}
                 onClose={onCloseModal} >
-                <ModalContent style={{width: '90%', height: '90%', backgroundColor:'rgba(0,0,0,0.9)', padding:0, borderWidth:0}}>
+                <ModalContent style={{width: '90%', height: '90%', backgroundColor:'rgba(0,0,0,0.93)', padding:0, borderWidth:0}}>
                     <ModalHeader style={{padding:10}}>
                         <Ionicons name="arrow-back-outline" size={32} color="white" onPress={onCloseModal}/>
-                        <Ionicons name="menu-outline" size={32} color="white"/>
+                        <Ionicons name="menu-outline" size={32} color="white" onPress={openActionSheetFunction}/>
                     </ModalHeader>
-                    <ImageDisplay attachment={item} openModal={openModalFunction} attachmentsUrls={attachmentsUrls} index={indexOpenModal} modal={true}/>
+                    <ImageDisplay attachment={item} openModal={openModalFunction} attachmentsUrls={attachmentsUrls} index={indexOpenModal} modal={true} openActionSheetFunction={openActionSheetFunction}/>
 
                 </ModalContent> 
             </Modal>
+            <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
+            {/* <Actionsheet isOpen={showActionSheet} onClose={onCloseActionSheet} useRNModal={true}>
+                <ActionsheetBackdrop/>
+                <ActionsheetContent>
+                    <HStack space={'lg'} style={styles.ActionSheetHStack}>
+                    {item.sender_id == user.id ? 
+                    <Box style={styles.ActionSheetBox}>
+                        <Ionicons name="trash-outline" size={32} color="black" onPress={() => console.log("DeletePress")}/>
+                    </Box>
+                    :<></> }
+                    <Box style={styles.ActionSheetBox}>
+                        <Ionicons name="information-circle-outline" size={32} color="black" onPress={() => {console.log("Info Pressed")}}/>
+                    </Box>
+                    <Box style={styles.ActionSheetBox}>
+                        <Ionicons name="download-outline" size={32} color="black" onPress={() => {console.log("DL Pressed")}}/>
+                    </Box>
+                    </HStack>
+                </ActionsheetContent>
+            </Actionsheet> */}
         </>
 
     )
@@ -248,4 +298,17 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.56)",
     borderWidth: 2
 },
+  ActionSheetHStack: {
+    width:"100%",
+    justifyContent:"space-between",
+    alignItems:"center",
+    padding:4,
+    height:150,
+  },
+  ActionSheetBox: {
+    flex:1,
+    padding:4,
+    backgroundColor:"white",
+    alignItems:"center",
+  }
 });

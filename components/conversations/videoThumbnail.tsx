@@ -30,6 +30,7 @@ const VideoThumbNail: React.FC = (props: any) => {
       width: props.width,
       height: props.height,
       borderRadius: props.borderRadius,
+      elevation: 5,
     },
     image: {
       borderRadius: props.borderRadius,

@@ -167,7 +167,6 @@ const ConversationScreen = () => {
         }
       }
 
-
     const delay = (ms: number): Promise<void> => {
     return new Promise(resolve => setTimeout(resolve, ms));
     };
@@ -199,9 +198,6 @@ const ConversationScreen = () => {
         }catch(error: unknown){
           console.log('Error in fetchMessages function in [...convId].tsx', error);
         }finally{
-            // console.log("BEFORE DELAY");
-            // await delay(1200);
-            // console.log("AFTER DELAY");
           setLoadingMoreMessages(false);
           setCanTriggerLoadMore(true);
       }
@@ -328,8 +324,6 @@ const ConversationScreen = () => {
             base64: true,
             allowsMultipleSelection: true
         });
-        // console.log(result);
-
         if(!result.canceled){
             // setImages(result.assets[0].uri);
             uploadImage(result.assets)
@@ -360,15 +354,7 @@ const ConversationScreen = () => {
                 }
                 console.log("FILE simple :", file);
                 if(file.type == 'video'){
-                    console.log("VIDEO FILE :", file);
-                    // const video = await DocumentPicker.getDocumentAsync({type: 'video/*', copyToCacheDirectory: true});
-                    // const videoBlob = await fetch(file.uri).then((res) => res.blob());
-                    // const video = new Blob([file.uri], {type: file.mimeType});
-                    // 
-                    // const videoBlob = URL.createObjectURL(video);
-                    // console.log("VIDEO NBLOB :", video);
                     const fileContent = await FileSystem.readAsStringAsync(file.uri, {encoding: FileSystem.EncodingType.Base64});
-
                     const {data, error} = await supabase.storage.from('Conversations')
                     .upload(convId+'/'+file.fileName, decode(fileContent),
                     {cacheControl: '3600', upsert:false, contentType:file.mimeType});
@@ -384,7 +370,6 @@ const ConversationScreen = () => {
                     if(error){
                         console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
                     }
-                    console.log("DATA UPLOAD:", data);
                 }
                 //Upload the file on supabase
             }
@@ -429,13 +414,13 @@ const ConversationScreen = () => {
                         <Text ml={4} color="$gray400">{Object.keys(typingUsers).join(", ")} is typing...</Text>
                         // <Text ml={4} color="$gray400">Someone is typing...</Text>
                     )}
-                    <HStack>
-                        <Box style={{borderBlockColor:"red", borderWidth:1}} width={'59%'}>
+                    <HStack style={{paddingTop:6}}>
+                        <Box style={{}} width={'59%'}>
                             <Input variant="outline" size="md">
                                 <InputField placeholder="Write message here..." onChangeText={(text) => {setText(text); sendTypingEvent()}} value={text}/>
                             </Input>
                         </Box>
-                        <Box width={'13%'} style={{borderBlockColor:"red", borderWidth:1}}>
+                        <Box width={'13%'} style={{}}>
                             {loadingSend ? 
                             <Text>SEND !</Text>: 
                             <Button onPress={() => {
@@ -445,7 +430,7 @@ const ConversationScreen = () => {
                             </Button>
                             }
                         </Box>
-                        <Box width={'13%'} style={{borderBlockColor:"red", borderWidth:1}}>
+                        <Box width={'13%'} style={{}}>
                             {loadingSend ? 
                             <Text>SEND !</Text>: 
                             <Button onPress={() => {
@@ -455,7 +440,7 @@ const ConversationScreen = () => {
                             </Button>
                             }
                         </Box>
-                        <Box width={'15%'} style={{borderBlockColor:"red", borderWidth:1}}>
+                        <Box width={'15%'} style={{}}>
                             {loadingSend ? 
                             <Text>SEND !</Text>: 
                             <Button onPress={() => {

@@ -194,7 +194,7 @@ const MainStack = () => {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <GluestackUIProvider mode="light">
         <UserContextProvider props={undefined}>
           <MainStack/>
