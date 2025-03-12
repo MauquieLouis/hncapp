@@ -215,30 +215,10 @@ const Attachment = (props: any) => {
 
     const deleteMessageAndAttachement = async () => {
         try{
-            /**
-                                         *           /\
-                                         *          /  \
-                                         *         /    \
-                                         *        /      \
-                                         *       /   ||   \
-                                         *      /    ||    \
-                                         *     /     ||     \
-                                         *    /      ||      \
-                                         *   /       __       \
-                                         *  /        ||        \
-                                         * /                    \
-                                         * ----------------------
-             * 
-             *  Deleting objects should always be done via the Storage API and NOT via a SQL query.
-             *  Deleting objects via a SQL query will not remove the object from the bucket and will result in the object being orphaned.
-             *  https://supabase.com/docs/guides/storage/management/delete-objects
-             */
-            console.log("ITEM IN DELETE FUNCTION : ",item.id);
             //SOFT DELETE THE MESSAGE
             const { data: data_soft_delete_msg, error: error_soft_delete_msg } = await supabase.from('messages').update({deleted_at:new Date().toISOString()}).eq('id',item.id);
             //DELETE ALL THE ASSOCIATED ATTACHMENTS
             const { data: deleted_attachments, error: error_deleted_attachment } = await supabase.from('attachments').delete().eq('message_id',item.id).select();
-            console.log("DELETED ATTACHMENT : ",deleted_attachments);
             //DELETE ASSOCIATED ATTACHMENTS IN STORAGE
             if(deleted_attachments){
                     const urls: string[] = deleted_attachments.map(item => item.url);
@@ -301,24 +281,6 @@ const Attachment = (props: any) => {
                 </ModalContent> 
             </Modal>
             <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
-            {/* <Actionsheet isOpen={showActionSheet} onClose={onCloseActionSheet} useRNModal={true}>
-                <ActionsheetBackdrop/>
-                <ActionsheetContent>
-                    <HStack space={'lg'} style={styles.ActionSheetHStack}>
-                    {item.sender_id == user.id ? 
-                    <Box style={styles.ActionSheetBox}>
-                        <Ionicons name="trash-outline" size={32} color="black" onPress={() => console.log("DeletePress")}/>
-                    </Box>
-                    :<></> }
-                    <Box style={styles.ActionSheetBox}>
-                        <Ionicons name="information-circle-outline" size={32} color="black" onPress={() => {console.log("Info Pressed")}}/>
-                    </Box>
-                    <Box style={styles.ActionSheetBox}>
-                        <Ionicons name="download-outline" size={32} color="black" onPress={() => {console.log("DL Pressed")}}/>
-                    </Box>
-                    </HStack>
-                </ActionsheetContent>
-            </Actionsheet> */}
         </>
 
     )

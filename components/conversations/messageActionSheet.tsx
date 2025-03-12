@@ -11,9 +11,6 @@ import { useState } from "react";
 const MessageActionSheet = (props: any) => {
 
     const { user } = useUserContext();
-    // const [showActionSheet, setShowActionSheet] = useState(false);
-    // const onCloseActionSheet = () => setShowActionSheet(false);
-    // const onOpenActionSheet = () => setShowActionSheet(true);
     
     // message = props.message;
     items = props.items;

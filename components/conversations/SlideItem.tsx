@@ -36,10 +36,10 @@ export const SlideItem: React.FC<Props> = (props) => {
 
   const [ showActionSheet, setShowActionSheet ] = useState(false);
   
-      const onCloseActionSheet = () => setShowActionSheet(false);
-      const openActionSheetFunction = (_index: any) => { 
-          setShowActionSheet(true); 
-      };
+  const onCloseActionSheet = () => setShowActionSheet(false);
+  const openActionSheetFunction = (_index: any) => { 
+      setShowActionSheet(true); 
+  };
   const { style, index = 0, rounded = false, testID, imagesArray, openModal, attachments, resizeMode, modalOpen, actionSheetTable, ...animatedViewProps } = props;
 
   const source = useMemo(
@@ -97,12 +97,6 @@ export const SlideItem: React.FC<Props> = (props) => {
         </View>
       </TouchableOpacity>
       <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
-
-      {/* <Actionsheet isOpen={showActionSheet} onClose={onCloseActionSheet} useRNModal={true}>
-        <ActionsheetContent>
-          <Text>TEST TEST ACTION SHEET</Text>
-        </ActionsheetContent>
-      </Actionsheet> */}
     </Animated.View>
   );
 };

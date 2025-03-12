@@ -30,7 +30,8 @@ const ConversationScreen = () => {
     const PAGE_SIZE = 20; // If changing this, number, be careful of changing it in the rpc function that retrieve first messages at opening, maybe add a parameter for that.
 
     const [ loading, setLoading ] = useState(false);
-    const [ messages, setMessages ] = useState(null);
+    // const [ messages, setMessages ] = useState(null);
+    const [ messages, setMessages ] = useState<any[]>([]);
     const [ text, setText ] = useState('');
     const [ participants, setParticipants ] = useState(null);
     const [ devicesTokens, setDeviceTokens ] = useState([]);
@@ -102,11 +103,7 @@ const ConversationScreen = () => {
             async (payload) => {
                 setIsSeen(false);
                 
-                // IL FAUT DETECTER SI LE TYPE DU MESSAGE RECU EST ATTACHMENT OU PAS,
-                // SI C'EST UN ATTACHEMENT, IL FAUT ALLER RECUPERER L'URL DE L'ATTACHEMENT
-                // ET L'AFFICHER DANS LE MESSAGE
-                // QUAND IL EST BIEN PRESENT DANS LE BUCKET 
-                // PARCEQUE L'UPLOAD PREND UN CERTAIN TEMPS.
+                // CREATE A WAITING TIME WHEN UPLOADING NEW IMAGE, TO DISPLAY IT IN THE CONVERSATION
                 if(payload.new.type == 'attachment'){
                     setLoadingNewImage(true);
                     console.log("NEW ATTACHMENT MESSAGE DETECTED :", payload);
@@ -117,7 +114,7 @@ const ConversationScreen = () => {
                     let result;
                     while(attempts < maxAttempts){
                         console.log("attemps :", attempts);
-                        // attempts++;
+                        attempts++;
                         console.log(`Waiting for file upload... Attempt ${attempts + 1}`);
                         await new Promise((resolve) => setTimeout(resolve, delay));
                         result = await fetchAttachments(payload.new.id);
@@ -126,9 +123,6 @@ const ConversationScreen = () => {
                         }
                     }
                     payload.new.attachments = result;
-                    // while()
-                    //ATTENDRE je ne sais pas encore comment que le fichier soit bien uploadé
-                    // Insertion de l'attachement dans la bdd et insertion du fichier dans le bucket
                 }
                 setMessages((prev) => [ payload.new, ...prev]);
                 setOffset((prevOffset) => prevOffset + 1);
@@ -143,26 +137,30 @@ const ConversationScreen = () => {
             }
         ).subscribe();
 
-        // const deleteChannel = supabase.channel(`conversation-messages-deleted-${convId[0]}`)
-        // .on('postgres_changes', { event: 'UPDATE', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]},
-        //     (payload) => {
-        //         console.log("NEW DELETED OR UPDATED MESSAGE DETECTED :", payload);
-        //         setMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
-        //         //SHOULD I CHANGE THE OFFSET ????? IDK REALLY KNOW NOW..
-        //         setOffset((prevOffset) => prevOffset - 1);
-        //         console.log("IS AT BOTTOM :", isAtBottom);
-        //         if(payload.new.user_id != user.id && isAtBottom){
-        //             console.log("NOT SUPPOSED TO SCROLL TO BOTTOM !!!!");
-        //             console.log("OFFSET :", offset);
-        //             // markMessageAsRead();
-        //             // scrollToBottom();
-        //         }
-        //     }
-        // ).subscribe();
+        const deleteChannel = supabase.channel(`conversation-messages-deleted-${convId[0]}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]},
+            (payload) => {
+                console.log("NEW DELETED OR UPDATED MESSAGE DETECTED :", payload);
+                if(messages){
+                    const exists = messages.some(msg => msg.id === payload.old.id);
+                    if(!exists) return;
+                }
+                setMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
+                //SHOULD I CHANGE THE OFFSET ????? IDK REALLY KNOW NOW..
+                setOffset((prevOffset) => prevOffset - 1);
+                console.log("IS AT BOTTOM :", isAtBottom);
+                if(payload.new.user_id != user.id && isAtBottom){
+                    console.log("NOT SUPPOSED TO SCROLL TO BOTTOM !!!!");
+                    console.log("OFFSET :", offset);
+                    // markMessageAsRead();
+                    // scrollToBottom();
+                }
+            }
+        ).subscribe();
 
         return() => {
             insertChannel.unsubscribe();
-            // deleteChannel.unsubscribe();
+            deleteChannel.unsubscribe();
         };
     }, [isAtBottom])
 
@@ -444,6 +442,9 @@ const ConversationScreen = () => {
         }
     }
 
+    const renderItemFlatList = ({item}: {item: any}) => {
+        return <FlatListMessage message={item}/>
+    }
 
     return(
         <>
@@ -457,9 +458,7 @@ const ConversationScreen = () => {
                         data={messages}
                         inverted={true}
                         nestedScrollEnabled={true}
-                        renderItem={({item}) => (
-                            <FlatListMessage message={item}/>
-                        )}
+                        renderItem={renderItemFlatList}
                         keyExtractor={(item) => item.id}
                         extraData={messages}
                         // onContentSizeChange={scrollToBottom} // To use when new message received.
