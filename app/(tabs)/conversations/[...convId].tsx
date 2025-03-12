@@ -44,6 +44,7 @@ const ConversationScreen = () => {
     const [ isAtBottom, setIsAtBottom ] = useState(true);
     const [ isSeen, setIsSeen ] = useState(false);
     const [ images, setImages ] = useState(null);
+    const [ loadingNewImage, setLoadingNewImage ] = useState(false);
 
     const { convId } = useLocalSearchParams();
     const { user } = useUserContext();
@@ -75,6 +76,20 @@ const ConversationScreen = () => {
         // console.log("UUID V6", uuidv6());
     }, []);
 
+    const fetchAttachments = async(msg_id: string) => {
+        try{
+            const { data: attach_data, error: attach_error } = await supabase.from('attachments').select('*').eq('message_id', msg_id);
+            if(attach_error){
+                console.log('Error in fetchAttachments function when fetching attachements in [...convId].tsx', attach_error);
+            }
+            return attach_data;
+        }catch(error: unknown){
+            console.log('Error in fetchAttachments function in [...convId].tsx', error);
+        }finally{
+
+        }
+    }
+
 
     useEffect(() => {
         console.log("is at bottom CHANGE : ", isAtBottom);
@@ -82,10 +97,39 @@ const ConversationScreen = () => {
         /** ---------------------------------------------------------------
          *  ==== ====  S U B S C R I B E   T O   M E S S A G E S  ==== ====
          */
-        const channel = supabase.channel(`conversation-messages-${convId[0]}`)
+        const insertChannel = supabase.channel(`conversation-messages-${convId[0]}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]},
-            (payload) => {
+            async (payload) => {
                 setIsSeen(false);
+                
+                // IL FAUT DETECTER SI LE TYPE DU MESSAGE RECU EST ATTACHMENT OU PAS,
+                // SI C'EST UN ATTACHEMENT, IL FAUT ALLER RECUPERER L'URL DE L'ATTACHEMENT
+                // ET L'AFFICHER DANS LE MESSAGE
+                // QUAND IL EST BIEN PRESENT DANS LE BUCKET 
+                // PARCEQUE L'UPLOAD PREND UN CERTAIN TEMPS.
+                if(payload.new.type == 'attachment'){
+                    setLoadingNewImage(true);
+                    console.log("NEW ATTACHMENT MESSAGE DETECTED :", payload);
+                    payload.new.attachments = [];
+                    let attempts = 0;
+                    let maxAttempts = 10;
+                    const delay= 1500;
+                    let result;
+                    while(attempts < maxAttempts){
+                        console.log("attemps :", attempts);
+                        // attempts++;
+                        console.log(`Waiting for file upload... Attempt ${attempts + 1}`);
+                        await new Promise((resolve) => setTimeout(resolve, delay));
+                        result = await fetchAttachments(payload.new.id);
+                        if(result){
+                            attempts = 10;
+                        }
+                    }
+                    payload.new.attachments = result;
+                    // while()
+                    //ATTENDRE je ne sais pas encore comment que le fichier soit bien uploadé
+                    // Insertion de l'attachement dans la bdd et insertion du fichier dans le bucket
+                }
                 setMessages((prev) => [ payload.new, ...prev]);
                 setOffset((prevOffset) => prevOffset + 1);
                 console.log("IS AT BOTTOM :", isAtBottom);
@@ -95,11 +139,30 @@ const ConversationScreen = () => {
                     markMessageAsRead();
                     // scrollToBottom();
                 }
+                setLoadingNewImage(false);
             }
         ).subscribe();
 
+        // const deleteChannel = supabase.channel(`conversation-messages-deleted-${convId[0]}`)
+        // .on('postgres_changes', { event: 'UPDATE', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]},
+        //     (payload) => {
+        //         console.log("NEW DELETED OR UPDATED MESSAGE DETECTED :", payload);
+        //         setMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
+        //         //SHOULD I CHANGE THE OFFSET ????? IDK REALLY KNOW NOW..
+        //         setOffset((prevOffset) => prevOffset - 1);
+        //         console.log("IS AT BOTTOM :", isAtBottom);
+        //         if(payload.new.user_id != user.id && isAtBottom){
+        //             console.log("NOT SUPPOSED TO SCROLL TO BOTTOM !!!!");
+        //             console.log("OFFSET :", offset);
+        //             // markMessageAsRead();
+        //             // scrollToBottom();
+        //         }
+        //     }
+        // ).subscribe();
+
         return() => {
-            channel.unsubscribe();
+            insertChannel.unsubscribe();
+            // deleteChannel.unsubscribe();
         };
     }, [isAtBottom])
 
@@ -182,6 +245,7 @@ const ConversationScreen = () => {
             const { data: messages_data, error: messages_error } = await supabase.from('messages')
             .select('id, content, created_at, sender_id, type, has_attachment')
             .eq('conversation_id', convId[0])
+            .is('deleted_at', null)
             .order('created_at', { ascending: false})
             .range(offset,offset+PAGE_SIZE-1);
             if(messages_error){
@@ -352,7 +416,7 @@ const ConversationScreen = () => {
                     console.log("Error in uploadImage function when inserting new attachement in [...convId].tsx :", attach_error);
 
                 }
-                console.log("FILE simple :", file);
+                // console.log("FILE simple :", file);
                 if(file.type == 'video'){
                     const fileContent = await FileSystem.readAsStringAsync(file.uri, {encoding: FileSystem.EncodingType.Base64});
                     const {data, error} = await supabase.storage.from('Conversations')

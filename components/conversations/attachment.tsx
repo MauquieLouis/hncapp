@@ -42,7 +42,7 @@ const ImageDisplay = (props: any) => {
     }else{
         height=220;
         height2=height*1.1;
-        width=Dimensions.get('window').width *0.64
+        width=Dimensions.get('window').width *0.64;
         moveSize=Dimensions.get('window').width * 0.72;
         resizeMode="cover";
         mode="horizontal-stack";
@@ -203,15 +203,64 @@ const Attachment = (props: any) => {
         },
         "download": {
             icon: "download-outline",
-            onPress: () => {console.log("DL Pressed")},
+            onPress: () => {console.log("DL Pressed"); },
         }
     }
     if(item.sender_id == user.id){
         actionSheetTable["delete"] = {
             icon: "trash-outline",
-            onPress: () => {console.log("Delete Pressed")},
+            onPress: () => {console.log("Delete Pressed"); deleteMessageAndAttachement();},
         }
     }
+
+    const deleteMessageAndAttachement = async () => {
+        try{
+            /**
+                                         *           /\
+                                         *          /  \
+                                         *         /    \
+                                         *        /      \
+                                         *       /   ||   \
+                                         *      /    ||    \
+                                         *     /     ||     \
+                                         *    /      ||      \
+                                         *   /       __       \
+                                         *  /        ||        \
+                                         * /                    \
+                                         * ----------------------
+             * 
+             *  Deleting objects should always be done via the Storage API and NOT via a SQL query.
+             *  Deleting objects via a SQL query will not remove the object from the bucket and will result in the object being orphaned.
+             *  https://supabase.com/docs/guides/storage/management/delete-objects
+             */
+            console.log("ITEM IN DELETE FUNCTION : ",item.id);
+            //SOFT DELETE THE MESSAGE
+            const { data: data_soft_delete_msg, error: error_soft_delete_msg } = await supabase.from('messages').update({deleted_at:new Date().toISOString()}).eq('id',item.id);
+            //DELETE ALL THE ASSOCIATED ATTACHMENTS
+            const { data: deleted_attachments, error: error_deleted_attachment } = await supabase.from('attachments').delete().eq('message_id',item.id).select();
+            console.log("DELETED ATTACHMENT : ",deleted_attachments);
+            //DELETE ASSOCIATED ATTACHMENTS IN STORAGE
+            if(deleted_attachments){
+                    const urls: string[] = deleted_attachments.map(item => item.url);
+                    console.log("URLS TO DELETE : ",urls);
+                    const { data: data_delete_attachment, error: error_delete_attachment } = await supabase.storage.from('Conversations').remove(urls);
+                    if(error_delete_attachment){
+                        console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file :", error_delete_attachment);
+                    }
+            }
+            if(error_soft_delete_msg){
+                console.log("Error in deleteMessage function when soft deleting msg in components/attachment.tsx file :", error_soft_delete_msg);
+            }
+            if(error_deleted_attachment){
+                console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file :", error_deleted_attachment);
+            }
+        }catch(error: unknown){
+            console.log("Error in deleteMessage function in components/attachment.tsx file :", error);
+        }finally{
+
+        }
+    }
+
     // console.log("ITEM USER AND USER : ",item, " / USER :",user.id);
     return(
         <>
