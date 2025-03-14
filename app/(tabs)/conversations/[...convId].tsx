@@ -15,6 +15,7 @@ import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system';
 import FlatListMessage from '@/components/conversations/FlatListMessage';
 import { v6 as uuidv6 } from 'uuid';
+import AudioRecorder from '@/components/conversations/audioRecorder';
 
 const debounce = (func, delay) => {
     let debounceTimer;
@@ -496,11 +497,7 @@ const ConversationScreen = () => {
                         <Box width={'13%'} style={{}}>
                             {loadingSend ? 
                             <Text>SEND !</Text>: 
-                            <Button onPress={() => {
-                                console.log('OPEN PHOTO');
-                            }}>
-                                <ButtonText><Ionicons name={'camera-outline'} color={'white'} size={16} /></ButtonText>
-                            </Button>
+                            <AudioRecorder sendMessageFunction={sendTextMessage} convId={convId}/>
                             }
                         </Box>
                         <Box width={'15%'} style={{}}>

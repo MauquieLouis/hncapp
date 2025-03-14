@@ -5,14 +5,11 @@ import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import { Ionicons } from "@expo/vector-icons";
 import { useUserContext } from "@/contexts/userContext";
-import { useState } from "react";
-
 
 const MessageActionSheet = (props: any) => {
 
     const { user } = useUserContext();
     
-    // message = props.message;
     items = props.items;
     return(
         <Actionsheet isOpen={props.showActionSheet} onClose={props.onCloseActionSheet} useRNModal={true}>

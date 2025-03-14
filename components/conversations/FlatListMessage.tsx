@@ -8,6 +8,7 @@ import Attachment from "./attachment";
 import * as Haptics from 'expo-haptics';
 import MessageActionSheet from "@/components/conversations/messageActionSheet";
 import { supabase } from "@/libs/initSupabase";
+import AudioPlayer from "./audioPlayer";
 
 
 const FlatListMessage = (props: any) => {
@@ -51,6 +52,9 @@ const FlatListMessage = (props: any) => {
     // console.log("FLAT LIST ELEM PROPS", item);
     if(item.type == 'attachment'){
         return <Attachment item={item}/>
+    }
+    if(item.type == 'audio'){
+        return <AudioPlayer item={item}/>
     }
     return (
         <Box>
