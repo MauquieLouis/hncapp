@@ -1,24 +1,26 @@
-import React, { Dimensions, TouchableOpacity, View, StyleSheet } from "react-native";
+import React, { Dimensions, TouchableOpacity, View, StyleSheet, Alert } from "react-native";
 import { Image } from "@/components/ui/image";
 import { useEffect, useRef, useState } from "react";
-import { Text } from "@/components/ui/text";
 import { Center } from "@/components/ui/center";
 import { Box } from "@/components/ui/box";
+import { Text } from "@/components/ui/text";
 import { HStack } from '@/components/ui/hstack';
 import { useUserContext } from "@/contexts/userContext";
 import type { ICarouselInstance } from "react-native-reanimated-carousel";
 import Carousel from "react-native-reanimated-carousel";
 import { renderItem } from "./renderItem";
 import { supabase } from "@/libs/initSupabase";
-import { Modal, ModalBackdrop, ModalContent, ModalHeader } from "../ui/modal";
-import { Video } from "expo-av";
+import { Modal, ModalContent, ModalHeader } from "../ui/modal";
 import { Ionicons } from "@expo/vector-icons";
 import VideoPlayer from "./video";
 import VideoThumbNail from "./videoThumbnail";
 import * as Haptics from "expo-haptics";
-import { Actionsheet, ActionsheetBackdrop, ActionsheetContent } from "../ui/actionsheet";
-import ZoomableImage from "./ZoomableImage";
 import MessageActionSheet from "./messageActionSheet";
+import { File, Paths } from 'expo-file-system/next';
+import * as FileSystem from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library';
+import { Actionsheet, ActionsheetContent } from "../ui/actionsheet";
+import { Toast, ToastTitle, useToast } from "../ui/toast";
 
 const ImageDisplay = (props: any) => {
 
@@ -47,11 +49,20 @@ const ImageDisplay = (props: any) => {
         resizeMode="cover";
         mode="horizontal-stack";
     }
+
     const ref = useRef<ICarouselInstance>(null);
+    // useEffect(() => {
+    //     console.log('MOVE SUPPOSED', ref)
+    //     if(ref.current){
+    //     ref.current.scrollTo(props.indexOpenModal);
+    //     }
+        
+    // }, [props.indexOpenModal, ref])
     return (
         <Box id={"carousel-component"+props.id}>
             {attachmentsUrls.length != 1 ?
             <Carousel
+            // defaultIndex={props.indexOpenModal}
                 key={props.id}
                 ref={ref}
                 autoPlayInterval={2000}
@@ -96,12 +107,12 @@ const ImageDisplay = (props: any) => {
                     //with enabled false.
                     return gesture;
                 }}
-                //onSnapToItem //use to remember the item of the id when opening modal carousel.
+                onSnapToItem={(index) => {console.log("snap Item : ",index); props.setIndexOpenModal(index)}} //use to remember the item of the id when opening modal carousel.
                 />
                 :
                 <>
                     {attachmentsUrls != null && attachmentsUrls.length && attachmentsUrls[0] != 'null' ? 
-                        <TouchableOpacity onPress={props.openModal} activeOpacity={1} onLongPress={() => {Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);props.openActionSheetFunction(1);}}>
+                        <TouchableOpacity onPress={() => {props.openModal(0)}} activeOpacity={1} onLongPress={() => {Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);props.openActionSheetFunction(0);}}>
                         <Center style={{ 
                             alignItems: "center",
                             justifyContent: "center",
@@ -160,9 +171,12 @@ const Attachment = (props: any) => {
     const [ attachmentsUrls, setAttachmentsUrls ] = useState([]);
     const [ showActionSheet, setShowActionSheet ] = useState(false);
 
-    const onCloseModal = () => setOpenModal(false);
+    // const onCloseModal = () => {setOpenModal(false)};
+    const onCloseModal = (_index: any) => {setOpenModal(false); setIndexOpenModal(_index);};
     const onCloseActionSheet = () => setShowActionSheet(false);
+
     const openModalFunction = (_index: any) => {
+        console.log("INDEX :", _index);
         setOpenModal(true); 
         setIndexOpenModal(_index); 
     };
@@ -173,6 +187,7 @@ const Attachment = (props: any) => {
 
     const item = props.item;
     const { user } = useUserContext();
+    const toast = useToast();
 
     useEffect(() => {
         getAttachmentsUrls();
@@ -203,13 +218,49 @@ const Attachment = (props: any) => {
         },
         "download": {
             icon: "download-outline",
-            onPress: () => {console.log("DL Pressed"); },
+            onPress: () => {console.log("DL Pressed");
+                // downloadAttachment(attachmentsUrls[indexOpenModal], item.attachments[indexOpenModal].url );
+                setTimeout(() => {downloadAttachment(attachmentsUrls[indexOpenModal], item.attachments[indexOpenModal].url)}, 1000);
+                console.log("INDEX :",indexOpenModal,", ATTACHMENT URLS INDEX MODAL :", attachmentsUrls[indexOpenModal], ", ITEM :",item.attachments[indexOpenModal]) /*downloadAttachment(attachmentsUrls[indexOpenModal], item.attachments[indexOpenModal].name)*/;},
         }
     }
     if(item.sender_id == user.id){
         actionSheetTable["delete"] = {
             icon: "trash-outline",
             onPress: () => {console.log("Delete Pressed"); deleteMessageAndAttachement();},
+        }
+    }
+
+    const downloadAttachment = async (url: string, filename: string) => {
+        try{
+            const { status } = await MediaLibrary.requestPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert("Permission Denied", "You need to allow access to save media.");
+                return;
+            }
+            onCloseActionSheet();
+            const fileUri = FileSystem.documentDirectory + filename.split('/')[1];
+            const { uri } = await FileSystem.downloadAsync(url, fileUri);
+            const asset = await MediaLibrary.createAssetAsync(uri);
+            toast.show({
+                duration: 1500,
+                placement: "bottom",
+                render: ({ id }) => {
+                  const toastId = "toast-" + id
+                  return (
+                    <Toast
+                      nativeID={toastId}
+                      className="px-5 py-5 gap-10 shadow-soft-1 items-center flex-row mb-10"
+                    >
+                      <ToastTitle size="lg">FILE DOWNLOADED SUCCESSFULLY !</ToastTitle>
+                    </Toast>
+                  )
+                },
+              })
+            
+
+        }catch(error: unknown){ 
+            console.log("Error in downloadAttachment function in components/attachment.tsx file :", error);
         }
     }
 
@@ -261,7 +312,9 @@ const Attachment = (props: any) => {
                                 attachmentsUrls={attachmentsUrls} 
                                 modal={false} 
                                 openActionSheetFunction={openActionSheetFunction} 
-                                actionSheetTable={actionSheetTable}/>
+                                actionSheetTable={actionSheetTable}
+                                setIndexOpenModal={setIndexOpenModal}
+                                indexOpenModal={indexOpenModal}/>
                         </Box>
                     </Box> 
                 </HStack>
@@ -270,17 +323,29 @@ const Attachment = (props: any) => {
             <Modal
                 style={{}}
                 isOpen={openModal}
-                onClose={onCloseModal} >
+                onClose={() => {onCloseModal(indexOpenModal)}} >
                 <ModalContent style={{width: '90%', height: '90%', backgroundColor:'rgba(0,0,0,0.93)', padding:0, borderWidth:0}}>
                     <ModalHeader style={{padding:10}}>
                         <Ionicons name="arrow-back-outline" size={32} color="white" onPress={onCloseModal}/>
-                        <Ionicons name="menu-outline" size={32} color="white" onPress={openActionSheetFunction}/>
+                        <Ionicons name="menu-outline" size={32} color="white" onPress={() => {openActionSheetFunction(indexOpenModal)}}/>
                     </ModalHeader>
-                    <ImageDisplay attachment={item} openModal={openModalFunction} attachmentsUrls={attachmentsUrls} index={indexOpenModal} modal={true} openActionSheetFunction={openActionSheetFunction}/>
-
+                    <ImageDisplay 
+                        attachment={item} 
+                        openModal={openModalFunction} 
+                        attachmentsUrls={attachmentsUrls} 
+                        index={indexOpenModal} 
+                        modal={true} 
+                        openActionSheetFunction={openActionSheetFunction} 
+                        actionSheetTable={actionSheetTable}
+                        setIndexOpenModal={setIndexOpenModal}
+                        indexOpenModal={indexOpenModal}/>
                 </ModalContent> 
             </Modal>
-            <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
+            <Actionsheet isOpen={showActionSheet}>
+                <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
+                {/* <MessageActionSheet items={actionSheetTable} showActionSheet={showModalActionSheet} onCloseActionSheet={onCloseModalActionSheet}/> */}
+            </Actionsheet>
+            {/* <Toast/> */}
         </>
 
     )

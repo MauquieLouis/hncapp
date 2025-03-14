@@ -52,7 +52,6 @@ export const SlideItem: React.FC<Props> = (props) => {
     [attachments[index % attachments.length].type]
   );
 
-
   return (
     <Animated.View testID={testID} style={{ flex: 1, elevation:5, borderRadius:15 }} {...animatedViewProps}>
       <TouchableOpacity onPress={() => openModal && openModal(index)} activeOpacity={1} style={{ height:"100%"}} onLongPress={() => {console.log("Long Pressed", index);  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); openActionSheetFunction(index)}}>
@@ -96,7 +95,9 @@ export const SlideItem: React.FC<Props> = (props) => {
           }
         </View>
       </TouchableOpacity>
+      {modalOpen ? <></> :
       <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
+      }
     </Animated.View>
   );
 };
