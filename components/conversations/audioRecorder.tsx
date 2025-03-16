@@ -18,7 +18,7 @@ const AudioRecorder = (props: any) =>{
   const [permissionResponse, requestPermission] = Audio.usePermissions();
   const [ iconSize, setIconSize ] = useState(32);
 
-  const audioRecorder = useAudioRecorder(RecordingPresets.LOW_QUALITY);
+  // const audioRecorder = useAudioRecorder(RecordingPresets.LOW_QUALITY);
   // const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const record = async () => {
@@ -147,7 +147,7 @@ const AudioRecorder = (props: any) =>{
             stopRecording();
           }, 120);
         }}
-        style={{padding: 10, backgroundColor: 'white', borderRadius: 50, elevation: 5, position: 'absolute', bottom: 1, right: 0}}
+        style={{padding: 8, backgroundColor: 'white', borderRadius: 50, elevation: 5, position: 'absolute', bottom: 1, right: 0}}
       >
         <Ionicons name={'mic-outline'} color={'black'} size={iconSize} />
       </TouchableOpacity>

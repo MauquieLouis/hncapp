@@ -5,6 +5,7 @@ import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import { Ionicons } from "@expo/vector-icons";
 import { useUserContext } from "@/contexts/userContext";
+import { memo } from "react";
 
 const MessageActionSheet = (props: any) => {
 
@@ -12,9 +13,10 @@ const MessageActionSheet = (props: any) => {
     
     items = props.items;
     return(
-        <Actionsheet isOpen={props.showActionSheet} onClose={props.onCloseActionSheet} useRNModal={true}>
+        <Actionsheet isOpen={props.showActionSheet} onClose={props.onCloseActionSheet} useRNModal={false}>
             <ActionsheetBackdrop />
             <ActionsheetContent style={styles.actionsheetContent}>
+                {/* <Text>TTEEESSSTTT</Text> */}
                 <HStack space={'lg'} style={styles.actionSheetHStack}>
                     {Object.entries(items).map(([key, { icon, onPress }]) => (
                         <TouchableOpacity
@@ -33,7 +35,7 @@ const MessageActionSheet = (props: any) => {
     
 }
 
-export default MessageActionSheet;
+export default memo(MessageActionSheet);
 
 const styles = StyleSheet.create({
     actionsheetContent: {

@@ -1,4 +1,4 @@
-import React, { FlatList } from 'react-native';
+import React, { FlatList, TouchableOpacity } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
@@ -16,6 +16,7 @@ import * as FileSystem from 'expo-file-system';
 import FlatListMessage from '@/components/conversations/FlatListMessage';
 import { v6 as uuidv6 } from 'uuid';
 import AudioRecorder from '@/components/conversations/audioRecorder';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const debounce = (func, delay) => {
     let debounceTimer;
@@ -141,9 +142,10 @@ const ConversationScreen = () => {
         const deleteChannel = supabase.channel(`conversation-messages-deleted-${convId[0]}`)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]},
             (payload) => {
-                console.log("NEW DELETED OR UPDATED MESSAGE DETECTED :", payload);
+                console.log("NEW DELETED OR UPDATED MESSAGE DETECTED :", payload.old.id);
                 if(messages){
-                    const exists = messages.some(msg => msg.id === payload.old.id);
+                    // const exists = messages.some(msg => msg.id === payload.old.id);
+                    const exists = messages.find(msg => msg.id === payload.old.id) !== undefined;
                     if(!exists) return;
                 }
                 setMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
@@ -163,7 +165,7 @@ const ConversationScreen = () => {
             insertChannel.unsubscribe();
             deleteChannel.unsubscribe();
         };
-    }, [isAtBottom])
+    }, [isAtBottom, messages])
 
     /** -------------------------------------------------------
      *  ==== ====  S E N D   T E X T   M E S S A G E  ==== ====
@@ -468,6 +470,7 @@ const ConversationScreen = () => {
                         onEndReachedThreshold={0.1}
                         ListFooterComponent={loadingMoreMessages? <Text>LOADING MORE MESSAGES !</Text> : null}
                         onScroll={handleScroll}
+                        ListHeaderComponent={<></>}
                     />
                     {isSeen ? 
                         <Box>
@@ -478,36 +481,40 @@ const ConversationScreen = () => {
                         <Text ml={4} color="$gray400">{Object.keys(typingUsers).join(", ")} is typing...</Text>
                         // <Text ml={4} color="$gray400">Someone is typing...</Text>
                     )}
-                    <HStack style={{paddingTop:6}}>
+                    <HStack style={{paddingTop:15, backgroundColor:'rgba(0,0,0,0.2)'}}>
                         <Box style={{}} width={'59%'}>
                             <Input variant="outline" size="md">
                                 <InputField placeholder="Write message here..." onChangeText={(text) => {setText(text); sendTypingEvent()}} value={text}/>
                             </Input>
                         </Box>
-                        <Box width={'13%'} style={{}}>
+                        <Box width={'13%'} style={{padding:1}}>
                             {loadingSend ? 
                             <Text>SEND !</Text>: 
-                            <Button onPress={() => {
+                            <TouchableOpacity 
+                            style={{padding: 8, backgroundColor: 'white', borderRadius: 50, elevation: 5, position: 'absolute', bottom: 1, right: 0}}
+                            onPress={() => {
                                 pickImage();
                             }}>
-                                <ButtonText><Ionicons name={'image-outline'} color={'white'} size={16} /></ButtonText>
-                            </Button>
+                                <Ionicons name={'image-outline'} color={'black'} size={32} />
+                            </TouchableOpacity>
                             }
                         </Box>
-                        <Box width={'13%'} style={{}}>
+                        <Box width={'13%'} style={{padding:1}}>
                             {loadingSend ? 
                             <Text>SEND !</Text>: 
                             <AudioRecorder sendMessageFunction={sendTextMessage} convId={convId}/>
                             }
                         </Box>
-                        <Box width={'15%'} style={{}}>
+                        <Box width={'13%'} style={{padding:1}}>
                             {loadingSend ? 
                             <Text>SEND !</Text>: 
-                            <Button onPress={() => {
+                            <TouchableOpacity 
+                            style={{padding: 8, backgroundColor: 'white', borderRadius: 50, elevation: 5, position: 'absolute', bottom: 1, right: 0}}
+                            onPress={() => {
                                 sendTextMessage(false, 'text');
                             }}>
-                                <ButtonText><Ionicons name={'send-outline'} color={'white'} size={16} /></ButtonText>
-                            </Button>
+                                <Ionicons name={'send-outline'} color={'black'} size={32} />
+                            </TouchableOpacity>
                             }
                         </Box>
                     </HStack>

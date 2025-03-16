@@ -22,25 +22,28 @@ const FlatListMessage = (props: any) => {
     };
     
     const item = props.message;
-    const actionSheetTable: { [key: string]: { icon: string; onPress: () => void; } } = {
-        "info": {
-            icon: "information-circle-outline",
-            onPress: () => {console.log("Info Pressed")},
-        },
-    }
-    if(item.sender_id == user.id){
-        actionSheetTable["delete"] = {
-            icon: "trash-outline",
-            onPress: () => {console.log("Delete msg Pressed"); deleteMessage();},
-        }
-    }
+    
 
     const deleteMessage = useCallback(async () => {
         try{
             //SOFT DELETE THE MESSAGE
             const { data: data_soft_delete_msg, error: error_soft_delete_msg } = await supabase.from('messages').update({deleted_at:new Date().toISOString()}).eq('id',item.id);
+            //DELETE ALL THE ASSOCIATED ATTACHMENTS
+            const { data: deleted_attachments, error: error_deleted_attachment } = await supabase.from('attachments').delete().eq('message_id',item.id).select();
+            //DELETE ASSOCIATED ATTACHMENTS IN STORAGE
+            if(deleted_attachments){
+                const urls: string[] = deleted_attachments.map(item => item.url);
+                console.log("URLS TO DELETE : ",urls);
+                const { data: data_delete_attachment, error: error_delete_attachment } = await supabase.storage.from('Conversations').remove(urls);
+                if(error_delete_attachment){
+                    console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file :", error_delete_attachment);
+                }
+            }
             if(error_soft_delete_msg){
                 console.log("Error in deleteMessage function when soft deleting msg in components/attachment.tsx file :", error_soft_delete_msg);
+            }
+            if(error_deleted_attachment){
+                console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file :", error_deleted_attachment);
             }
         }catch(error: unknown){
             console.log("Error in deleteMessage function in components/attachment.tsx file :", error);
@@ -58,7 +61,7 @@ const FlatListMessage = (props: any) => {
     const renderMessageContent = () => {
         switch(item.type) {
         case 'attachment':
-            return <Attachment item={item}/>
+            return <Attachment item={item} deleteFunction={deleteMessage}/>
         case 'audio':
             return <AudioPlayer item={item}/>
         default:
@@ -84,23 +87,40 @@ const FlatListMessage = (props: any) => {
 
         }
     }
+
+    const actionSheetTable: { [key: string]: { icon: string; onPress: () => void; } } = {
+        "info": {
+            icon: "information-circle-outline",
+            onPress: () => {console.log("Info Pressed")},
+        },
+    }
+    if(item.sender_id == user.id){
+        actionSheetTable["delete"] = {
+            icon: "trash-outline",
+            onPress: () => {console.log("Delete msg Pressed"); deleteMessage();},
+        }
+    }
+    // if(item.type=='attachment'){
+    //     actionSheetTable["download"] = {
+    //         icon: "download-outline",
+    //         onPress: () => {console.log("download msg Pressed"); deleteMessage();},
+    //     }
+    // }
     return (
-        <Box>
-            <TouchableOpacity activeOpacity={1} onLongPress={handleLongPress}>
-                <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:5}}>
-                    {/* {item.sender_id != user.id ? 
-                    <Box style={{}} width={'20%'}>
-                        <Text>
-                            {item.sender_id}
-                        </Text>
-                    </Box>
-                        : 
-                    <></>} */}
-                     {renderMessageContent()}
-                </HStack>
-            </TouchableOpacity>
+        <TouchableOpacity activeOpacity={1} onLongPress={handleLongPress}>
+            <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:5}}>
+                {/* {item.sender_id != user.id ? 
+                <Box style={{}} width={'20%'}>
+                    <Text>
+                        {item.sender_id}
+                    </Text>
+                </Box>
+                    : 
+                <></>} */}
+                    {renderMessageContent()}
+            </HStack>
             <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
-        </Box>
+        </TouchableOpacity>
     )
 }
 

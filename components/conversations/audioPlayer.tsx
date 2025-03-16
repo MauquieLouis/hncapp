@@ -10,6 +10,7 @@ import { supabase } from '@/libs/initSupabase';
 import { useAudio } from '@/contexts/audioContext';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 import AudioWaves from './audioWaves';
+import { Center } from '../ui/center';
 
 
   
@@ -119,43 +120,74 @@ const AudioPlayer = (props: any) => {
           }
     }
 
-    const calculateWidthAndWave = () => {
-        if(duration){
-
-            if(Math.floor(duration / 1000) < 5){
-                return { width:80, waves:5 };
-            }else if (Math.floor(duration / 1000) >= 5 && Math.floor(duration / 1000) < 12 ){
-                return { width:80, waves:8 };
-            }else if (Math.floor(duration / 1000) >= 12 && Math.floor(duration / 1000) < 21 ){
-                return { width:120, waves:12 };
-            }else {
-                return { width:170, waves:17 };
-            }
-        }else{
-            return { width: 150, waves:12};
-        }
+    let backgroundColor,textColor;
+    const MESSAGE_HEIGHT = 50;
+    if(props.item.sender_id == user.id){
+        backgroundColor = "blue";
+        textColor= "white";
+    }else{
+        backgroundColor = "grey";
+        textColor= "black";
     }
+    const styles = StyleSheet.create({
+        audioBox: {
+           backgroundColor:backgroundColor,
+           // justifyContent: "right",
+           alignItems: "flex-end",
+           width:'100%',
+           padding:2,
+           borderRadius:15,
+           margin:1,
+           elevation: 5,
+        },
+        elemColor:{
+            color: textColor
+        },
+        textElem:{
+            padding:3
+        },
+        centeredElem:{
+            height: MESSAGE_HEIGHT,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingRight:3
+       },
+       timingBox:{
+        minWidth:40,
+        maxWidth:40
+       }
+       });
 
     return(
-        <Box>
+        <Box style={{}}>
             <HStack reversed={item.sender_id == user.id ? true : false} style={[styles.audioBox,{paddingHorizontal:5}]}>
-                <Box>
+                <Box style={[styles.centeredElem, {}]}>
                     <AudioWaves 
-                        svgWidth={160} 
-                        svgHeight={50} 
-                        waveformHeight={30} 
+                        svgWidth={140} 
+                        svgHeight={MESSAGE_HEIGHT} 
+                        waveformHeight={30}
+                        yStart={10} 
                         rectWidth={4} 
-                        wavesNumber={18} 
+                        wavesNumber={16} 
                         isAnimating={!isPlaying} />
                 </Box>
-                <Box>
-                    <Text>
-                        {Math.floor(position / 1000)} / {Math.floor(duration / 1000)} sec
+                <Box style={[styles.centeredElem, styles.timingBox]}>
+                    {   position == 0 ? 
+                    <Text style={[styles.elemColor, styles.textElem]}>
+                        0:{Math.floor(duration / 1000) < 10 ? "0"+ Math.floor(duration / 1000):Math.floor(duration / 1000)}
+                        {/* {Math.floor(position / 1000)}:{Math.floor(duration / 1000)} */}
                     </Text>
+                    
+                    :
+                    <Text style={[styles.elemColor, styles.textElem]}>
+                        0:{Math.floor(position / 1000) < 10 ? "0"+ Math.floor(position / 1000):Math.floor(position / 1000)}
+                    </Text>
+
+                    }
                 </Box>
-                <Box>
-                    <TouchableOpacity onPress={PlayAudio} style={{ marginRight: 10 }}>
-                        <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="black" />
+                <Box style={styles.centeredElem}>
+                    <TouchableOpacity onPress={PlayAudio} style={{ marginRight: 0}}>
+                        <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color={styles.elemColor.color} />
                     </TouchableOpacity>
                 </Box>
             </HStack>
@@ -166,14 +198,4 @@ const AudioPlayer = (props: any) => {
 
 export default AudioPlayer;
 
-const styles = StyleSheet.create({
- audioBox: {
-    // justifyContent: "right",
-    alignItems: "flex-end",
-    width:'100%',
-    padding:13,
-    borderRadius:15,
-    margin:1,
-    elevation: 5,
-}
-});
+

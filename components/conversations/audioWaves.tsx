@@ -33,7 +33,7 @@ const AudioWaves = (props: any) => {
   const minDuration = 400;
   const maxDuration = 680;
 
-  const colorTables = ['#00FF00', '#FF0000', '#0000FF', '#FF00FF', '#FFFF00', '#00FFFF']
+  const colorTables = ['#00FF00', '#FF0000', '#FFFFFF', '#FF00FF', '#FFFF00', '#00FFFF']
 
   useEffect(() => {
     toggleAnimation();
@@ -125,7 +125,7 @@ const AudioWaves = (props: any) => {
 
   return (
     <View style={styles.container}>
-      <View style={{width:SVG_WIDTH, height:SVG_HEIGHT, borderColor:"cyan", borderWidth:1}}>
+      <View style={{width:SVG_WIDTH, height:SVG_HEIGHT}}>
         <Svg width={SVG_WIDTH} height={SVG_HEIGHT} style={{borderWidth:1, borderColor:"cyan"}}>
           {waveform.map((item, index) => {
             const space= (SVG_WIDTH / waveform.length)- RECT_WIDTH
@@ -134,7 +134,7 @@ const AudioWaves = (props: any) => {
             key={index}
             animatedProps={animatedProps[index]}    
             x={index*(space+RECT_WIDTH)} 
-            y={SVG_HEIGHT-2} 
+            y={SVG_HEIGHT-props.yStart-2} 
             width={RECT_WIDTH} 
             />
           })}
@@ -151,10 +151,9 @@ export default memo(AudioWaves);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#25292e',
+    // backgroundColor: '#25292e',
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor:"red",borderWidth:1
   },
   text: {
     color: '#fff',

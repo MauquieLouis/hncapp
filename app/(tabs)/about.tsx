@@ -119,7 +119,7 @@ export default function AboutScreen() {
     return (
       <>
         <Button title={isAnimating ? "Stop Animation" : "Start Animation"} onPress={toggleAnimation} />
-        <AudioWaves svgWidth={200} svgHeight={50} waveformHeight={40} rectWidth={4} wavesNumber={20} isAnimating={!isAnimating}/>
+        <AudioWaves svgWidth={200} svgHeight={50} waveformHeight={40} rectWidth={4} wavesNumber={20} yStart={10} isAnimating={!isAnimating}/>
       </>
       
       // <View style={styles.container}>

@@ -16,11 +16,9 @@ import VideoPlayer from "./video";
 import VideoThumbNail from "./videoThumbnail";
 import * as Haptics from "expo-haptics";
 import MessageActionSheet from "./messageActionSheet";
-import { File, Paths } from 'expo-file-system/next';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
-import { Actionsheet, ActionsheetContent } from "../ui/actionsheet";
-import { Toast, ToastTitle, useToast } from "../ui/toast";
+import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 
 const ImageDisplay = (props: any) => {
 
@@ -51,13 +49,7 @@ const ImageDisplay = (props: any) => {
     }
 
     const ref = useRef<ICarouselInstance>(null);
-    // useEffect(() => {
-    //     console.log('MOVE SUPPOSED', ref)
-    //     if(ref.current){
-    //     ref.current.scrollTo(props.indexOpenModal);
-    //     }
-        
-    // }, [props.indexOpenModal, ref])
+
     return (
         <Box id={"carousel-component"+props.id}>
             {attachmentsUrls.length != 1 ?
@@ -171,7 +163,6 @@ const Attachment = (props: any) => {
     const [ attachmentsUrls, setAttachmentsUrls ] = useState([]);
     const [ showActionSheet, setShowActionSheet ] = useState(false);
 
-    // const onCloseModal = () => {setOpenModal(false)};
     const onCloseModal = (_index: any) => {setOpenModal(false); setIndexOpenModal(_index);};
     const onCloseActionSheet = () => setShowActionSheet(false);
 
@@ -219,7 +210,6 @@ const Attachment = (props: any) => {
         "download": {
             icon: "download-outline",
             onPress: () => {console.log("DL Pressed");
-                // downloadAttachment(attachmentsUrls[indexOpenModal], item.attachments[indexOpenModal].url );
                 setTimeout(() => {downloadAttachment(attachmentsUrls[indexOpenModal], item.attachments[indexOpenModal].url)}, 1000);
                 console.log("INDEX :",indexOpenModal,", ATTACHMENT URLS INDEX MODAL :", attachmentsUrls[indexOpenModal], ", ITEM :",item.attachments[indexOpenModal]) /*downloadAttachment(attachmentsUrls[indexOpenModal], item.attachments[indexOpenModal].name)*/;},
         }
@@ -227,7 +217,7 @@ const Attachment = (props: any) => {
     if(item.sender_id == user.id){
         actionSheetTable["delete"] = {
             icon: "trash-outline",
-            onPress: () => {console.log("Delete Pressed"); deleteMessageAndAttachement();},
+            onPress: () => {console.log("Delete Pressed"); props.deleteFunction();},
         }
     }
 
@@ -256,43 +246,12 @@ const Attachment = (props: any) => {
                     </Toast>
                   )
                 },
-              })
-            
-
+              });
         }catch(error: unknown){ 
             console.log("Error in downloadAttachment function in components/attachment.tsx file :", error);
         }
     }
 
-    const deleteMessageAndAttachement = async () => {
-        try{
-            //SOFT DELETE THE MESSAGE
-            const { data: data_soft_delete_msg, error: error_soft_delete_msg } = await supabase.from('messages').update({deleted_at:new Date().toISOString()}).eq('id',item.id);
-            //DELETE ALL THE ASSOCIATED ATTACHMENTS
-            const { data: deleted_attachments, error: error_deleted_attachment } = await supabase.from('attachments').delete().eq('message_id',item.id).select();
-            //DELETE ASSOCIATED ATTACHMENTS IN STORAGE
-            if(deleted_attachments){
-                    const urls: string[] = deleted_attachments.map(item => item.url);
-                    console.log("URLS TO DELETE : ",urls);
-                    const { data: data_delete_attachment, error: error_delete_attachment } = await supabase.storage.from('Conversations').remove(urls);
-                    if(error_delete_attachment){
-                        console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file :", error_delete_attachment);
-                    }
-            }
-            if(error_soft_delete_msg){
-                console.log("Error in deleteMessage function when soft deleting msg in components/attachment.tsx file :", error_soft_delete_msg);
-            }
-            if(error_deleted_attachment){
-                console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file :", error_deleted_attachment);
-            }
-        }catch(error: unknown){
-            console.log("Error in deleteMessage function in components/attachment.tsx file :", error);
-        }finally{
-
-        }
-    }
-
-    // console.log("ITEM USER AND USER : ",item, " / USER :",user.id);
     return(
         <>
             <Box>
@@ -341,11 +300,8 @@ const Attachment = (props: any) => {
                         indexOpenModal={indexOpenModal}/>
                 </ModalContent> 
             </Modal>
-            <Actionsheet isOpen={showActionSheet}>
-                <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
-                {/* <MessageActionSheet items={actionSheetTable} showActionSheet={showModalActionSheet} onCloseActionSheet={onCloseModalActionSheet}/> */}
-            </Actionsheet>
-            {/* <Toast/> */}
+            <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
+            {/* <MessageActionSheet items={actionSheetTable} showActionSheet={showModalActionSheet} onCloseActionSheet={onCloseModalActionSheet}/> */}
         </>
 
     )
