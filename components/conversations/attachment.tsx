@@ -296,7 +296,7 @@ const Attachment = (props: any) => {
     return(
         <>
             <Box>
-                <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:5}}>
+                <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:0}}>
                     <Box style={
                         item.sender_id == user.id ?
                         //My message
@@ -304,7 +304,7 @@ const Attachment = (props: any) => {
                         :
                         //Other message
                         {}
-                    } width={'76%'}>
+                    } width={'85%'}>
                         <Box> 
                             <ImageDisplay 
                                 attachment={item} 

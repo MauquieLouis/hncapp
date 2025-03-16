@@ -7,8 +7,12 @@ import { Audio } from "expo-av";
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/libs/initSupabase';
+import { useAudio } from '@/contexts/audioContext';
+import { useSharedValue, withTiming } from 'react-native-reanimated';
+import AudioWaves from './audioWaves';
 
 
+  
 const AudioPlayer = (props: any) => {
     const [sound, setSound] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -17,24 +21,41 @@ const AudioPlayer = (props: any) => {
     const [ attachmentUrl, setAttachmentsUrl ] = useState('');
     const [ loadingUrl, setLoadingUrl ] = useState(false);
 
-
+    // const { playNewSound, currentUrl } = useAudio();
     const { user } = useUserContext();
     const item = props.item;
 
     useEffect(() => {
-        getAttachmentsUrls();
         return sound 
         ? () => {
             sound.unloadAsync(); 
         }
         : undefined;
     }, [sound]);
+    
+    let widthS, wavesS; 
+    useEffect(() => {
+        getAttachmentsUrlsAndLoad();
+        
+    }, []);
 
-    // async function playSound() {
-    //     console.log("LOADING SOUND");
-    //     const { sound } = await Audio.Sound.createAsync({ uri: "dd" })
-    // }
-    const getAttachmentsUrls = async () => {
+    useEffect(() => {
+        if(position >= duration){
+            setIsPlaying(false);
+            setPosition(0);
+            setSound(null);
+            loadAudio(attachmentUrl);
+        }
+    }, [position])
+
+    const progress = useSharedValue(0);
+    useEffect(() => {
+        if (duration > 0) {
+          progress.value = withTiming((position / duration) * 100, { duration: 100 });
+        }
+      }, [position, duration]);
+
+    const getAttachmentsUrlsAndLoad = async () => {
             try{
                 setLoadingUrl(true);
                 const urls = item.attachments.map((attachment: { url: any; }) => attachment.url);
@@ -43,9 +64,10 @@ const AudioPlayer = (props: any) => {
                     console.log("Error in ImageDisplay when creatingSignedUrls function in components/attachment.tsx file :", error);
                 }
                 const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
-                console.log("SIGNEDURLS:", signedUrls);
                 setAttachmentsUrl(signedUrls[0]);
-    
+                loadAudio(signedUrls[0]);
+                // const isPlayingGlobal = currentUrl === signedUrls[0];
+
             }catch(error: unknown){
                 console.log("Error in ImageDisplay function in components/attachment.tsx file :", error);
             }finally{
@@ -53,29 +75,15 @@ const AudioPlayer = (props: any) => {
             }
         }
 
-    const loadAndPlayAudio = async () => {
-        
-        if (sound) {
-          // If already playing, pause it
-          if (isPlaying) {
-            await sound.pauseAsync();
-            setIsPlaying(false);
-          } else {
-            await sound.playAsync();
-            setIsPlaying(true);
-          }
-          return;
-        }
-    
+    const loadAudio = async (url: string) => {
         // Load sound from URL
         const { sound: newSound } = await Audio.Sound.createAsync(
-          { uri: attachmentUrl },
-        //   { shouldPlay: true }
+          { uri: url },
+          { shouldPlay: false }
         );
     
         setSound(newSound);
-        setIsPlaying(true);
-        const status = await newSound.getStatusAsync();
+        setIsPlaying(false);
     
         // Listen for playback status
         newSound.setOnPlaybackStatusUpdate(async() => {
@@ -85,29 +93,70 @@ const AudioPlayer = (props: any) => {
             setDuration(status.durationMillis ?? 0);
             setPosition(status.positionMillis);
             if (status.didJustFinish) {
+                console.log("sound supposed to finish")
               setIsPlaying(false); // Reset when finished
+              setSound(null);
             }
           }
         });
-      };
+    };
 
-    
+    const PlayAudio = async() => {
+        if (sound) {
+            // setIsPlayingGlobal(currentUrl === attachmentUrl)
+            // If already playing, pause it
+            if (isPlaying) {
+                await sound.pauseAsync();
+                setIsPlaying(false);
+            } else {
+                await sound.playAsync();
+                // setIsAnimating(true);
+                // setIsAnimating(false);
+                setIsPlaying(true);
+            }
+            // playNewSound(sound, attachmentUrl);
+            return;
+          }
+    }
+
+    const calculateWidthAndWave = () => {
+        if(duration){
+
+            if(Math.floor(duration / 1000) < 5){
+                return { width:80, waves:5 };
+            }else if (Math.floor(duration / 1000) >= 5 && Math.floor(duration / 1000) < 12 ){
+                return { width:80, waves:8 };
+            }else if (Math.floor(duration / 1000) >= 12 && Math.floor(duration / 1000) < 21 ){
+                return { width:120, waves:12 };
+            }else {
+                return { width:170, waves:17 };
+            }
+        }else{
+            return { width: 150, waves:12};
+        }
+    }
+
     return(
         <Box>
             <HStack reversed={item.sender_id == user.id ? true : false} style={[styles.audioBox,{paddingHorizontal:5}]}>
                 <Box>
-                    <Text>AUDIO HERE</Text>
+                    <AudioWaves 
+                        svgWidth={160} 
+                        svgHeight={50} 
+                        waveformHeight={30} 
+                        rectWidth={4} 
+                        wavesNumber={18} 
+                        isAnimating={!isPlaying} />
                 </Box>
                 <Box>
-                    <TouchableOpacity onPress={loadAndPlayAudio} style={{ marginRight: 10 }}>
-                        <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="black" />
-                    </TouchableOpacity>
                     <Text>
                         {Math.floor(position / 1000)} / {Math.floor(duration / 1000)} sec
                     </Text>
                 </Box>
                 <Box>
-                    <Text>Icon - </Text>
+                    <TouchableOpacity onPress={PlayAudio} style={{ marginRight: 10 }}>
+                        <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="black" />
+                    </TouchableOpacity>
                 </Box>
             </HStack>
         </Box>
@@ -119,7 +168,7 @@ export default AudioPlayer;
 
 const styles = StyleSheet.create({
  audioBox: {
-    justifyContent: "right",
+    // justifyContent: "right",
     alignItems: "flex-end",
     width:'100%',
     padding:13,

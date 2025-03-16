@@ -136,7 +136,7 @@ const AudioRecorder = (props: any) =>{
             console.log("ON PRESS IN !");
             setIconSize(64);
             record();
-          }, 300);
+          }, 120);
         
         }}
         onPressOut={()=>{
@@ -145,7 +145,7 @@ const AudioRecorder = (props: any) =>{
             setIconSize(32);
             console.log("ON PRESS OUT !");
             stopRecording();
-          }, 300);
+          }, 120);
         }}
         style={{padding: 10, backgroundColor: 'white', borderRadius: 50, elevation: 5, position: 'absolute', bottom: 1, right: 0}}
       >
