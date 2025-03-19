@@ -4,7 +4,7 @@ import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { useUserContext } from '@/contexts/userContext';
 import { Audio } from "expo-av";
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/libs/initSupabase';
 import { useAudio } from '@/contexts/audioContext';
@@ -25,6 +25,7 @@ const AudioPlayer = (props: any) => {
     // const { playNewSound, currentUrl } = useAudio();
     const { user } = useUserContext();
     const item = props.item;
+    const soundRef = useRef(new Audio.Sound());
 
     useEffect(() => {
         return sound 
@@ -34,18 +35,18 @@ const AudioPlayer = (props: any) => {
         : undefined;
     }, [sound]);
     
-    let widthS, wavesS; 
     useEffect(() => {
         getAttachmentsUrlsAndLoad();
-        
     }, []);
 
     useEffect(() => {
         if(position >= duration){
+            //Reset sound to 0 second.
+            soundRef.current.setPositionAsync(0);
+            //Not play the sound after reseting it.
+            soundRef.current.pauseAsync();
             setIsPlaying(false);
             setPosition(0);
-            setSound(null);
-            loadAudio(attachmentUrl);
         }
     }, [position])
 
@@ -54,19 +55,21 @@ const AudioPlayer = (props: any) => {
         if (duration > 0) {
           progress.value = withTiming((position / duration) * 100, { duration: 100 });
         }
-      }, [position, duration]);
+      }, [position]);
 
     const getAttachmentsUrlsAndLoad = async () => {
             try{
                 setLoadingUrl(true);
-                const urls = item.attachments.map((attachment: { url: any; }) => attachment.url);
+                const urls = item.attachments.map((attachment: { url: string }) => attachment.url);
                 const { data, error } = await supabase.storage.from('Conversations').createSignedUrls(urls, 5400);
                 if(error){
                     console.log("Error in ImageDisplay when creatingSignedUrls function in components/attachment.tsx file :", error);
                 }
-                const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
-                setAttachmentsUrl(signedUrls[0]);
-                loadAudio(signedUrls[0]);
+                if(data){
+                    const signedUrls = data.map((signedURL) => signedURL.signedUrl)
+                    setAttachmentsUrl(signedUrls[0]);
+                    loadAudio(signedUrls[0]);
+                }
                 // const isPlayingGlobal = currentUrl === signedUrls[0];
 
             }catch(error: unknown){
@@ -82,43 +85,39 @@ const AudioPlayer = (props: any) => {
           { uri: url },
           { shouldPlay: false }
         );
-    
+        soundRef.current = newSound;
         setSound(newSound);
         setIsPlaying(false);
     
         // Listen for playback status
         newSound.setOnPlaybackStatusUpdate(async() => {
-            const status = await newSound.getStatusAsync();
+        const status = await newSound.getStatusAsync();
 
-          if (status.isLoaded) {
-            setDuration(status.durationMillis ?? 0);
-            setPosition(status.positionMillis);
-            if (status.didJustFinish) {
-                console.log("sound supposed to finish")
-              setIsPlaying(false); // Reset when finished
-              setSound(null);
-            }
-          }
+        if (status.isLoaded) {
+        setDuration(status.durationMillis ?? 0);
+        setPosition(status.positionMillis);
+        if (status.didJustFinish) {
+            console.log("sound supposed to finish")
+            setIsPlaying(false); // Reset when finished
+            setSound(null);
+        }
+        }
         });
     };
 
     const PlayAudio = async() => {
-        if (sound) {
-            // setIsPlayingGlobal(currentUrl === attachmentUrl)
-            // If already playing, pause it
-            if (isPlaying) {
-                await sound.pauseAsync();
-                setIsPlaying(false);
-            } else {
-                await sound.playAsync();
-                // setIsAnimating(true);
-                // setIsAnimating(false);
-                setIsPlaying(true);
-            }
-            // playNewSound(sound, attachmentUrl);
-            return;
-          }
-    }
+        if (!sound) return; 
+        // setIsPlayingGlobal(currentUrl === attachmentUrl)
+        // If already playing, pause it
+        if (isPlaying) {
+            await sound.pauseAsync();
+            setIsPlaying(false);
+        } else {
+            await sound.playAsync();
+            setIsPlaying(true);
+        }
+        // playNewSound(sound, attachmentUrl);
+    };
 
     let backgroundColor,textColor;
     const MESSAGE_HEIGHT = 50;

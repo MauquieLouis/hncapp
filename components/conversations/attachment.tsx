@@ -10,15 +10,15 @@ import type { ICarouselInstance } from "react-native-reanimated-carousel";
 import Carousel from "react-native-reanimated-carousel";
 import { renderItem } from "./renderItem";
 import { supabase } from "@/libs/initSupabase";
-import { Modal, ModalContent, ModalHeader } from "../ui/modal";
+import { Modal, ModalContent, ModalHeader } from "@/components/ui/modal";
+import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { Ionicons } from "@expo/vector-icons";
 import VideoPlayer from "./video";
 import VideoThumbNail from "./videoThumbnail";
-import * as Haptics from "expo-haptics";
 import MessageActionSheet from "./messageActionSheet";
+import * as Haptics from "expo-haptics";
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 
 const ImageDisplay = (props: any) => {
 
@@ -190,13 +190,13 @@ const Attachment = (props: any) => {
             const urls = item.attachments.map((attachment: { url: any; }) => attachment.url);
             const { data, error } = await supabase.storage.from('Conversations').createSignedUrls(urls, 5400);
             if(error){
-                console.log("Error in ImageDisplay when creatingSignedUrls function in components/attachment.tsx file :", error);
+                console.log("Error in Attachment when creatingSignedUrls function in components/attachment.tsx file :", error);
             }
             const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
             setAttachmentsUrls(signedUrls);
 
         }catch(error: unknown){
-            console.log("Error in ImageDisplay function in components/attachment.tsx file :", error);
+            console.log("Error in Attachment function in components/attachment.tsx file :", error);
         }finally{
             setLoadingUrls(false);
         }

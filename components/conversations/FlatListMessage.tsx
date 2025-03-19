@@ -73,13 +73,13 @@ const FlatListMessage = (props: any) => {
                     :
                     //Other message
                     { backgroundColor:'#BABABA'}
-                ]} maxwidth={'66%'}>
+                ]}>
                     <Text style={[styles.commonTextMessage, item.sender_id == user.id ? 
                         //My message
-                        {textAlign:'right', color:'white'} 
+                        {color:'white'} 
                         : 
                         //Other message
-                        {textAlign:'left', color:'#1a1a1a'}]}>
+                        {color:'#1a1a1a'}]}>
                         {item.content}
                     </Text>
                 </Box>
@@ -136,8 +136,10 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 4,
         elevation: 5,
+        maxWidth:'70%',
     },
     commonTextMessage: {
-        fontSize:16
+        fontSize:16,
+        textAlign:'left',
     }
   });

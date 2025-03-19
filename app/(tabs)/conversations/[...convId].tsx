@@ -1,26 +1,20 @@
-import React, { FlatList, TouchableOpacity } from 'react-native';
+import React, { FlatList } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
-import { HStack } from '@/components/ui/hstack';
-import { Button, ButtonText } from '@/components/ui/button';
-import { Input, InputField } from '@/components/ui/input';
 import { useUserContext } from '../../../contexts/userContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../../libs/initSupabase';
 import { useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
-import * as ImagePicker from 'expo-image-picker';
-import { decode } from 'base64-arraybuffer';
-import * as FileSystem from 'expo-file-system';
 import FlatListMessage from '@/components/conversations/FlatListMessage';
 import { v6 as uuidv6 } from 'uuid';
-import AudioRecorder from '@/components/conversations/audioRecorder';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import ConversationCommands from '@/components/conversations/conversationCommands';
+import { Center } from '@/components/ui/center';
+import { Spinner } from '@/components/ui/spinner';
 
-const debounce = (func, delay) => {
-    let debounceTimer;
-    return function(...args) {
+const debounce = (func: { (): Promise<void>; apply?: any; }, delay: number | undefined) => {
+    let debounceTimer: string | number | NodeJS.Timeout | undefined;
+    return function(...args: any) {
         const context = this;
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => func.apply(context, args), delay);
@@ -32,7 +26,6 @@ const ConversationScreen = () => {
     const PAGE_SIZE = 20; // If changing this, number, be careful of changing it in the rpc function that retrieve first messages at opening, maybe add a parameter for that.
 
     const [ loading, setLoading ] = useState(false);
-    // const [ messages, setMessages ] = useState(null);
     const [ messages, setMessages ] = useState<any[]>([]);
     const [ text, setText ] = useState('');
     const [ participants, setParticipants ] = useState(null);
@@ -93,7 +86,6 @@ const ConversationScreen = () => {
         }
     }
 
-
     useEffect(() => {
         console.log("is at bottom CHANGE : ", isAtBottom);
         if(isAtBottom) markMessageAsRead();
@@ -105,14 +97,14 @@ const ConversationScreen = () => {
             async (payload) => {
                 setIsSeen(false);
                 
-                // CREATE A WAITING TIME WHEN UPLOADING NEW IMAGE, TO DISPLAY IT IN THE CONVERSATION
-                if(payload.new.type == 'attachment'){
+                // CREATE A WAITING TIME WHEN UPLOADING NEW IMAGE OR AUDIO, TO DISPLAY IT IN THE CONVERSATION
+                if(payload.new.type == 'attachment' || payload.new.type == 'audio'){
                     setLoadingNewImage(true);
                     console.log("NEW ATTACHMENT MESSAGE DETECTED :", payload);
                     payload.new.attachments = [];
                     let attempts = 0;
-                    let maxAttempts = 10;
-                    const delay= 1500;
+                    let maxAttempts = 13;
+                    const delay= 900;
                     let result;
                     while(attempts < maxAttempts){
                         console.log("attemps :", attempts);
@@ -121,7 +113,7 @@ const ConversationScreen = () => {
                         await new Promise((resolve) => setTimeout(resolve, delay));
                         result = await fetchAttachments(payload.new.id);
                         if(result){
-                            attempts = 10;
+                            attempts = maxAttempts;
                         }
                     }
                     payload.new.attachments = result;
@@ -377,74 +369,6 @@ const ConversationScreen = () => {
         }
     }
 
-    /** -----------------------------------------
-     *  ==== ====  P I C K   I M A G E  ==== ====
-     */
-    const pickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images', 'videos'],
-            // allowsEditing: true,
-            aspect: [4,3],
-            quality:1,
-            base64: true,
-            allowsMultipleSelection: true
-        });
-        if(!result.canceled){
-            // setImages(result.assets[0].uri);
-            uploadImage(result.assets)
-        }
-    }
-
-    /** ---------------------------------------------
-     *  ==== ====  U P L O A D   I M A G E  ==== ====
-     * @param file 
-     */
-    const uploadImage = async (files: ImagePicker.ImagePickerAsset[]) => {
-        try{
-            //Create the attachement and send Message
-            const message_id = await sendTextMessage(true, 'attachment');
-            console.log("message iD :", message_id);
-            for(let file of files as ImagePicker.ImagePickerAsset[]){
-                // const filename = uuidv6();
-                
-                const { data: attach_data, error: attach_error } = await supabase.from('attachments').insert({
-                    message_id: message_id,
-                    url: convId+'/'+file.fileName,
-                    type: file.mimeType,
-                    size: file.fileSize
-                });
-                if(attach_error){
-                    console.log("Error in uploadImage function when inserting new attachement in [...convId].tsx :", attach_error);
-
-                }
-                // console.log("FILE simple :", file);
-                if(file.type == 'video'){
-                    const fileContent = await FileSystem.readAsStringAsync(file.uri, {encoding: FileSystem.EncodingType.Base64});
-                    const {data, error} = await supabase.storage.from('Conversations')
-                    .upload(convId+'/'+file.fileName, decode(fileContent),
-                    {cacheControl: '3600', upsert:false, contentType:file.mimeType});
-                    if(error){
-                        console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
-                    }
-                    console.log("DATA UPLOAD:", data);
-                }else{
-                    console.log("NOT A VIDEO :");
-                    const {data, error} = await supabase.storage.from('Conversations')
-                    .upload(convId+'/'+file.fileName, decode(file.base64 as string),
-                    {cacheControl: '3600', upsert:false, contentType:file.mimeType});
-                    if(error){
-                        console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
-                    }
-                }
-                //Upload the file on supabase
-            }
-        }catch(error:unknown){
-            console.log("Error in uploadImage function [...convId].tsx :", error);
-        }finally{
-
-        }
-    }
-
     const renderItemFlatList = ({item}: {item: any}) => {
         return <FlatListMessage message={item}/>
     }
@@ -468,9 +392,12 @@ const ConversationScreen = () => {
                         onEndReached={handleLoadMoreMessage}
                         onMomentumScrollBegin={() => {setCanTriggerLoadMore(true)}}
                         onEndReachedThreshold={0.1}
-                        ListFooterComponent={loadingMoreMessages? <Text>LOADING MORE MESSAGES !</Text> : null}
+                        ListFooterComponent={loadingMoreMessages? <Center>
+                            <Spinner size="large" color={"blue"}/>
+                        </Center>  : null}
                         onScroll={handleScroll}
-                        ListHeaderComponent={<></>}
+                        ListHeaderComponent={<Box style={{height:50}}></Box>}
+                        // style={{borderColor:"red",borderWidth:1}}
                     />
                     {isSeen ? 
                         <Box>
@@ -481,43 +408,13 @@ const ConversationScreen = () => {
                         <Text ml={4} color="$gray400">{Object.keys(typingUsers).join(", ")} is typing...</Text>
                         // <Text ml={4} color="$gray400">Someone is typing...</Text>
                     )}
-                    <HStack style={{paddingTop:15, backgroundColor:'rgba(0,0,0,0.2)'}}>
-                        <Box style={{}} width={'59%'}>
-                            <Input variant="outline" size="md">
-                                <InputField placeholder="Write message here..." onChangeText={(text) => {setText(text); sendTypingEvent()}} value={text}/>
-                            </Input>
-                        </Box>
-                        <Box width={'13%'} style={{padding:1}}>
-                            {loadingSend ? 
-                            <Text>SEND !</Text>: 
-                            <TouchableOpacity 
-                            style={{padding: 8, backgroundColor: 'white', borderRadius: 50, elevation: 5, position: 'absolute', bottom: 1, right: 0}}
-                            onPress={() => {
-                                pickImage();
-                            }}>
-                                <Ionicons name={'image-outline'} color={'black'} size={32} />
-                            </TouchableOpacity>
-                            }
-                        </Box>
-                        <Box width={'13%'} style={{padding:1}}>
-                            {loadingSend ? 
-                            <Text>SEND !</Text>: 
-                            <AudioRecorder sendMessageFunction={sendTextMessage} convId={convId}/>
-                            }
-                        </Box>
-                        <Box width={'13%'} style={{padding:1}}>
-                            {loadingSend ? 
-                            <Text>SEND !</Text>: 
-                            <TouchableOpacity 
-                            style={{padding: 8, backgroundColor: 'white', borderRadius: 50, elevation: 5, position: 'absolute', bottom: 1, right: 0}}
-                            onPress={() => {
-                                sendTextMessage(false, 'text');
-                            }}>
-                                <Ionicons name={'send-outline'} color={'black'} size={32} />
-                            </TouchableOpacity>
-                            }
-                        </Box>
-                    </HStack>
+                    <ConversationCommands
+                        convId={convId}
+                        sendTextMessage={sendTextMessage}
+                        text={text}
+                        setText={setText}
+                        sendTypingEvent={sendTypingEvent}
+                    />
                 </>
             }
         </>

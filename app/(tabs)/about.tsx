@@ -1,148 +1,443 @@
 import AudioWaves from '@/components/conversations/audioWaves';
-import {  useState } from 'react';
-import React, { View, StyleSheet, Button } from 'react-native';
-import Animated, { cancelAnimation, Easing, useAnimatedProps, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
-import { Svg, Rect } from 'react-native-svg';
+import { Box } from '@/components/ui/box';
+import { Ionicons } from '@expo/vector-icons';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { View, StyleSheet, Button, TouchableOpacity, Text, Dimensions } from 'react-native';
+// import Animated, { cancelAnimation, Easing, useAnimatedProps, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import { Svg, Rect, Circle, LinearGradient, Stop, Defs, Filter, G, FeGaussianBlur } from 'react-native-svg';
+import * as Haptics from "expo-haptics";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 
-const AnimatedRect = Animated.createAnimatedComponent(Rect);
-
-const WAVEFORM_HEIGHT = 50;
-
-const generateFakeWaveform = (numPoints = 100) => {
-  return Array.from({ length: numPoints }, () => Math.random() * WAVEFORM_HEIGHT);
-};
-
-// const generateSinusoidalWaveform = (numPoints = 100) => {
-//   return Array.from({ length: numPoints }, (_, index) => {
-//     const angle = (index / numPoints) * Math.PI * 2; // Map index to angle in range [0, 2π]
-//     const height = Math.sin(angle) * (WAVEFORM_HEIGHT / 2) + (WAVEFORM_HEIGHT / 2); // Scale and shift sine wave
-//     return height;
-//   });
-// };
+const DRAGGABLE_SIZE = 60;
+const DROP_ZONE = { x: 100, y:400, width: 150, height: 150 };
 
 export default function AboutScreen() {
-
-    const [isAnimating, setIsAnimating] = useState(false);
-
-    const waveform = generateFakeWaveform( 20 );
-
-    const color = useSharedValue('#FF0000');
-    console.log("WAVEFORM :",waveform);
-    const heightValues = waveform.map((item,index) => useSharedValue(-item));
-    const animatedProps = heightValues.map((height, index) =>
-      useAnimatedProps(() => {
-        return {
-          height: height.value,
-          fill: color.value,
-        };
-      })
-    );
   
-    
-    const colorTables = ['#00FF00', '#FF0000', '#0000FF', '#FF00FF', '#FFFF00', '#00FFFF']
-    const minDuration = 300;
-    const maxDuration = 600;
-
-    const generateUniqueHeightSequence = (minDuration: number, maxDuration: number, waveformHeight: number) => {
-      // Generate a unique sequence of animations for each rectangle
-      return withSequence(
-        withTiming(-Math.random() * waveformHeight, {
-          duration: Math.random() * (maxDuration - minDuration) + minDuration,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        withTiming(-Math.random() * waveformHeight, {
-          duration: Math.random() * (maxDuration - minDuration) + minDuration,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        withTiming(-Math.random() * waveformHeight, {
-          duration: Math.random() * (maxDuration - minDuration) + minDuration,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        withTiming(-Math.random() * waveformHeight, {
-          duration: Math.random() * (maxDuration - minDuration) + minDuration,
-          easing: Easing.inOut(Easing.ease),
-        })
-      );
-    };
-
-    const generateUniqueColorSequence = (minDuration: number, maxDuration: number) => {
-      //Color Sequence
-      return withSequence(
-        withTiming(colorTables[Math.floor(Math.random()*colorTables.length)], {
-          duration: Math.random()*(maxDuration-minDuration)+minDuration,
-          easing: Easing.inOut(Easing.ease),
-        }), 
-        withTiming(colorTables[Math.floor(Math.random()*colorTables.length)], {
-          duration: Math.random()*(maxDuration-minDuration)+minDuration,
-          easing: Easing.inOut(Easing.ease),
-        }), 
-        withTiming(colorTables[Math.floor(Math.random()*colorTables.length)], {
-          duration: Math.random()*(maxDuration-minDuration)+minDuration,
-          easing: Easing.inOut(Easing.ease),
-        }), 
-        withTiming(colorTables[Math.floor(Math.random()*colorTables.length)], {
-          duration: Math.random()*(maxDuration-minDuration)+minDuration,
-          easing: Easing.inOut(Easing.ease),
-        })
-      );
-    }
-
-    
-    const startAnimation = () => {
-      heightValues.forEach((height) => {
-        height.value = withRepeat(generateUniqueHeightSequence(minDuration, maxDuration, WAVEFORM_HEIGHT), Infinity, true);
-      });
-      color.value = withRepeat(
-        generateUniqueColorSequence(minDuration, maxDuration),
-      Infinity, true);
-    };
-
-    const stopAnimation = () => {
-      heightValues.forEach((height) => {
-        cancelAnimation(height);
-      });
-      cancelAnimation(color);
-    };
-
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [iconSize, setIconSize] = useState(32);
+  const [iconCenter, setIconCenter] = useState({ x: 0, y: 0 });
+  const [isEnabled, setIsEnabled] = useState(true);
+  const [ showZone, setShowZone ] = useState(false);
+  // const [ gestureEnabled, setGestureEnabled ] = useState(true);
 
     const toggleAnimation = () => {
-      if (isAnimating) {
-        stopAnimation();
-      } else {
-        startAnimation();
-      }
       setIsAnimating(!isAnimating);
     };
 
-    const SVG_WIDTH = 200
-    const RECT_WIDTH = 4
+    /*const pan = useRef(new Animated.ValueXY()).current;
+    const dropZoneValues = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+    const originalPosition = useRef({ x: 0, y: 0 });
+
+    useEffect(() => {
+      // Set the original position when the component mounts
+      pan.setValue(originalPosition.current);
+    }, [pan]);
+
+    const panResponder = useRef(
+      PanResponder.create({
+
+        onStartShouldSetPanResponder: () => {
+          console.log("ONPRESS IN");
+          setIconSize(48);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+          setIsReleased(false);
+          return true},
+
+        onPanResponderGrant: () => {
+          // console.log('onPanResponderGrant');
+        },
+
+        onPanResponderMove: (e, gesture) => {
+            // console.log("MOVE.",gesture);
+            if(!gestureEnabled) return;
+          if(isDropZone(gesture) && !isReleased){
+            setIsReleased(true);
+            console.log("Dropped into the special zone !");
+            // pan.removeAllListeners();
+            // panResponder.panHandlers.
+            forceRelease(e);
+          }
+          return Animated.event([null, { dx: pan.x, dy:pan.y}], {
+            useNativeDriver: false,
+          })(e, gesture)
+        },
+
+        onPanResponderRelease: (e, gesture) => {
+          setIconSize(32);
+          console.log("ON RELEASE !");
+          if(isDropZone(gesture)) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            console.log("Dropped into the special zone !");
+          }
+          // Animate back to the original position
+          Animated.spring(pan, {
+            toValue: originalPosition.current,
+            useNativeDriver: false,
+          }).start();
+          setGestureEnabled(true);
+        },
+      })
+    ).current;
+
+    const width_screen = Dimensions.get('window').width; // -D-
+    const width_mic_container = 70; // -A-
+    const width_mic_icon = 60       // -B-
+    const width_drop_zone = 170     // -C-
+    let max_dx_mvt;                 // ? -E-
+    
+    const height_mic_container = 70;  // -X-
+    const height_mic_icon = 60;       // -Y-
+    const height_drop_zone = 130;     // -Z-
+    let max_dy_mvt_pos, max_dy_mvt_neg;  // ? W+ et W-
+
+    const isDropZone = (gesture: React.PanResponderGestureState) => {
+      max_dx_mvt = width_screen-width_drop_zone-(width_mic_container-width_mic_icon);
+      max_dy_mvt_neg = height_drop_zone-height_mic_container;
+      max_dy_mvt_pos = height_mic_container-height_mic_icon;
+      const { dx, dy } = gesture;
+
+                                                                        // +50 car il y a la bottom tab bar en bas.
+      if(dx < -max_dx_mvt && dy > -max_dy_mvt_neg && dy < max_dy_mvt_pos + 50 ){
+        console.log(" ------- === INSIDE DROP ZONE === ------- !!!");
+        // forceRelease();
+        return true;
+      }
+      return false;
+    };
+
+    const forceRelease = (e: React.GestureResponderEvent) => {
+      setGestureEnabled(false);
+
+      console.log("Force Release");
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      // forceRelease();
+      pan.stopAnimation();
+      panResponder.panHandlers.onResponderTerminate?.(e);
+      pan.setValue(originalPosition.current);
+      // pan.removeAllListeners();
+      Animated.spring(pan, {
+        toValue: originalPosition.current,
+        useNativeDriver: false,
+      }).start();
+      // panResponder.panHandlers.onResponderEnd?.(e);
+      setTimeout(() => setGestureEnabled(true), 500);
+      // panResponder.panHandlers.term
+      // return 
+      
+    }
+
+    const handleIconLayout = (event) => {
+      const layout = event.nativeEvent.layout;
+      const centerX = layout.x + layout.width / 2;
+      const centerY = layout.y + layout.height / 2;
+      setIconCenter({ x: centerX, y: centerY });
+      // console.log("LAYOUT INCON :", layout);
+      // console.log('Icon Center:', { x: centerX, y: centerY });
+    };*/
+
+    const startX = useSharedValue(150);
+    const startY = useSharedValue(150);
+    const translateX = useSharedValue(0);
+    const translateY = useSharedValue(0);
+
+    const enableGesture = useSharedValue(true);
+
+    const width_screen = Dimensions.get('window').width; // -D-
+    const width_mic_container = 70; // -A-
+    const width_mic_icon = 60       // -B-
+    const width_drop_zone = 170     // -C-
+    let max_dx_mvt;                 // ? -E-
+    
+    const height_mic_container = 70;  // -X-
+    const height_mic_icon = 60;       // -Y-
+    const height_drop_zone = 130;     // -Z-
+    let max_dy_mvt_pos, max_dy_mvt_neg;  // ? W+ et W-
+
+      const isInDropZone = useCallback((x: number,y: number) => {
+        'worklet';
+        // console.log("drpZ :", DROP_ZONE);
+        max_dx_mvt = width_screen-width_drop_zone-(width_mic_container-width_mic_icon);
+        max_dy_mvt_neg = height_drop_zone-height_mic_container;
+        max_dy_mvt_pos = height_mic_container-height_mic_icon;
+        // +50 car il y a la bottom tab bar en bas.
+        if(x < -max_dx_mvt && y > -max_dy_mvt_neg && y < max_dy_mvt_pos + 50 ){
+          console.log("drpZ :");
+          // console.log(" ------- === INSIDE DROP ZONE === ------- !!!");
+          return true;
+        }
+        return false;
+      }, []);
+      
+      const onStartFunction = () => {
+        setIsEnabled(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        console.log("START");
+        setShowZone(true);
+        
+        //Afficher la DROP ZONE
+      }
+      
+      const onEndFunction = () => {
+        setIsEnabled(false);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        setShowZone(false);
+        setTimeout(() => {setIsEnabled(true)}, 250)
+      }
+
+      const panGesture = Gesture.Pan()
+      .enabled(isEnabled)
+      .onTouchesUp(() => { // Touch Up // relacher
+        console.log("UP");
+        runOnJS(onEndFunction)();
+
+      }).onTouchesDown(() => { //Touch down // appuyer
+        console.log("DOWN");
+        runOnJS(onStartFunction)();
+      })
+      // .activeOffsetY([-height_drop_zone-height_mic_container, height_mic_container-height_mic_icon])
+      // .activeOffsetX([-width_screen-width_drop_zone-(width_mic_container-width_mic_icon), 0])
+      // .activeOffsetY([-100, 100])
+      // .activeOffsetX([-100, 100])
+      // .failOffsetY([0, 0])
+      // .failOffsetX([0, 0])
+      .onStart((event) => { //Start Mouvement
+        // runOnJS(onStartFunction)();
+        // panGesture.enabled(true);
+      })
+      .onUpdate((event) => {
+        // console.log("EVT :",event);
+        translateX.value = event.translationX;
+        translateY.value = event.translationY;
+        // runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Soft);
+        if(isInDropZone(translateX.value , translateY.value)){
+          // runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Soft);
+          console.log("DROP ZONE ---- Do Not Save Vocal Message");
+          translateX.value = withSpring(0);
+          translateY.value = withSpring(0);
+          runOnJS(onEndFunction)();
+        }
+      })
+      .onEnd((event) => {
+        const finalX = translateX.value;
+        const finalY = translateY.value;
+        // if(isInDropZone(finalX, finalY)){
+        //   // runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Soft);
+        //   console.log("DROP ZONE ---- Do Not Save Vocal Message");
+        // }
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+        
+      })
+
+
+    // const gestureHandler = useAnimatedGestureHandler({
+    //   onStart: (_, ctx) => {
+    //     ctx.startX = translateX.value;
+    //     ctx.startY = translateY.value;
+    //   },
+    //   onActive: (event, ctx) => {
+    //     translateX.value = ctx.startX + event.translationX;
+    //     translateY.value = ctx.startY + event.translationY;
+    //   },
+    //   onEnd: (event) => {
+    //     const finalX = startX.value + translateX.value;
+    //     const finalY = startY.value + translateY.value;
+  
+    //     if (isInDropZone(finalX, finalY)) {
+    //       runOnJS(() => console.log("Dropped inside the zone!"))();
+    //     }
+  
+    //     // Reset position
+    //     translateX.value = withSpring(0);
+    //     translateY.value = withSpring(0);
+    //   },
+    // });
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+      ],
+    }));
+
+
+    const { width } = Dimensions.get("window");
+    const size = width*0.6;
+    const strokeWidth = 12;
+    const glowWidth = 16;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const rotate = useSharedValue(0);
+    useEffect(() => {
+      rotate.value = withRepeat(withTiming(360, { duration: 1500, easing: Easing.linear }), -1, false);
+    },[]);
+
+    const animatedStyleC = useAnimatedStyle(() => ({
+      transform: [{ rotate: `${rotate.value}deg`}],
+    }))
+    
     return (
       <>
         <Button title={isAnimating ? "Stop Animation" : "Start Animation"} onPress={toggleAnimation} />
         <AudioWaves svgWidth={200} svgHeight={50} waveformHeight={40} rectWidth={4} wavesNumber={20} yStart={10} isAnimating={!isAnimating}/>
+        {showZone ? 
+          <View style={styles.dropZone} />
+        :
+          <></>  
+        }
+        <GestureDetector gesture={panGesture}>
+          <Animated.View
+            style={[
+              styles.draggable,
+              animatedStyle
+            ]}
+            />
+        </GestureDetector>
+        <Animated.View style={[{ position: "absolute", marginTop:50 }, animatedStyleC]}>
+                    <Svg width={size+30} height={size+30} viewBox={`0 0 ${size} ${size}`}>
+                    <Defs>
+                        {/* <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <Stop offset="0%" stopColor="rgba(254, 103, 249, 0.6)" />
+                        <Stop offset="25%" stopColor="rgba(62, 213, 255, 0.6)" />
+                        <Stop offset="75%" stopColor="rgba(62, 213, 255, 0.6)" />
+                        <Stop offset="100%" stopColor="rgba(254, 103, 249, 0.6)" />
+                        </LinearGradient> */}
+                        <LinearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <Stop offset="0%" stopColor="rgba(254, 103, 249, 0.6)" />
+                        <Stop offset="25%" stopColor="rgba(62, 213, 255, 0.6)" />
+                        <Stop offset="75%" stopColor="rgba(62, 213, 255, 0.6)" />
+                        <Stop offset="100%" stopColor="rgba(254, 103, 249, 0.6)" />
+                        </LinearGradient>
+        
+                        {/* Outer Glow Gradient (Fades to White) */}
+                        <LinearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <Stop offset="0%" stopColor="rgba(254, 103, 249, 0.6)" stopOpacity="0.6" />
+                        <Stop offset="25%" stopColor="rgba(62, 213, 255, 0.6)" stopOpacity="0.6"/>
+                        <Stop offset="75%" stopColor="rgba(62, 213, 255, 0.6)"  stopOpacity="0.6"/>
+                        <Stop offset="100%" stopColor="rgba(254, 103, 249, 0.6)" stopOpacity="0.6"/>
+                        </LinearGradient>
+                        <LinearGradient id="glowGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <Stop offset="0%" stopColor="rgba(254, 103, 249, 0.8)" stopOpacity="0.4"/>
+                        <Stop offset="25%" stopColor="rgba(62, 213, 255, 0.8)" stopOpacity="0.4"/>
+                        <Stop offset="75%" stopColor="rgba(62, 213, 255, 0.8)" stopOpacity="0.4"/>
+                        <Stop offset="100%" stopColor="rgba(254, 103, 249, 0.8)" stopOpacity="0.4"/>
+                        </LinearGradient>
+                        <LinearGradient id="glowGradient3" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <Stop offset="0%" stopColor="rgba(254, 103, 249, 0.8)" stopOpacity="0.2"/>
+                        <Stop offset="25%" stopColor="rgba(62, 213, 255, 0.8)" stopOpacity="0.2"/>
+                        <Stop offset="75%" stopColor="rgba(62, 213, 255, 0.8)" stopOpacity="0.2"/>
+                        <Stop offset="100%" stopColor="rgba(254, 103, 249, 0.8)" stopOpacity="0.2"/>
+                        </LinearGradient>
+        
+                    </Defs>
+                    {/* Outer Glow Stroke (Fades Outward) */}
+                    <Circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius-10}
+                        stroke="url(#glowGradient)"
+                        strokeWidth={glowWidth} // Wider for glow effect
+                        fill="none"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference * 0}
+                        strokeLinecap="round"
+                        opacity={0.5} // Make it blend better
+                    />
+                    <Circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius-10}
+                        stroke="url(#glowGradient2)"
+                        strokeWidth={glowWidth+3} // Wider for glow effect
+                        fill="none"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference * 0}
+                        strokeLinecap="round"
+                        opacity={0.5} // Make it blend better
+                    />
+                    <Circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius-10}
+                        stroke="url(#glowGradient3)"
+                        strokeWidth={glowWidth+6} // Wider for glow effect
+                        fill="none"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference * 0}
+                        strokeLinecap="round"
+                        opacity={0.5} // Make it blend better
+                    />
+        
+                    {/* Main Stroke */}
+                    <Circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius-10}
+                        stroke="url(#mainGradient)"
+                        strokeWidth={strokeWidth}
+                        fill="none"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference * 0}
+                        strokeLinecap="round"
+                    />
+                    </Svg>
+                </Animated.View>
+        
+        {/* <View style={{borderColor:"red", borderWidth:1, width:"100%", height:250}}>
+          <TouchableOpacity onPressIn={()=>{
+                setTimeout(() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                    console.log("ON PRESS IN ! ABOUTSCREEN");
+                    setIconSize(48);
+                    // record();
+                  }, 0);
+                
+                }}
+                onPressOut={()=>{
+                  setTimeout(() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                    setIconSize(32);
+                    console.log("ON PRESS OUT ! ABOUTSCREEN");
+                    // stopRecording();
+                  }, 120);
+                }}
+                style={{padding: 8, backgroundColor: 'white', borderRadius: 50, elevation: 5, position: 'absolute', bottom: 1, right: 0}}
+                {...panResponder.current.panHandlers}
+              >
+                <Ionicons name={'mic-outline'} color={'black'} size={iconSize} />
+              </TouchableOpacity>
+        </View> */}
+        {/* <View style={styles.container}>
+          <View style={styles.dCont}>
+            <View
+              onLayout={(event) => {
+                const layout = event.nativeEvent.layout;
+                dropZoneValues.current = layout;
+                console.log("DROPZONE VALUES :", dropZoneValues);
+              }}
+              style={styles.dropZone}
+              >
+            <Text style={styles.text}>Drop Zone</Text>
+            </View>
+          </View>
+          <View style={styles.cCont}>
+            <TouchableOpacity onPress={() => {console.log("PRESS SIMPLE !!")}} onPressIn={() => {console.log("PRESS-IN! ! ! !")}} onPressOut={() => {console.log("PRESS-OUT !!!!")}}>
+
+            <Animated.View
+              {...panResponder.panHandlers}
+              style={[pan.getLayout(), styles.circle]}
+              onLayout={handleIconLayout}
+              >
+              <Ionicons name="mic-outline" size={iconSize} color="white" />
+            </Animated.View>
+            </TouchableOpacity>
+
+          </View>
+        </View> */}
       </>
       
-      // <View style={styles.container}>
-      //   {/* <Svg height="300" width="300">
-      //     <AnimatedRect animatedProps={animatedProps} width="100" x="100" y="50" />
-      //   </Svg> */}
-      //   <View style={{width:SVG_WIDTH, height:100, borderColor:"cyan", borderWidth:1}}>
-      //     <Svg width={SVG_WIDTH} height={100} style={{borderWidth:1, borderColor:"cyan"}}>
-      //       {waveform.map((item, index) => {
-      //         // const space= (SVG_WIDTH - (RECT_WIDTH * waveform.length)) / waveform.length
-      //         const space= (SVG_WIDTH / waveform.length)- RECT_WIDTH
-      //         console.log("SPACE : space", space);
-      //         return <AnimatedRect
-      //         key={index}
-      //         animatedProps={animatedProps[index]}    
-      //         x={index*(space+RECT_WIDTH)} 
-      //         y="98" 
-      //         width={RECT_WIDTH} 
-      //         />
-      //       })}
-      //     </Svg>
-      //   </View>
-      // </View>
+
     );
 }
 
@@ -156,5 +451,54 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#fff',
+  },
+  circle: {
+    borderColor:"green",borderWidth:1,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'blue',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // dropZone: {
+  //   width: 170,
+  //   height: 130,
+  //   backgroundColor: 'green',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  // },
+  cCont: {
+    position:"absolute",
+    right:0,
+    bottom:0,
+    width:70,
+    height:70,
+    borderColor:"yellow",borderWidth:1,
+  },
+  dCont: {
+    position:"absolute",
+    left:0,
+    bottom:0,
+    borderColor:"pink",borderWidth:2,
+
+  },
+  dropZone: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    width: DROP_ZONE.width,
+    height: DROP_ZONE.height,
+    backgroundColor: "rgba(0,0,255,0.2)",
+    borderRadius: 10,
+  },
+  draggable: {
+    width: DRAGGABLE_SIZE,
+    height: DRAGGABLE_SIZE,
+    backgroundColor: "red",
+    borderRadius: 30,
+    position: "absolute",
+    bottom:0,
+    right:0,
   },
 });
