@@ -23,11 +23,11 @@ const AudioRecorder = (props: any) =>{
   const [isRecording, setIsRecording] = useState<Boolean>(false);
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [permissionResponse, requestPermission] = Audio.usePermissions();
-  const [ iconSize, setIconSize ] = useState(32);
+  const [ iconSize, setIconSize ] = useState(props.iconSize);
   const [ showDeletionZone, setShowDeleteZone ] = useState(false);
   const [ isGestureEnabled, setIsGestureEnabled ] = useState(true);
-  const [ initialWidth, setInitialWidth ] = useState(48.72);
-  const [ itemWidth, setItemWidth ] = useState(48.72);
+  const [ initialWidth, setInitialWidth ] = useState(50);
+  const [ itemWidth, setItemWidth ] = useState(50);
   const [ saveInitialWidth, setSaveInitalWidth] = useState(true);
   const [ position, setPosition ] = useState({x:0, y:0});
   const [ sendingAudio, setSendingAudio] = useState(false);
@@ -299,15 +299,17 @@ const AudioRecorder = (props: any) =>{
     backgroundColor: 'white', 
     borderRadius: itemWidth/2, 
     elevation: 5, 
-    position: 'absolute', 
-    bottom: 1, 
-    right: 0,
+    // position: 'absolute', 
+    // bottom: 1, 
+    // right: 0,
     width:itemWidth,
     height:itemWidth,
-    left:2,
+    left:1.5,
+    // bottom:1,
     zIndex:15,
     justifyContent:"center",
     alignItems:"center",
+    // borderColor:"red", borderWidth:1
   },
 });
 

@@ -245,12 +245,21 @@ const ConversationScreen = () => {
                   console.log('Error in fetchMessages  when fetching messages in [...convId].tsx', messages_error);
                 }
             if(messages_data?.length != 0){
-            setMessages((prev) => {const data = [...prev, ...messages_data]; const uniqueData = Array.from(new Set(data)); return uniqueData});
-            setOffset(offset+PAGE_SIZE);
+                const newMessageArray: any = messages_data;
+                if(newMessageArray){
+                    for(let message of newMessageArray){
+                        if(message.type == 'attachment' || message.type == 'audio'){
+                            const result = await fetchAttachments(message.id);
+                            message.attachments = result;
+                        }
+                    }
+                    setMessages((prev) => {const data = [...prev, ...newMessageArray]; const uniqueData = Array.from(new Set(data)); return uniqueData});
+                    setOffset(offset+PAGE_SIZE);
+                }
             }else{
-            console.log("END REACHED NO MORE MESSAGES WILL BE LOADED...");
-            //Here put some infos about users in conv (carroussel with profiles)
-            setEndReached(true);
+                console.log("END REACHED NO MORE MESSAGES WILL BE LOADED...");
+                //Here put some infos about users in conv (carroussel with profiles)
+                setEndReached(true);
             }
         }catch(error: unknown){
           console.log('Error in fetchMessages function in [...convId].tsx', error);

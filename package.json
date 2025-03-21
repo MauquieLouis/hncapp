@@ -32,6 +32,7 @@
     "@gluestack-ui/pressable": "^0.1.20",
     "@gluestack-ui/radio": "^0.1.38",
     "@gluestack-ui/spinner": "^0.1.15",
+    "@gluestack-ui/textarea": "^0.1.24",
     "@gluestack-ui/toast": "^1.0.9",
     "@legendapp/motion": "^2.4.0",
     "@react-native-async-storage/async-storage": "^2.1.1",
