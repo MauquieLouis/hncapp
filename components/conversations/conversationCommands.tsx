@@ -1,17 +1,17 @@
 import React, { TouchableOpacity, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { Input, InputField } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { supabase } from '@/libs/initSupabase';
+import { Ionicons } from '@expo/vector-icons';
 import { HStack } from '@/components/ui/hstack';
 import { Box } from '@/components/ui/box';
-import { Input, InputField } from '@/components/ui/input';
-import { Text } from '@/components/ui/text';
-import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { supabase } from '@/libs/initSupabase';
 
-import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
+import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import AudioRecorder from './audioRecorder';
-import { Spinner } from '../ui/spinner';
+import { ImageManipulator, useImageManipulator } from 'expo-image-manipulator';
 
 
 const ConversationCommands = (props: any) => {
@@ -36,8 +36,28 @@ const ConversationCommands = (props: any) => {
         });
         if(!result.canceled){
             // setImages(result.assets[0].uri);
-            uploadImage(result.assets)
+            resizeImage(result.assets[0].uri);
+            uploadImage(result.assets);
         }
+    }
+
+    const compressImage = async(uri: string) => {
+        const fileSize = await FileSystem.getInfoAsync(uri).then(info => info.size);
+        const manipRes = await ImageManipulator.manipulate(uri).renderAsync();
+        if(fileSize > 500*1024){
+            return(manipRes.saveAsync({compress:0.5}));
+        }else if (fileSize > 1000*1024){
+            return(manipRes.saveAsync({compress:0.45}));
+        }else if(fileSize > 1600*1024) {
+            return(manipRes.saveAsync({compress:0.40}));
+        }
+    }
+
+    const compressVideo = async(uri: string) => {
+        /** TODO */
+        /**
+         * Find an open source library to compress video from local uri
+         */
     }
 
     /** ---------------------------------------------
@@ -47,6 +67,7 @@ const ConversationCommands = (props: any) => {
     const uploadImage = async (files: ImagePicker.ImagePickerAsset[]) => {
         try{
             //Create the attachement and send Message
+            setLoadingSend(true);
             const message_id = await sendTextMessage(true, 'attachment');
             console.log("message iD :", message_id);
             for(let file of files as ImagePicker.ImagePickerAsset[]){
@@ -74,10 +95,12 @@ const ConversationCommands = (props: any) => {
                     console.log("DATA UPLOAD:", data);
                 }else{
                     console.log("NOT A VIDEO :");
+                    const fileResized = await resizeImage(file.uri);
+                    const fileContent = await FileSystem.readAsStringAsync(fileResized.uri, {encoding: FileSystem.EncodingType.Base64});
                     const {data, error} = await supabase.storage.from('Conversations')
-                    .upload(convId+'/'+file.fileName, decode(file.base64 as string),
+                    .upload(convId+'/'+file.fileName, decode(fileContent as string),
                     {cacheControl: '3600', upsert:false, contentType:file.mimeType});
-                    if(error){
+                    if(error){ 
                         console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
                     }
                 }
@@ -86,7 +109,7 @@ const ConversationCommands = (props: any) => {
         }catch(error:unknown){
             console.log("Error in uploadImage function [...convId].tsx :", error);
         }finally{
-
+            setLoadingSend(false);
         }
     }
 

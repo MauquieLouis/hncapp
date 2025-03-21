@@ -369,8 +369,8 @@ const ConversationScreen = () => {
         }
     }
 
-    const renderItemFlatList = ({item}: {item: any}) => {
-        return <FlatListMessage message={item}/>
+    const renderItemFlatList = ({item, index}: {item: any, index: any}) => {
+        return <FlatListMessage message={item} previousTime={index === messages.length-1 || messages[index+1].created_at}/>
     }
 
     return(
@@ -396,14 +396,16 @@ const ConversationScreen = () => {
                             <Spinner size="large" color={"blue"}/>
                         </Center>  : null}
                         onScroll={handleScroll}
-                        ListHeaderComponent={<Box style={{height:50}}></Box>}
+                        ListHeaderComponent={<Box style={{height:70}}>
+                            {isSeen ? 
+                                <Box style={{height:70}}>
+                                    <Text style={{textAlign:'left'}}>SEEN !</Text>
+                                </Box>
+                            : null}
+                        </Box>}
                         // style={{borderColor:"red",borderWidth:1}}
                     />
-                    {isSeen ? 
-                        <Box>
-                            <Text style={{textAlign:'left'}}>SEEN !</Text>
-                        </Box>
-                    : null}
+                    
                     {Object.keys(typingUsers).length > 0 && (
                         <Text ml={4} color="$gray400">{Object.keys(typingUsers).join(", ")} is typing...</Text>
                         // <Text ml={4} color="$gray400">Someone is typing...</Text>

@@ -177,7 +177,7 @@ const AudioRecorder = (props: any) =>{
   const width_screen = Dimensions.get('window').width; // -D-
   const width_mic_container = itemWidth; // -A-
   const width_mic_icon = itemWidth       // -B-
-  const width_drop_zone = DROP_ZONE.width+15     // -C-
+  const width_drop_zone = DROP_ZONE.width+16    // -C-
   let max_dx_mvt;                 // ? -E-
   
   const height_mic_container = itemWidth;  // -X-
@@ -228,7 +228,7 @@ const AudioRecorder = (props: any) =>{
     setTimeout(() => {
       stopRecording(true);
       commonEndFunction();
-    }, 250);
+    }, 100);
     //Save vocal message here
     // console.log("Save vocal message");
   }
@@ -237,7 +237,7 @@ const AudioRecorder = (props: any) =>{
     setTimeout(() => {
       stopRecording(false);
       commonEndFunction();
-    }, 250);
+    }, 75);
     //Do not save the vocal message.
     // console.log("/!\\ Do NOT save vocal message /!\\")
   }

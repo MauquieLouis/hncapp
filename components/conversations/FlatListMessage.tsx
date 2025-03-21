@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import MessageActionSheet from "@/components/conversations/messageActionSheet";
 import { supabase } from "@/libs/initSupabase";
 import AudioPlayer from "./audioPlayer";
+import { Center } from "../ui/center";
 
 
 const FlatListMessage = (props: any) => {
@@ -106,8 +107,60 @@ const FlatListMessage = (props: any) => {
     //         onPress: () => {console.log("download msg Pressed"); deleteMessage();},
     //     }
     // }
+    const formatHour = (time: any) => {
+        let date = new Date(time);
+
+        let hours =date.getHours();
+        let minutes = date.getMinutes();
+
+        let formattedHours = hours < 10 ? '0' + hours : hours;
+        let formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+
+        return `${formattedHours}:${formattedMinutes}`
+    };
+
+    const sameHour = () => {
+        return formatHour(item.created_at) == formatHour(props.previousTime ) ? <></> : formatHour(item.created_at)
+    }
+
+    const formatDate = (time: any) => {
+        const date = new Date(time);
+        const year = date.getFullYear();
+        const month = (date.getMonth()+1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    const sameDate = () => {
+        return formatDate(item.created_at) == formatDate(props.previousTime) ? null : formatDate(item.created_at)
+    }
+
     return (
         <TouchableOpacity activeOpacity={1} onLongPress={handleLongPress}>
+            {sameDate() ? 
+                <Box style={{}}>
+                    <Center style={{}}>
+                        <Box style={{
+                            // borderColor:"green", 
+                            // borderWidth:1, 
+                            backgroundColor:'rgba(210,210,210,1)', 
+                            paddingLeft: 15, 
+                            paddingRight:15, 
+                            padding:3, 
+                            marginTop:10, 
+                            marginBottom:10,
+                            elevation:5,
+                            borderRadius:3
+                            }}>
+                            <Text>
+                                {sameDate()}
+                            </Text>
+                        </Box>
+                    </Center>
+                </Box>
+            :
+                <></>
+            }
             <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:5}}>
                 {/* {item.sender_id != user.id ? 
                 <Box style={{}} width={'20%'}>
@@ -117,7 +170,11 @@ const FlatListMessage = (props: any) => {
                 </Box>
                     : 
                 <></>} */}
+                    {/** PRINT HOUR */}
                     {renderMessageContent()}
+                    <Box style={{justifyContent:"center", alignItems:"center", paddingLeft:5, paddingRight:5}}>
+                        <Text style={{color:"rgba(120,120,120,0.7)"}}>{sameHour()}</Text>
+                    </Box>
             </HStack>
             <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
         </TouchableOpacity>

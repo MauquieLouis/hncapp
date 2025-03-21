@@ -125,7 +125,7 @@ const AudioPlayer = (props: any) => {
         backgroundColor = "blue";
         textColor= "white";
     }else{
-        backgroundColor = "grey";
+        backgroundColor = "#BABABA";
         textColor= "black";
     }
     const styles = StyleSheet.create({
