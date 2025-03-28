@@ -9,19 +9,21 @@ import { Pressable } from '@/components/ui/pressable';
 import { Button } from '@/components/ui/button';
 import { Box } from '@/components/ui/box';
 
-import { useUserContext } from '../../../contexts/userContext';
-import { supabase } from '../../../libs/initSupabase';
+import { useUserContext } from '../../contexts/userContext';
+import { supabase } from '../../libs/initSupabase';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 
 const ConversationsListScreen = () => {
     const [conv_data, setConvData] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [ myConversationsId, setMyConversationsId ] = useState<string[]>([]); 
     const { user } = useUserContext();
     const router = useRouter();
 
 
     useEffect(() => {
+        getMyConversationIdList();
         const fetchConversation = async() => {
             try{
                 setLoading(true);
@@ -39,7 +41,49 @@ const ConversationsListScreen = () => {
         };
         fetchConversation();
 
+        
+
     }, []);
+
+    useEffect(() => {
+        const insertChannel = supabase.channel(`conversation-List-messages-${user.id}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'messages'},
+            //This is working and not subscribing to all incoming message because, there is a policy that check a user can only read message of the conversation_participants he is in.
+            async (payload) => {
+                
+                // CREATE A WAITING TIME WHEN UPLOADING NEW IMAGE OR AUDIO, TO DISPLAY IT IN THE CONVERSATION
+                if(payload.new.type == 'attachment' || payload.new.type == 'audio'){
+                    console.log("New message received in list screen -> Attachment");
+                }
+                console.log("New message received in list screen");
+            }
+        ).subscribe();
+
+        return() => {
+            insertChannel.unsubscribe();
+        }
+    }, [myConversationsId])
+
+    const getMyConversationIdList = async() => {
+        try{
+            const { data, error } = await supabase
+            .from("conversation_participants")
+            .select("conversation_id")
+            .eq("user_id", user.id)
+            .is("deleted_at", null);
+            // console.log("DATA CONV LIST :", data);
+            if(error){
+                console.log("Error in getMyConversationIdList function when fetching conversations particpant table in conversationsList.tsx", error);
+            }
+            if(data){
+                setMyConversationsId(data.map((item: { conversation_id: string }) => item.conversation_id));
+            }
+        }catch(error: unknown){
+            console.log("Error in getMyConversationIdList function in conversationsList.tsx", error);
+        }finally{
+
+        }
+    }
 
     return(
         <>

@@ -1,16 +1,19 @@
-import React, { FlatList } from 'react-native';
+import React, { FlatList, Touchable, TouchableOpacity } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
-import { useUserContext } from '../../../contexts/userContext';
+import { useUserContext } from '../../contexts/userContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { supabase } from '../../../libs/initSupabase';
+import { supabase } from '../../libs/initSupabase';
 import { useLocalSearchParams } from 'expo-router';
 
 import FlatListMessage from '@/components/conversations/FlatListMessage';
-import { v6 as uuidv6 } from 'uuid';
 import ConversationCommands from '@/components/conversations/conversationCommands';
 import { Center } from '@/components/ui/center';
 import { Spinner } from '@/components/ui/spinner';
+import { MMKV, Mode } from 'react-native-mmkv';
+import * as FileSystem from 'expo-file-system';
+import { HStack } from '@/components/ui/hstack';
+import { Ionicons } from '@expo/vector-icons';
 
 const debounce = (func: { (): Promise<void>; apply?: any; }, delay: number | undefined) => {
     let debounceTimer: string | number | NodeJS.Timeout | undefined;
@@ -21,8 +24,19 @@ const debounce = (func: { (): Promise<void>; apply?: any; }, delay: number | und
     }
 }
 
-const ConversationScreen = () => {
+// const documentPath = FileSystem.documentDirectory;
+// console.log("DOCUMENT DIRECTORY Path :", documentPath);
 
+// export const storage = new MMKV({
+//     id: `user-test-storage`,
+//     path: `${documentPath}/storage`,
+//     encryptionKey: 'hunter2',
+//     mode: Mode.MULTI_PROCESS,
+// });
+
+
+const ConversationScreen = () => {
+    
     const PAGE_SIZE = 20; // If changing this, number, be careful of changing it in the rpc function that retrieve first messages at opening, maybe add a parameter for that.
 
     const [ loading, setLoading ] = useState(false);
@@ -39,15 +53,47 @@ const ConversationScreen = () => {
     const [ offset, setOffset ] = useState(PAGE_SIZE);
     const [ isAtBottom, setIsAtBottom ] = useState(true);
     const [ isSeen, setIsSeen ] = useState(false);
-    const [ images, setImages ] = useState(null);
     const [ loadingNewImage, setLoadingNewImage ] = useState(false);
+    const [ replyTo, setReplyTo ] = useState(null);
+    const [ replyToContent, setReplyToContent] = useState(null);
+    const [ replyToType, setReplyToType] = useState(null);
+    const [ scrollY, setScrollY ] = useState(0);
 
     const { convId } = useLocalSearchParams();
     const { user } = useUserContext();
+
     
     const flatListRef = useRef(null);
 
+    const checkIfConvExistLocally = () => {
+        return storage.contains(`${convId}-timestamp`)
+    }
+
+    const checkForTimestampDiff = async() => {
+        const last_local_timestamp = storage.getString(`${convId}-timestamp`);
+        try{
+            const { data, error } = await supabase.from('messages').select('created_at').gte('created_at', last_local_timestamp);
+            console.log("DATA :", data);
+            if(error){
+                console.log("Error in checkForTimestampDiff function when fetching last timestamp, in [...convId].tsx", error);
+            }
+        }catch(error: unknown){
+            console.log("Error in chechForTimeStampDiff function in [...convId].tsx",error);
+        }finally{
+
+        } 
+    }
+
+    let storage: MMKV;
     useEffect(() => {
+        storage = new MMKV({
+            id: `user-${user.id}-storage`,
+        });
+        if(checkIfConvExistLocally()){
+            checkForTimestampDiff();
+        }else{
+            
+        }
         const fetchConversationData = async () => {
             try{
                 setLoading(true);
@@ -69,7 +115,6 @@ const ConversationScreen = () => {
         fetchConversationData();
         subscribeToTypingStatus();
         subscrbeToMessagesStatus();
-        // console.log("UUID V6", uuidv6());
     }, []);
 
     const fetchAttachments = async(msg_id: string) => {
@@ -92,72 +137,59 @@ const ConversationScreen = () => {
         /** ---------------------------------------------------------------
          *  ==== ====  S U B S C R I B E   T O   M E S S A G E S  ==== ====
          */
-        const insertChannel = supabase.channel(`conversation-messages-${convId[0]}`)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]},
-            async (payload) => {
-                setIsSeen(false);
-                
-                // CREATE A WAITING TIME WHEN UPLOADING NEW IMAGE OR AUDIO, TO DISPLAY IT IN THE CONVERSATION
-                if(payload.new.type == 'attachment' || payload.new.type == 'audio'){
-                    setLoadingNewImage(true);
-                    console.log("NEW ATTACHMENT MESSAGE DETECTED :", payload);
-                    payload.new.attachments = [];
-                    let attempts = 0;
-                    let maxAttempts = 13;
-                    const delay= 900;
-                    let result;
-                    while(attempts < maxAttempts){
-                        console.log("attemps :", attempts);
-                        attempts++;
-                        console.log(`Waiting for file upload... Attempt ${attempts + 1}`);
-                        await new Promise((resolve) => setTimeout(resolve, delay));
-                        result = await fetchAttachments(payload.new.id);
-                        if(result){
-                            attempts = maxAttempts;
-                        }
-                    }
-                    payload.new.attachments = result;
-                }
-                setMessages((prev) => [ payload.new, ...prev]);
-                setOffset((prevOffset) => prevOffset + 1);
-                console.log("IS AT BOTTOM :", isAtBottom);
-                if(payload.new.user_id != user.id && isAtBottom){
-                    console.log("NOT SUPPOSED TO SCROLL TO BOTTOM !!!!");
-                    console.log("OFFSET :", offset);
-                    markMessageAsRead();
-                    // scrollToBottom();
-                }
-                setLoadingNewImage(false);
-            }
-        ).subscribe();
-
-        const deleteChannel = supabase.channel(`conversation-messages-deleted-${convId[0]}`)
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]},
-            (payload) => {
-                console.log("NEW DELETED OR UPDATED MESSAGE DETECTED :", payload.old.id);
-                if(messages){
-                    // const exists = messages.some(msg => msg.id === payload.old.id);
-                    const exists = messages.find(msg => msg.id === payload.old.id) !== undefined;
-                    if(!exists) return;
-                }
-                setMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
-                //SHOULD I CHANGE THE OFFSET ????? IDK REALLY KNOW NOW..
-                setOffset((prevOffset) => prevOffset - 1);
-                console.log("IS AT BOTTOM :", isAtBottom);
-                if(payload.new.user_id != user.id && isAtBottom){
-                    console.log("NOT SUPPOSED TO SCROLL TO BOTTOM !!!!");
-                    console.log("OFFSET :", offset);
-                    // markMessageAsRead();
-                    // scrollToBottom();
-                }
-            }
-        ).subscribe();
+        const insertAndDeleteChannels = supabase.channel(`conversation-messages-${convId[0]}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]}, handleReceivedMessage)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]}, handleDeletedMessage)
+        .subscribe();
 
         return() => {
-            insertChannel.unsubscribe();
-            deleteChannel.unsubscribe();
+            insertAndDeleteChannels.unsubscribe();
         };
     }, [isAtBottom, messages])
+
+    const handleDeletedMessage = (payload: any) => {
+        console.log("NEW DELETED OR UPDATED MESSAGE DETECTED :", payload.old.id);
+        if(messages){
+            const exists = messages.find(msg => msg.id === payload.old.id) !== undefined;
+            if(!exists) return;
+        }
+        setMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
+        setOffset((prevOffset) => prevOffset - 1);
+    }
+
+    const handleReceivedMessage = async (payload: any) => {
+        setIsSeen(false);
+        // CREATE A WAITING TIME WHEN UPLOADING NEW IMAGE OR AUDIO, TO DISPLAY IT IN THE CONVERSATION
+        if(payload.new.type == 'attachment' || payload.new.type == 'audio'){
+            setLoadingNewImage(true);
+            console.log("NEW ATTACHMENT MESSAGE DETECTED :", payload);
+            payload.new.attachments = [];
+            let attempts = 0;
+            let maxAttempts = 13;
+            const delay= 900;
+            let result;
+            while(attempts < maxAttempts){
+                console.log("attemps :", attempts);
+                attempts++;
+                console.log(`Waiting for file upload... Attempt ${attempts + 1}`);
+                await new Promise((resolve) => setTimeout(resolve, delay));
+                result = await fetchAttachments(payload.new.id);
+                if(result){
+                    attempts = maxAttempts;
+                }
+            }
+            payload.new.attachments = result;
+        }
+        setMessages((prev) => [ payload.new, ...prev]);
+        setOffset((prevOffset) => prevOffset + 1);
+        console.log("IS AT BOTTOM :", isAtBottom);
+        if(payload.new.user_id != user.id && isAtBottom){
+            console.log("NOT SUPPOSED TO SCROLL TO BOTTOM !!!!");
+            console.log("OFFSET :", offset);
+            markMessageAsRead();
+        }
+        setLoadingNewImage(false);
+    }
 
     /** -------------------------------------------------------
      *  ==== ====  S E N D   T E X T   M E S S A G E  ==== ====
@@ -175,6 +207,7 @@ const ConversationScreen = () => {
                 conversation_id: convId[0],
                 type: type, // Must be one of the following: 'text', 'attachment', 'file', 'audio', 'other'
                 has_attachment: has_attachement,
+                replied_to_id:replyTo
             }).select("id");
             console.log("SEND DATA :", send_data);
             if(send_error){
@@ -190,6 +223,7 @@ const ConversationScreen = () => {
             setIsSeen(false);
             setText('');
             setLoadingSend(false);
+            setReplyTo(null);
         }
         return message_id;
     };
@@ -223,9 +257,6 @@ const ConversationScreen = () => {
         }
       }
 
-    const delay = (ms: number): Promise<void> => {
-    return new Promise(resolve => setTimeout(resolve, ms));
-    };
     /** ----------------------------------------------------------
      *  ==== ====  L O A D   M O R E    M E S S A G E S  ==== ====
      * @returns 
@@ -300,14 +331,16 @@ const ConversationScreen = () => {
      *  ==== ====  H A N D L E   S C R O L L  ==== ====
      * @param event
      */
-    const handleScroll = (event) => {
+    const handleScroll = (event: { nativeEvent: { layoutMeasurement: any; contentOffset: any; contentSize: any; }; }) => {
         const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
         // Check if the user is at the bottom (with a small threshold)
         // const atBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 20;
         // Check if the user is at the top (small threshold to allow minor scrolling)
         const atTop = contentOffset.y <= 10; // Adjust threshold if needed
+        console.log("contentOffset", contentOffset.y);
+        setScrollY(contentOffset.y);
         setIsAtBottom(atTop); //It's call bottom here because flatlist is inverted.
-      };
+    };
 
     /** -------------------------------------------------------------------------
      *  ==== ====  S U B S C R I B E   T O   T Y P I N G   S T A T U S  ==== ====
@@ -379,7 +412,13 @@ const ConversationScreen = () => {
     }
 
     const renderItemFlatList = ({item, index}: {item: any, index: any}) => {
-        return <FlatListMessage message={item} previousTime={index === messages.length-1 || messages[index+1].created_at}/>
+        return <FlatListMessage 
+                    message={item} 
+                    previousTime={index === messages.length-1 || messages[index+1].created_at} 
+                    setReplyTo={setReplyTo}
+                    setReplyToContent={setReplyToContent}
+                    setReplyToType={setReplyToType} 
+                    scrollY={scrollY}/>
     }
 
     return(
@@ -405,20 +444,53 @@ const ConversationScreen = () => {
                             <Spinner size="large" color={"blue"}/>
                         </Center>  : null}
                         onScroll={handleScroll}
+                        scrollEventThrottle={16}
                         ListHeaderComponent={<Box style={{height:70}}>
                             {isSeen ? 
                                 <Box style={{height:70}}>
                                     <Text style={{textAlign:'left'}}>SEEN !</Text>
                                 </Box>
                             : null}
+                            
                         </Box>}
-                        // style={{borderColor:"red",borderWidth:1}}
                     />
                     
                     {Object.keys(typingUsers).length > 0 && (
                         <Text ml={4} color="$gray400">{Object.keys(typingUsers).join(", ")} is typing...</Text>
                         // <Text ml={4} color="$gray400">Someone is typing...</Text>
                     )}
+                    {replyTo ? 
+                            <Box style={{
+                                borderColor:"rgba(0, 0, 0, 0.15)",
+                                borderWidth:1,
+                                width:"66%",
+                                padding:3,
+                                height:50,
+                                // bottom:40,
+                                backgroundColor:"rgba(255,255,255,0.7)",
+                                marginLeft:6,
+                                borderRadius:10,
+                                position:'absolute',
+                                bottom:40, 
+                                left:0
+                            }}>
+                                <HStack>
+                                    <Box style={{padding:5, backgroundColor:"rgba(220,220,220,0.4)", borderRadius:10}}>
+                                        <Ionicons name={'return-up-back-outline'} color={'blue'} size={32}/>
+                                    </Box>
+                                    <Box style={{justifyContent:'center', alignItems:'center', paddingLeft:5}}>
+                                        <Text numberOfLines={1}>
+                                            {replyToContent}
+                                            {replyToType == 'attachment' ? <Ionicons name={'image-outline'} color={'blue'} size={23}/> : null}
+                                            {replyToType == 'audio' ? <Ionicons name={'mic-outline'} color={'blue'} size={23}/> : null}
+                                        </Text>
+                                    </Box>
+                                    <TouchableOpacity onPress={() => {setReplyTo(null); setReplyToContent(null); setReplyToType(null)}} style={{position:'absolute',right:0}}>
+                                        <Ionicons name={'close-circle-outline'} color={'blue'} size={32}/>
+                                    </TouchableOpacity>
+                                </HStack>
+                            </Box> 
+                            : null}
                     <ConversationCommands
                         convId={convId}
                         sendTextMessage={sendTextMessage}

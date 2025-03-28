@@ -88,7 +88,8 @@ const ImageDisplay = (props: any) => {
                     attachments:attachments.attachments,
                     resizeMode:resizeMode,
                     modalOpen:props.modal,
-                    actionSheetTable:props.actionSheetTable
+                    actionSheetTable:props.actionSheetTable,
+                    openModalIconFunction:props.openModalIconFunction,
                 })}
                 scrollAnimationDuration={460}
                 onConfigurePanGesture={(gesture) => {
@@ -104,48 +105,48 @@ const ImageDisplay = (props: any) => {
                 :
                 <>
                     {attachmentsUrls != null && attachmentsUrls.length && attachmentsUrls[0] != 'null' ? 
-                        <TouchableOpacity onPress={() => {props.openModal(0)}} activeOpacity={1} onLongPress={() => {Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);props.openActionSheetFunction(0);}}>
-                        <Center style={{ 
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width:"100%",
-                            height: height2,
-                             }}>
-                                {attachments.attachments[0].type.startsWith("video/") ? 
-                                <>
-                                    {props.modal == false ?
-                                        <>
-                                        <VideoThumbNail uri={attachmentsUrls[0]} width={width} height={height} borderRadius={15} resizeMode={resizeMode}/>
-                                            <View style={styles.overlay}>
-                                                <View style={styles.overlayVideo}>
-                                                    <Ionicons name={'videocam-outline'} color={'white'} size={26}/>
+                        <TouchableOpacity onPress={() => {props.openModal(0)}} activeOpacity={1} onLongPress={() => {
+                            console.log("attch", props.attachment.id);
+                            // props.calculPositionFunction(props.attachment.id);
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            // props.openActionSheetFunction(0);
+                            props.openModalIconFunction();
+                            }}>
+                            <Center style={{ 
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width:"100%",
+                                height: height2,
+                                }}>
+                                    {attachments.attachments[0].type.startsWith("video/") ? 
+                                    <>
+                                        {props.modal == false ?
+                                            <>
+                                            <VideoThumbNail uri={attachmentsUrls[0]} width={width} height={height} borderRadius={15} resizeMode={resizeMode}/>
+                                                <View style={styles.overlay}>
+                                                    <View style={styles.overlayVideo}>
+                                                        <Ionicons name={'videocam-outline'} color={'white'} size={26}/>
+                                                    </View>
                                                 </View>
-                                            </View>
-                                        </>
+                                            </>
+                                        : 
+                                            <VideoPlayer uri={attachmentsUrls[0]} width={width} height={height} borderRadius={15} resizeMode={resizeMode}/>
+                                        }
+                                    </>
                                     : 
-                                        <VideoPlayer uri={attachmentsUrls[0]} width={width} height={height} borderRadius={15} resizeMode={resizeMode}/>
+                                        <Image
+                                        width={width}
+                                        height={height}
+                                        // style={[{}]}
+                                        borderRadius={15}
+                                        elevation={5}
+                                        size='none'
+                                        source={attachmentsUrls[0]}
+                                        alt={"One CenteredPicture sended"}
+                                        resizeMode={resizeMode}
+                                        />
                                     }
-                                </>
-                                : 
-                                    <Image
-                                    width={width}
-                                    height={height}
-                                    // style={[{}]}
-                                    borderRadius={15}
-                                    elevation={5}
-                                    size='none'
-                                    source={attachmentsUrls[0]}
-                                    alt={"One CenteredPicture sended"}
-                                    resizeMode={resizeMode}
-                                    />
-                                    // <ZoomableImage
-                                    //     uri={attachmentsUrls[0]}
-                                    //     width={width}
-                                    //     height={height}
-                                    //     resizeMode={resizeMode}
-                                    // />
-                                }
-                        </Center>
+                            </Center>
                         </TouchableOpacity>
                         :
                         <></>}
@@ -273,7 +274,8 @@ const Attachment = (props: any) => {
                                 openActionSheetFunction={openActionSheetFunction} 
                                 actionSheetTable={actionSheetTable}
                                 setIndexOpenModal={setIndexOpenModal}
-                                indexOpenModal={indexOpenModal}/>
+                                indexOpenModal={indexOpenModal}
+                                openModalIconFunction={props.openModalIconFunction}/>
                         </Box>
                     </Box> 
                 </HStack>
@@ -297,13 +299,12 @@ const Attachment = (props: any) => {
                         openActionSheetFunction={openActionSheetFunction} 
                         actionSheetTable={actionSheetTable}
                         setIndexOpenModal={setIndexOpenModal}
-                        indexOpenModal={indexOpenModal}/>
+                        indexOpenModal={indexOpenModal}
+                        openModalIconFunction={props.openModalIconFunction}/>
                 </ModalContent> 
             </Modal>
             <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
-            {/* <MessageActionSheet items={actionSheetTable} showActionSheet={showModalActionSheet} onCloseActionSheet={onCloseModalActionSheet}/> */}
         </>
-
     )
 }
 

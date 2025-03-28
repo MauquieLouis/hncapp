@@ -13,6 +13,9 @@ import * as Device from 'expo-device';
 
 import Auth from "./auth/Login";
 import "@/global.css";
+import MainFile from "./MainFile";
+import { MMKV } from "react-native-mmkv";
+import * as FileSystem from 'expo-file-system';
 
 
 Notifications.setNotificationHandler({
@@ -128,13 +131,14 @@ const updateOrInsertDeviceToken = async(userId: any, device_token: any) => {
   }
 }
 
+
 const MainStack = () => {
   
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
   const { session, loading, user } = useUserContext();
+
   console.log("SESSION:");
-  
   const notificationListener = useRef<Notifications.EventSubscription>();
   const responseListener = useRef<Notifications.EventSubscription>();
   useEffect(() => {
@@ -149,12 +153,30 @@ const MainStack = () => {
         responseListener.current && Notifications.removeNotificationSubscription(responseListener.current);
       }
     }, []);
+
+    const documentPath = FileSystem.documentDirectory;
+    // console.log("DOCUMENT DIRECTORY Path :", documentPath);
+    let storage: MMKV;
+    
     
     useEffect(() => {
       if(session && expoPushToken){
         console.log("USER AND TOKEN", user.id, expoPushToken);
         updateOrInsertDeviceToken(user.id, expoPushToken);
+        
       }
+      if(session){
+        storage = new MMKV({
+          id: `user-${user.id}-storage`,
+        });
+        // console.log("STORAGE :", storage);
+      }
+      // const storedData = storage.getString('myKey');
+      // if(storedData !== undefined){
+      //   console.log("NO STORED DATA 1");
+      // }else{
+      //   console.log("NO STORED DATA 2");
+      // }
     }, [expoPushToken, session]);
 
   return (
@@ -178,11 +200,13 @@ const MainStack = () => {
       // </View> */}
        {session ?
         <>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          {/* <Stack>
+            <Stack.Screen name="index"  />
+            <Stack.Screen name="conversations" options={{ headerShown: false }} />
             <Stack.Screen name="+not-found" />
           </Stack>
-          <StatusBar style="dark" />
+          <StatusBar style="dark" /> */}
+          <MainFile/>
         </> 
         :
         <Auth/>

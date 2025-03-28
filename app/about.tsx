@@ -195,12 +195,6 @@ export default function AboutScreen() {
         console.log("DOWN");
         runOnJS(onStartFunction)();
       })
-      // .activeOffsetY([-height_drop_zone-height_mic_container, height_mic_container-height_mic_icon])
-      // .activeOffsetX([-width_screen-width_drop_zone-(width_mic_container-width_mic_icon), 0])
-      // .activeOffsetY([-100, 100])
-      // .activeOffsetX([-100, 100])
-      // .failOffsetY([0, 0])
-      // .failOffsetX([0, 0])
       .onStart((event) => { //Start Mouvement
         // runOnJS(onStartFunction)();
         // panGesture.enabled(true);
@@ -221,10 +215,6 @@ export default function AboutScreen() {
       .onEnd((event) => {
         const finalX = translateX.value;
         const finalY = translateY.value;
-        // if(isInDropZone(finalX, finalY)){
-        //   // runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Soft);
-        //   console.log("DROP ZONE ---- Do Not Save Vocal Message");
-        // }
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
         

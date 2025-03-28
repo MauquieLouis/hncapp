@@ -30,6 +30,7 @@ interface Props extends AnimatedProps<ViewProps> {
   resizeMode?: string;
   modalOpen?: boolean;
   actionSheetTable?: object;
+  openModalIconFunction?: Function;
 }
 
 export const SlideItem: React.FC<Props> = (props) => {
@@ -40,7 +41,7 @@ export const SlideItem: React.FC<Props> = (props) => {
   const openActionSheetFunction = (_index: any) => { 
       setShowActionSheet(true); 
   };
-  const { style, index = 0, rounded = false, testID, imagesArray, openModal, attachments, resizeMode, modalOpen, actionSheetTable, ...animatedViewProps } = props;
+  const { style, index = 0, rounded = false, testID, imagesArray, openModal, attachments, resizeMode, modalOpen, actionSheetTable, openModalIconFunction, ...animatedViewProps } = props;
 
   const source = useMemo(
     () => props.source || imagesArray[index % imagesArray.length],
@@ -54,7 +55,14 @@ export const SlideItem: React.FC<Props> = (props) => {
 
   return (
     <Animated.View testID={testID} style={{ flex: 1, elevation:5, borderRadius:15 }} {...animatedViewProps}>
-      <TouchableOpacity onPress={() => openModal && openModal(index)} activeOpacity={1} style={{ height:"100%"}} onLongPress={() => {console.log("Long Pressed", index);  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); openActionSheetFunction(index)}}>
+      <TouchableOpacity 
+        onPress={() => openModal && openModal(index)} activeOpacity={1} style={{ height:"100%"}} 
+        onLongPress={() => {
+          console.log("Long Pressed", index);  
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
+          openModalIconFunction && openModalIconFunction();
+          // openActionSheetFunction(index);
+        }}>
         {type.startsWith("video/") ? 
           <>
           {modalOpen == false ?
@@ -96,7 +104,8 @@ export const SlideItem: React.FC<Props> = (props) => {
         </View>
       </TouchableOpacity>
       {modalOpen ? <></> :
-      <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
+      <></>
+      // <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
       }
     </Animated.View>
   );

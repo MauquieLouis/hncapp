@@ -12,10 +12,12 @@ interface Options {
   resizeMode?: string;
   modalOpen?: boolean;
   actionSheetTable?: object;
+  openModalIconFunction?: Function;
+  
 }
 
 export const renderItem =
-  ({ rounded = false, style, imagesArray, openModalFunction, attachments, resizeMode, modalOpen, actionSheetTable }: Options = {}): CarouselRenderItem<any> =>
+  ({ rounded = false, style, imagesArray, openModalFunction, attachments, resizeMode, modalOpen, actionSheetTable, openModalIconFunction }: Options = {}): CarouselRenderItem<any> =>
   ({ index }: { index: number }) => (
       <SlideItem 
         key={index} 
@@ -27,5 +29,6 @@ export const renderItem =
         attachments={attachments} 
         resizeMode={resizeMode}
         modalOpen={modalOpen}
-        actionSheetTable={actionSheetTable}/>
+        actionSheetTable={actionSheetTable}
+        openModalIconFunction={openModalIconFunction}/>
   );

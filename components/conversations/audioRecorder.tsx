@@ -40,7 +40,6 @@ const AudioRecorder = (props: any) =>{
   const measurePosition = () => {
     if(viewRef.current){
       viewRef.current.measure((x: any, y: any, width: any, height: any, pageX: any, pageY: any) => {
-        console.log("Position", x,y,width,height,pageX,pageY);
         setPosition({ x: pageX, y: pageY });
       });
     }

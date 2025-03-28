@@ -14,6 +14,7 @@ import AudioRecorder from './audioRecorder';
 import { ImageManipulator, useImageManipulator } from 'expo-image-manipulator';
 import { Textarea, TextareaInput } from '../ui/textarea';
 import { TextInput } from 'react-native';
+import { v6 as uuidv6 } from 'uuid';
 
 
 const ConversationCommands = (props: any) => {
@@ -73,7 +74,7 @@ const ConversationCommands = (props: any) => {
         });
         if(!result.canceled){
             // setImages(result.assets[0].uri);
-            resizeImage(result.assets[0].uri);
+            // compressImage(result.assets[0].uri);
             uploadImage(result.assets);
         }
     }
@@ -132,7 +133,7 @@ const ConversationCommands = (props: any) => {
                     console.log("DATA UPLOAD:", data);
                 }else{
                     console.log("NOT A VIDEO :");
-                    const fileResized = await resizeImage(file.uri);
+                    const fileResized = await compressImage(file.uri);
                     const fileContent = await FileSystem.readAsStringAsync(fileResized.uri, {encoding: FileSystem.EncodingType.Base64});
                     const {data, error} = await supabase.storage.from('Conversations')
                     .upload(convId+'/'+file.fileName, decode(fileContent as string),
@@ -216,7 +217,6 @@ const ConversationCommands = (props: any) => {
 
     const handleContentSizeChange = (event: any) => {
         const contentHeight = event.nativeEvent.contentSize.height;
-        console.log("CONTENT height", contentHeight);
         if (contentHeight <= maxHeight) {
             setInputHeight(contentHeight);
         } else {

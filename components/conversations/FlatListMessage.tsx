@@ -1,28 +1,41 @@
-import React, { StyleSheet, TouchableOpacity} from "react-native";
-import { memo, useCallback, useState } from "react";
+import React, { Dimensions, StyleSheet, TouchableOpacity} from "react-native";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Text } from "@/components/ui/text";
 import { Box } from "@/components/ui/box";
 import { HStack } from '@/components/ui/hstack';
 import { useUserContext } from "@/contexts/userContext";
 import Attachment from "./attachment";
 import * as Haptics from 'expo-haptics';
-import MessageActionSheet from "@/components/conversations/messageActionSheet";
 import { supabase } from "@/libs/initSupabase";
 import AudioPlayer from "./audioPlayer";
 import { Center } from "../ui/center";
+import ModalIcon from "./modalIcon";
+import { Ionicons } from "@expo/vector-icons";
 
 
 const FlatListMessage = (props: any) => {
 
-    const [ showActionSheet, setShowActionSheet ] = useState(false);
-    const { user } = useUserContext();
+    // const [ showActionSheet, setShowActionSheet ] = useState(false);
+    const [ modalIconPosition, setModalIconPosition ] = useState(0);
+    // const [ modalActionPosition, setModalActionPosition ] = useState(0);
+    const [ modalIcon, setModalIcon ] = useState(false);
 
-    const onCloseActionSheet = () => setShowActionSheet(false);
-    const openActionSheetFunction = () => { 
-        setShowActionSheet(true); 
-    };
+    const { user } = useUserContext();
     
     const item = props.message;
+    const boxRef = useRef(null);
+
+    // const onCloseActionSheet = () => setShowActionSheet(false);
+    const onCloseModalIcon = () => setModalIcon(false);
+
+    const openModalIconFunction = () => {
+        setModalIcon(true);
+        calculatePositionToDisplay(item.id);
+    }
+    // const openActionSheetFunction = () => { 
+    //     setShowActionSheet(true); 
+    //     calculatePositionToDisplay(item.id)
+    // };
     
 
     const deleteMessage = useCallback(async () => {
@@ -55,14 +68,22 @@ const FlatListMessage = (props: any) => {
 
     const handleLongPress = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        openActionSheetFunction()
-    }, [openActionSheetFunction]);
+        openModalIconFunction()
+    }, [openModalIconFunction]);
+
+    // useEffect(() => {
+    //     console.log("MODAL ICON POSITION :", modalIconPosition);
+    // },[modalIconPosition]);
 
 
     const renderMessageContent = () => {
         switch(item.type) {
         case 'attachment':
-            return <Attachment item={item} deleteFunction={deleteMessage}/>
+            return <Attachment 
+                        item={item} 
+                        deleteFunction={deleteMessage}
+                        openModalIconFunction={openModalIconFunction} 
+                    />
         case 'audio':
             return <AudioPlayer item={item}/>
         default:
@@ -92,8 +113,17 @@ const FlatListMessage = (props: any) => {
     const actionSheetTable: { [key: string]: { icon: string; onPress: () => void; } } = {
         "info": {
             icon: "information-circle-outline",
-            onPress: () => {console.log("Info Pressed")},
+            onPress: () => {console.log("Info Pressed, id :", item.id); onCloseModalIcon();},
         },
+        "answer": {
+            icon: "return-up-back-outline",
+            onPress: () => {
+                console.log("Answer Pressed"); 
+                props.setReplyTo(item.id); 
+                props.setReplyToType(item.type);
+                props.setReplyToContent(item.content);
+                onCloseModalIcon();},
+        }
     }
     if(item.sender_id == user.id){
         actionSheetTable["delete"] = {
@@ -101,12 +131,16 @@ const FlatListMessage = (props: any) => {
             onPress: () => {console.log("Delete msg Pressed"); deleteMessage();},
         }
     }
-    // if(item.type=='attachment'){
-    //     actionSheetTable["download"] = {
-    //         icon: "download-outline",
-    //         onPress: () => {console.log("download msg Pressed"); deleteMessage();},
-    //     }
+    if(item.type=='attachment'){
+        actionSheetTable["download"] = {
+            icon: "save-outline",
+            onPress: () => {console.log("download all attach msg Pressed");},
+        }
+    }
+    // if(item.type == 'attachment'){
+        
     // }
+
     const formatHour = (time: any) => {
         let date = new Date(time);
 
@@ -120,7 +154,11 @@ const FlatListMessage = (props: any) => {
     };
 
     const sameHour = () => {
-        return formatHour(item.created_at) == formatHour(props.previousTime ) ? <></> : formatHour(item.created_at)
+        return formatHour(item.created_at) == formatHour(props.previousTime ) ? sameDateTime() : formatHour(item.created_at)
+    }
+
+    const sameDateTime = () => {
+        return formatDate(item.created_at) == formatDate(props.previousTime) ? <></> : formatHour(item.created_at);
     }
 
     const formatDate = (time: any) => {
@@ -135,49 +173,128 @@ const FlatListMessage = (props: any) => {
         return formatDate(item.created_at) == formatDate(props.previousTime) ? null : formatDate(item.created_at)
     }
 
-    return (
-        <TouchableOpacity activeOpacity={1} onLongPress={handleLongPress}>
-            {sameDate() ? 
-                <Box style={{}}>
-                    <Center style={{}}>
-                        <Box style={{
-                            // borderColor:"green", 
-                            // borderWidth:1, 
-                            backgroundColor:'rgba(210,210,210,1)', 
-                            paddingLeft: 15, 
-                            paddingRight:15, 
-                            padding:3, 
-                            marginTop:10, 
-                            marginBottom:10,
-                            elevation:5,
-                            borderRadius:3
-                            }}>
-                            <Text>
-                                {sameDate()}
-                            </Text>
-                        </Box>
-                    </Center>
-                </Box>
-            :
-                <></>
+
+    const calculatePositionToDisplay = (messageId: any) => {
+        console.log("CALCULATE POSITION");
+        if(boxRef.current){
+            boxRef.current.measure((x: any, y: any, width: any, height: any, pageX: any, pageY: any)=> {
+                console.log("==================================== MSG POS ====================================")
+                console.log("Info x :", x," - y :", y);
+                console.log("Info width :", width," - height :", height);
+                console.log("Info pageX :", pageX," - pageY :", pageY);
+                console.log(pageY+props.scrollY,">",2*Dimensions.get('window').height/3);
+                console.log("==================================== MSG POS ====================================")
+                //If the message is at the bottom of the screen, the modal will be displayed at the top of the message
+                let pageYScroll;
+                if( pageY+props.scrollY > Dimensions.get('window').height || pageY+props.scrollY <0)
+                {
+                    pageYScroll = pageY
+                }else{
+                    pageYScroll = pageY+props.scrollY;
+                }
+                    if(pageYScroll > Dimensions.get('window').height/2){
+                        console.log('bottom message so modal top');
+                        setModalIconPosition(pageYScroll);
+                        //Else if the message is at the top of the screen, the modal will be displayed at the bottom of the message
+                    }else{
+                        console.log('top message so modal bottom');
+                        setModalIconPosition(pageYScroll+height);
+                    }
+            });
+        }
+    }
+
+    const addMessageReaction = async(reaction: string) => {
+        console.log("REACTION :", reaction);
+        try{
+            const { data: data_reaction, error: error_reaction } = await supabase.from('message_reactions').upsert(
+                {message_id:item.id, reaction:reaction, user_id:user.id}, { onConflict: "message_id,user_id" }
+            ).select();
+            if(error_reaction){
+                console.log("Error in addMessageReaction function when adding reaction in components/flatListMessage.tsx file :", error_reaction);
             }
-            <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:5}}>
-                {/* {item.sender_id != user.id ? 
-                <Box style={{}} width={'20%'}>
-                    <Text>
-                        {item.sender_id}
-                    </Text>
-                </Box>
-                    : 
-                <></>} */}
-                    {/** PRINT HOUR */}
-                    {renderMessageContent()}
-                    <Box style={{justifyContent:"center", alignItems:"center", paddingLeft:5, paddingRight:5}}>
-                        <Text style={{color:"rgba(120,120,120,0.7)"}}>{sameHour()}</Text>
+        }catch(error: unknown){
+            console.log("Error in addMessageReaction function in components/flatListMessage.tsx file :", error);
+        }finally{
+
+        }
+    }
+
+    return (
+        <>
+            <TouchableOpacity activeOpacity={1} onLongPress={handleLongPress} ref={boxRef}>
+            
+                {sameDate() ? 
+                    <Box style={{}}>
+                        <Center style={{}}>
+                            <Box style={{
+                                // borderColor:"green", 
+                                // borderWidth:1, 
+                                backgroundColor:'rgba(210,210,210,1)', 
+                                paddingLeft: 15, 
+                                paddingRight:15, 
+                                padding:3, 
+                                marginTop:10, 
+                                marginBottom:10,
+                                elevation:5,
+                                borderRadius:3
+                                }}>
+                                <Text>
+                                    {sameDate()}
+                                </Text>
+                            </Box>
+                        </Center>
                     </Box>
-            </HStack>
-            <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
-        </TouchableOpacity>
+                :
+                    <></>
+                }
+                <>
+                {item.replied_to_id ? 
+                    <Box style={{position:'absolute',
+                        right:item.sender_id == user.id ? 0 : undefined,
+                        left:item.sender_id != user.id ? 0 : undefined,
+                        padding:8,
+                        borderColor:"rgba(200, 200, 200, 0.4)",
+                        backgroundColor:"rgba(210, 210, 210, 0.5)",
+                        borderWidth:2,
+                        marginHorizontal:3,
+                        borderRadius:10,
+                        top:3,
+                        maxWidth:'72%',
+                    }}>
+                        <HStack>
+                            <Ionicons name={'arrow-redo-outline'} size={20} color={'rgba(0, 0, 200, 0.8)'}/>
+                            <Text numberOfLines={1} style={{width:"90%"}}>RESPONSE TEXT HERE IM testing more more more more</Text>
+                        </HStack>
+                    </Box>
+                :<></>}
+                </>
+                <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:5, marginTop:item.replied_to_id? 33:0}}>
+                    {/* {item.sender_id != user.id ? 
+                    <Box style={{}} width={'20%'}>
+                        <Text>
+                            {item.sender_id}
+                        </Text>
+                    </Box>
+                        : 
+                    <></>} */}
+                        {/** PRINT HOUR */}
+                        {renderMessageContent()}
+                        <Box style={{justifyContent:"center", alignItems:"center", paddingLeft:5, paddingRight:5}}>
+                            <Text style={{color:"rgba(120,120,120,0.7)"}}>{sameHour()}</Text>
+                        </Box>
+                </HStack>
+            </TouchableOpacity>
+
+            <ModalIcon 
+                items={actionSheetTable}
+                isOpen={modalIcon} 
+                onClose={onCloseModalIcon} 
+                modalIconPosition={modalIconPosition} 
+                myMessage={item.sender_id === user.id}
+                onPress={addMessageReaction}
+            />
+        </>
     )
 }
 
