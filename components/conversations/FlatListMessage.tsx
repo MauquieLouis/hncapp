@@ -11,14 +11,17 @@ import AudioPlayer from "./audioPlayer";
 import { Center } from "../ui/center";
 import ModalIcon from "./modalIcon";
 import { Ionicons } from "@expo/vector-icons";
+import { VStack } from "../ui/vstack";
+import ReactionActionSheet from "./reactionActionSheet";
 
 
 const FlatListMessage = (props: any) => {
 
     // const [ showActionSheet, setShowActionSheet ] = useState(false);
     const [ modalIconPosition, setModalIconPosition ] = useState(0);
-    // const [ modalActionPosition, setModalActionPosition ] = useState(0);
+    const [ showReactionActionSheet, setShowReactionActionSheet ] = useState(false);
     const [ modalIcon, setModalIcon ] = useState(false);
+    // const [ modalActionPosition, setModalActionPosition ] = useState(0);
 
     const { user } = useUserContext();
     
@@ -27,6 +30,7 @@ const FlatListMessage = (props: any) => {
 
     // const onCloseActionSheet = () => setShowActionSheet(false);
     const onCloseModalIcon = () => setModalIcon(false);
+    const onCloseReactionActionSheet = () => setShowReactionActionSheet(false);
 
     const openModalIconFunction = () => {
         setModalIcon(true);
@@ -205,10 +209,10 @@ const FlatListMessage = (props: any) => {
     }
 
     const addMessageReaction = async(reaction: string) => {
-        console.log("REACTION :", reaction);
+        console.log("REACTION :", reaction, props.convId);
         try{
             const { data: data_reaction, error: error_reaction } = await supabase.from('message_reactions').upsert(
-                {message_id:item.id, reaction:reaction, user_id:user.id}, { onConflict: "message_id,user_id" }
+                {message_id:item.id, reaction:reaction, user_id:user.id, conversation_id:props.convId[0]}, { onConflict: "message_id,user_id" }
             ).select();
             if(error_reaction){
                 console.log("Error in addMessageReaction function when adding reaction in components/flatListMessage.tsx file :", error_reaction);
@@ -216,20 +220,39 @@ const FlatListMessage = (props: any) => {
         }catch(error: unknown){
             console.log("Error in addMessageReaction function in components/flatListMessage.tsx file :", error);
         }finally{
+            setModalIcon(false);
 
         }
     }
 
+    const deleteMessageReaction = async() => {
+        console.log("DELETE REACTION");
+        try{
+            const { data: data_reaction, error: error_reaction } = await supabase
+                .from('message_reactions')
+                .delete()
+                .eq('message_id',item.id)
+                .eq('user_id',user.id)
+                .select();
+            if(error_reaction){
+                console.log("Error in deleteMessageReaction function when deleting reaction in components/flatListMessage.tsx file :", error_reaction);
+            }
+        }catch(error: unknown){
+            console.log("Error in deleteMessageReaction function in components/flatListMessage.tsx file :", error);
+        }finally{
+            onCloseReactionActionSheet();
+        }
+    }
+
+    const reactions = item.reactions || [];
+    // console.log("ITEM :", item);
     return (
         <>
-            <TouchableOpacity activeOpacity={1} onLongPress={handleLongPress} ref={boxRef}>
-            
+            <VStack>
                 {sameDate() ? 
-                    <Box style={{}}>
+                    <Box>
                         <Center style={{}}>
                             <Box style={{
-                                // borderColor:"green", 
-                                // borderWidth:1, 
                                 backgroundColor:'rgba(210,210,210,1)', 
                                 paddingLeft: 15, 
                                 paddingRight:15, 
@@ -248,44 +271,74 @@ const FlatListMessage = (props: any) => {
                 :
                     <></>
                 }
-                <>
-                {item.replied_to_id ? 
-                    <Box style={{position:'absolute',
-                        right:item.sender_id == user.id ? 0 : undefined,
-                        left:item.sender_id != user.id ? 0 : undefined,
-                        padding:8,
-                        borderColor:"rgba(200, 200, 200, 0.4)",
-                        backgroundColor:"rgba(210, 210, 210, 0.5)",
-                        borderWidth:2,
-                        marginHorizontal:3,
-                        borderRadius:10,
-                        top:3,
-                        maxWidth:'72%',
-                    }}>
-                        <HStack>
-                            <Ionicons name={'arrow-redo-outline'} size={20} color={'rgba(0, 0, 200, 0.8)'}/>
-                            <Text numberOfLines={1} style={{width:"90%"}}>RESPONSE TEXT HERE IM testing more more more more</Text>
-                        </HStack>
-                    </Box>
-                :<></>}
-                </>
-                <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:5, marginTop:item.replied_to_id? 33:0}}>
-                    {/* {item.sender_id != user.id ? 
-                    <Box style={{}} width={'20%'}>
-                        <Text>
-                            {item.sender_id}
-                        </Text>
-                    </Box>
-                        : 
-                    <></>} */}
-                        {/** PRINT HOUR */}
-                        {renderMessageContent()}
-                        <Box style={{justifyContent:"center", alignItems:"center", paddingLeft:5, paddingRight:5}}>
-                            <Text style={{color:"rgba(120,120,120,0.7)"}}>{sameHour()}</Text>
+                <TouchableOpacity activeOpacity={1} onLongPress={handleLongPress} ref={boxRef}>
+                    <>
+                        {item.replied_to_id ? 
+                            <Box style={{position:'absolute',
+                                right:item.sender_id == user.id ? 0 : undefined,
+                                left:item.sender_id != user.id ? 0 : undefined,
+                                padding:8,
+                                borderColor:"rgba(200, 200, 200, 0.4)",
+                                backgroundColor:"rgba(210, 210, 210, 0.5)",
+                                borderWidth:2,
+                                marginHorizontal:3,
+                                borderRadius:10,
+                                top:3,
+                                maxWidth:'72%',
+                            }}>
+                                <HStack>
+                                    <Ionicons name={'arrow-redo-outline'} size={20} color={'rgba(0, 0, 200, 0.8)'}/>
+                                    {item.reply_type == 'attachment' ? <Ionicons name={'image-outline'} color={'blue'} size={23}/> : null}
+                                    {item.reply_type == 'audio' ? <Ionicons name={'mic-outline'} color={'blue'} size={23}/> : null}
+                                    <Text numberOfLines={1} style={{maxWidth:"94%"}}>{item.reply_content}</Text>
+                                </HStack>
+                            </Box>
+                        :<></>}
+                    </>
+                    <HStack reversed={item.sender_id == user.id ? true : false} style={{
+                            paddingHorizontal:5, 
+                            marginTop:item.replied_to_id? 33:0,
+                            marginBottom: item.reactions.length ? 25 : 0,}}>
+                        {/* {item.sender_id != user.id ? 
+                        <Box style={{}} width={'20%'}>
+                            <Text>
+                                {item.sender_id}
+                            </Text>
                         </Box>
-                </HStack>
-            </TouchableOpacity>
+                            : 
+                        <></>} */}
+                            {/** PRINT HOUR */}
+                            {renderMessageContent()}
+                            <Box style={{justifyContent:"center", alignItems:"center", paddingLeft:5, paddingRight:5}}>
+                                <Text style={{color:"rgba(120,120,120,0.7)"}}>{sameHour()}</Text>
+                            </Box>
+                    </HStack>
+                    {item.reactions.length != 0 ? 
+                        <TouchableOpacity onPress={() => (setShowReactionActionSheet(true))} >
+                            <Box style={{position:'absolute',
+                                right:item.sender_id == user.id ? 6 : undefined,
+                                left:item.sender_id != user.id ? 6 : undefined,
+                                padding:3,
+                                borderColor:"rgba(200, 200, 200, 0.4)",
+                                backgroundColor:"rgba(210, 210, 210, 0.5)",
+                                borderWidth:2,
+                                marginHorizontal:3,
+                                borderRadius:12,
+                                bottom:3,
+                                maxWidth:'72%',
+                            }}>
+                                <HStack>
+                                    {item.reactions.map((reaction, index) => (
+                                        <Text key={index}>{reaction.reaction}</Text>
+                                    ))}
+                                    {/* <Ionicons name={'arrow-redo-outline'} size={20} color={'rgba(0, 0, 200, 0.8)'}/> */}
+                                </HStack>
+                            </Box>
+                        </TouchableOpacity>
+                    :<></>}
+                </TouchableOpacity>
 
+            </VStack>
             <ModalIcon 
                 items={actionSheetTable}
                 isOpen={modalIcon} 
@@ -293,6 +346,12 @@ const FlatListMessage = (props: any) => {
                 modalIconPosition={modalIconPosition} 
                 myMessage={item.sender_id === user.id}
                 onPress={addMessageReaction}
+                />
+            <ReactionActionSheet
+                showReactionActionSheet={showReactionActionSheet}
+                onCloseReactionActionSheet={onCloseReactionActionSheet}
+                reactions={item.reactions}
+                deleteFunction={deleteMessageReaction}
             />
         </>
     )

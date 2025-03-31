@@ -58,6 +58,7 @@ const ConversationScreen = () => {
     const [ replyToContent, setReplyToContent] = useState(null);
     const [ replyToType, setReplyToType] = useState(null);
     const [ scrollY, setScrollY ] = useState(0);
+    const [ page, setPage ] = useState(1);
 
     const { convId } = useLocalSearchParams();
     const { user } = useUserContext();
@@ -97,10 +98,12 @@ const ConversationScreen = () => {
         const fetchConversationData = async () => {
             try{
                 setLoading(true);
-                const { data: conv_data, error: conv_error } = await supabase.rpc('get_conversation_messages2', {'p_conversation_id': convId[0], 'p_user_id':user.id})
+                const { data: conv_data, error: conv_error } = await supabase.rpc('get_conversation_messages2', 
+                    {'p_conversation_id': convId[0], 'p_user_id':user.id});
                 if(conv_error){
                     console.log('Conv_Error :', conv_error);
                 }
+                console.log("conv_data :", conv_data.messages);
                 setMessages(conv_data.messages);
                 setParticipants(conv_data.participants);
                 setDeviceTokens(conv_data.device_tokens);
@@ -140,6 +143,7 @@ const ConversationScreen = () => {
         const insertAndDeleteChannels = supabase.channel(`conversation-messages-${convId[0]}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]}, handleReceivedMessage)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]}, handleDeletedMessage)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'message_reactions', filter:'conversation_id=eq.'+convId[0]}, handleNewReactionReceived)
         .subscribe();
 
         return() => {
@@ -160,6 +164,7 @@ const ConversationScreen = () => {
     const handleReceivedMessage = async (payload: any) => {
         setIsSeen(false);
         // CREATE A WAITING TIME WHEN UPLOADING NEW IMAGE OR AUDIO, TO DISPLAY IT IN THE CONVERSATION
+        console.log("new message type :", payload.new.type);
         if(payload.new.type == 'attachment' || payload.new.type == 'audio'){
             setLoadingNewImage(true);
             console.log("NEW ATTACHMENT MESSAGE DETECTED :", payload);
@@ -180,6 +185,8 @@ const ConversationScreen = () => {
             }
             payload.new.attachments = result;
         }
+        payload.new.reactions = [];         //Add this to avoid style issue with the marginBottom 
+        console.log("PAYLOAD :",payload);
         setMessages((prev) => [ payload.new, ...prev]);
         setOffset((prevOffset) => prevOffset + 1);
         console.log("IS AT BOTTOM :", isAtBottom);
@@ -189,6 +196,18 @@ const ConversationScreen = () => {
             markMessageAsRead();
         }
         setLoadingNewImage(false);
+    }
+
+    const handleNewReactionReceived = async(payload: any) => {
+        //Edit main message state variable
+        console.log("PAYLOAD : ", payload.new)
+        setMessages(prevMessages =>
+            prevMessages.map(message =>
+              message.id === payload.new.message_id
+                ? { ...message, reactions: [...message.reactions, {"reaction":payload.new.reaction, "created_at":payload.new.created_at,"user_id": payload.new.user_id}] }
+                : message
+            )
+          );
     }
 
     /** -------------------------------------------------------
@@ -266,27 +285,38 @@ const ConversationScreen = () => {
       try{
             setCanTriggerLoadMore(false);
             setLoadingMoreMessages(true);
-            const { data: messages_data, error: messages_error } = await supabase.from('messages')
-            .select('id, content, created_at, sender_id, type, has_attachment')
-            .eq('conversation_id', convId[0])
-            .is('deleted_at', null)
-            .order('created_at', { ascending: false})
-            .range(offset,offset+PAGE_SIZE-1);
-            if(messages_error){
-                  console.log('Error in fetchMessages  when fetching messages in [...convId].tsx', messages_error);
-                }
+            // const { data: messages_data, error: messages_error } = await supabase.from('messages')
+            // .select('id, content, created_at, sender_id, type, has_attachment')
+            // .eq('conversation_id', convId[0])
+            // .is('deleted_at', null)
+            // .order('created_at', { ascending: false})
+            // .range(offset,offset+PAGE_SIZE-1);
+            // if(messages_error){
+            //       console.log('Error in fetchMessages  when fetching messages in [...convId].tsx', messages_error);
+            //     }
+            const { data: messages_data, error: conv_error } = await supabase.rpc(
+                'load_more_messages', 
+                {'p_conversation_id': convId[0], 'p_user_id':user.id, p_page:page+1});
+            if(conv_error){
+                console.log('Conv_Error :', conv_error);
+            }else{
+                setPage(page+1)
+            }
+            console.log("MORE MESSAGES :", messages_data);
             if(messages_data?.length != 0){
-                const newMessageArray: any = messages_data;
-                if(newMessageArray){
-                    for(let message of newMessageArray){
-                        if(message.type == 'attachment' || message.type == 'audio'){
-                            const result = await fetchAttachments(message.id);
-                            message.attachments = result;
-                        }
-                    }
-                    setMessages((prev) => {const data = [...prev, ...newMessageArray]; const uniqueData = Array.from(new Set(data)); return uniqueData});
-                    setOffset(offset+PAGE_SIZE);
-                }
+                const newMessageArray: any = messages_data.messages;
+                setMessages((prev) => {const data = [...prev, ...newMessageArray]; const uniqueData = Array.from(new Set(data)); return uniqueData});
+                // setMessages((prev) => {const data = [...prev, ...newMessageArray]; const uniqueData = Array.from(new Set(data)); return uniqueData});
+                // if(newMessageArray){
+                //     for(let message of newMessageArray){
+                //         if(message.type == 'attachment' || message.type == 'audio'){
+                //             const result = await fetchAttachments(message.id);
+                //             message.attachments = result;
+                //         }
+                //     }
+                //     setMessages((prev) => {const data = [...prev, ...newMessageArray]; const uniqueData = Array.from(new Set(data)); return uniqueData});
+                //     setOffset(offset+PAGE_SIZE);
+                // }
             }else{
                 console.log("END REACHED NO MORE MESSAGES WILL BE LOADED...");
                 //Here put some infos about users in conv (carroussel with profiles)
@@ -418,7 +448,8 @@ const ConversationScreen = () => {
                     setReplyTo={setReplyTo}
                     setReplyToContent={setReplyToContent}
                     setReplyToType={setReplyToType} 
-                    scrollY={scrollY}/>
+                    scrollY={scrollY}
+                    convId={convId}/>
     }
 
     return(
