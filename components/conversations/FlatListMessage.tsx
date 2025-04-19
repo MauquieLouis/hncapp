@@ -314,7 +314,7 @@ const FlatListMessage = (props: any) => {
                             </Box>
                     </HStack>
                     {item.reactions.length != 0 ? 
-                        <TouchableOpacity onPress={() => (setShowReactionActionSheet(true))} >
+                        <TouchableOpacity onPress={() => {console.log("PRESS REACTIONS "); setShowReactionActionSheet(true);}} >
                             <Box style={{position:'absolute',
                                 right:item.sender_id == user.id ? 6 : undefined,
                                 left:item.sender_id != user.id ? 6 : undefined,

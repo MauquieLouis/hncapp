@@ -15,7 +15,8 @@ import { ImageManipulator, useImageManipulator } from 'expo-image-manipulator';
 import { Textarea, TextareaInput } from '../ui/textarea';
 import { TextInput } from 'react-native';
 import { v6 as uuidv6 } from 'uuid';
-
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
 
 const ConversationCommands = (props: any) => {
 
@@ -71,6 +72,7 @@ const ConversationCommands = (props: any) => {
             quality:1,
             base64: true,
             allowsMultipleSelection: true,
+            selectionLimit: 10,
         });
         if(!result.canceled){
             // setImages(result.assets[0].uri);
@@ -80,14 +82,19 @@ const ConversationCommands = (props: any) => {
     }
 
     const compressImage = async(uri: string) => {
+        console.log("COMPRESS URI :", uri);
         const fileSize = await FileSystem.getInfoAsync(uri).then(info => info.size);
+        console.log("FileSize :", fileSize);
         const manipRes = await ImageManipulator.manipulate(uri).renderAsync();
+        console.log("MANIP RES :", manipRes.uri);
         if(fileSize > 500*1024){
             return(manipRes.saveAsync({compress:0.5}));
         }else if (fileSize > 1000*1024){
             return(manipRes.saveAsync({compress:0.45}));
         }else if(fileSize > 1600*1024) {
             return(manipRes.saveAsync({compress:0.40}));
+        }else{
+            return(manipRes.saveAsync({compress:0.8}));
         }
     }
 
@@ -105,27 +112,23 @@ const ConversationCommands = (props: any) => {
     const uploadImage = async (files: ImagePicker.ImagePickerAsset[]) => {
         try{
             //Create the attachement and send Message
+            // for(let file in files as ImagePicker.ImagePickerAsset[]){
+            //     console.log("FILE :", files[file].fileName);
+            // }
+            // return;
             setLoadingSend(true);
-            const message_id = await sendTextMessage(true, 'attachment');
-            console.log("message iD :", message_id);
+            const fileNames = [];
             for(let file of files as ImagePicker.ImagePickerAsset[]){
                 // const filename = uuidv6();
-                
-                const { data: attach_data, error: attach_error } = await supabase.from('attachments').insert({
-                    message_id: message_id,
-                    url: convId+'/'+file.fileName,
-                    type: file.mimeType,
-                    size: file.fileSize
-                });
-                if(attach_error){
-                    console.log("Error in uploadImage function when inserting new attachement in [...convId].tsx :", attach_error);
-
-                }
+                const ext = (file.fileName ?? '').split('.').pop();
+                const fileName = uuidv6()+"."+ext;
+                console.log("NEW FILENAME : ", fileName);
+                fileNames.push(fileName);
                 // console.log("FILE simple :", file);
                 if(file.type == 'video'){
                     const fileContent = await FileSystem.readAsStringAsync(file.uri, {encoding: FileSystem.EncodingType.Base64});
                     const {data, error} = await supabase.storage.from('Conversations')
-                    .upload(convId+'/'+file.fileName, decode(fileContent),
+                    .upload(convId+'/'+fileName, decode(fileContent),
                     {cacheControl: '3600', upsert:false, contentType:file.mimeType});
                     if(error){
                         console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
@@ -134,16 +137,37 @@ const ConversationCommands = (props: any) => {
                 }else{
                     console.log("NOT A VIDEO :");
                     const fileResized = await compressImage(file.uri);
-                    const fileContent = await FileSystem.readAsStringAsync(fileResized.uri, {encoding: FileSystem.EncodingType.Base64});
+                    console.log("FILE RESIZED :", fileResized?.uri);
+                    const fileContent = await FileSystem.readAsStringAsync(fileResized?.uri, {encoding: FileSystem.EncodingType.Base64});
                     const {data, error} = await supabase.storage.from('Conversations')
-                    .upload(convId+'/'+file.fileName, decode(fileContent as string),
+                    .upload(convId+'/'+fileName, decode(fileContent as string),
                     {cacheControl: '3600', upsert:false, contentType:file.mimeType});
                     if(error){ 
                         console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
                     }
+                    console.log("DATA UPLOAD:", data);
                 }
                 //Upload the file on supabase
             }
+            const message_id = await sendTextMessage(true, 'attachment');
+            console.log("message iD :", message_id);
+            let index = 0;
+            for(let file of files as ImagePicker.ImagePickerAsset[]){
+                const fileName = fileNames[index];
+                index++;
+                console.log("FILE :", file.fileName);
+                const { data: attach_data, error: attach_error } = await supabase.from('attachments').insert({
+                    message_id: message_id,
+                    url: convId+'/'+fileName,
+                    type: file.mimeType,
+                    size: file.fileSize
+                });
+                if(attach_error){
+                    console.log("Error in uploadImage function when inserting new attachement in [...convId].tsx :", attach_error);
+
+                }
+            }
+            
         }catch(error:unknown){
             console.log("Error in uploadImage function [...convId].tsx :", error);
         }finally{

@@ -19,6 +19,7 @@ import MessageActionSheet from "./messageActionSheet";
 import * as Haptics from "expo-haptics";
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
+import { Spinner } from "../ui/spinner";
 
 const ImageDisplay = (props: any) => {
 
@@ -184,17 +185,55 @@ const Attachment = (props: any) => {
     useEffect(() => {
         getAttachmentsUrls();
     }, []);
+    console.log("PROPS :", props.item.attachments);
 
     const getAttachmentsUrls = async () => {
         try{
-            setLoadingUrls(true);
-            const urls = item.attachments.map((attachment: { url: any; }) => attachment.url);
-            const { data, error } = await supabase.storage.from('Conversations').createSignedUrls(urls, 5400);
-            if(error){
-                console.log("Error in Attachment when creatingSignedUrls function in components/attachment.tsx file :", error);
+            // 1. Split attachments into local and remote
+            const localUrls: ((prevState: never[]) => never[]) | string[] = [];
+            const remoteAttachments: { index: number; url: string }[] = [];
+
+            item.attachments.forEach((attachment: { local_path: string; url: any; }, index: string | number) => {
+            if (attachment.local_path) {
+                localUrls[index] = attachment.local_path;
+            } else {
+                remoteAttachments.push({ index, url: attachment.url });
             }
-            const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
-            setAttachmentsUrls(signedUrls);
+            });
+
+            // 2. Generate signed URLs for remote attachments
+            let signedUrls: string[] = [];
+            if (remoteAttachments.length > 0) {
+            const { data, error } = await supabase.storage
+                .from("Conversations")
+                .createSignedUrls(remoteAttachments.map(a => a.url), 5400);
+
+            if (error) {
+                console.error(
+                "❌ Error creating signed URLs in components/attachment.tsx:",
+                error
+                );
+            }
+
+            signedUrls = data?.map(d => d.signedUrl) || [];
+
+            // 3. Insert signed URLs into the correct positions
+            remoteAttachments.forEach((remote, i) => {
+                localUrls[remote.index] = signedUrls[i];
+            });
+            }
+            console.log("LOCAL URLS :", localUrls);
+            setAttachmentsUrls(localUrls);
+            // setLoadingUrls(true);
+            // const urls = item.attachments.map((attachment: { url: any; local_path?: any }) =>
+            //     attachment.local_path ?? attachment.url
+            //   );
+            // const { data, error } = await supabase.storage.from('Conversations').createSignedUrls(urls, 5400);
+            // if(error){
+            //     console.log("Error in Attachment when creatingSignedUrls function in components/attachment.tsx file :", error);
+            // }
+            // const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
+            // setAttachmentsUrls(signedUrls);
 
         }catch(error: unknown){
             console.log("Error in Attachment function in components/attachment.tsx file :", error);
@@ -224,6 +263,7 @@ const Attachment = (props: any) => {
 
     const downloadAttachment = async (url: string, filename: string) => {
         try{
+            setLoadingUrls(true);
             const { status } = await MediaLibrary.requestPermissionsAsync();
             if (status !== 'granted') {
                 Alert.alert("Permission Denied", "You need to allow access to save media.");
@@ -250,10 +290,14 @@ const Attachment = (props: any) => {
               });
         }catch(error: unknown){ 
             console.log("Error in downloadAttachment function in components/attachment.tsx file :", error);
+        }finally{
+            setLoadingUrls(false);
         }
     }
 
     return(
+        <>
+        {loadingUrls ? <Spinner/>: 
         <>
             <Box>
                 <HStack reversed={item.sender_id == user.id ? true : false} style={{paddingHorizontal:0}}>
@@ -304,6 +348,8 @@ const Attachment = (props: any) => {
                 </ModalContent> 
             </Modal>
             <MessageActionSheet items={actionSheetTable} showActionSheet={showActionSheet} onCloseActionSheet={onCloseActionSheet}/>
+        </>
+        }
         </>
     )
 }

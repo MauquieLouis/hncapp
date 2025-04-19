@@ -14,9 +14,9 @@ const ReactionActionSheet = (props: any) => {
     const { user } = useUserContext();
     
     // items = props.items;
-    console.log("REACTION LIST :", props.reactions);
+    // console.log("REACTION LIST :", props.reactions);
     return(
-        <Actionsheet isOpen={props.showReactionActionSheet} onClose={props.onCloseReactionActionSheet} useRNModal={true}>
+        <Actionsheet isOpen={props.showReactionActionSheet} onClose={props.onCloseReactionActionSheet} useRNModal={false}>
             <ActionsheetBackdrop />
             <ActionsheetContent style={styles.actionsheetContent}>
                 <Text>REACTIONS</Text>

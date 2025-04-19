@@ -15,6 +15,8 @@ import * as FileSystem from 'expo-file-system';
 import { HStack } from '@/components/ui/hstack';
 import { Ionicons } from '@expo/vector-icons';
 
+import ConversationStorageDatabase from '@/components/conversations/conversationStorage';
+
 const debounce = (func: { (): Promise<void>; apply?: any; }, delay: number | undefined) => {
     let debounceTimer: string | number | NodeJS.Timeout | undefined;
     return function(...args: any) {
@@ -37,7 +39,7 @@ const debounce = (func: { (): Promise<void>; apply?: any; }, delay: number | und
 
 const ConversationScreen = () => {
     
-    const PAGE_SIZE = 20; // If changing this, number, be careful of changing it in the rpc function that retrieve first messages at opening, maybe add a parameter for that.
+    const PAGE_SIZE = 50; // If changing this, number, be careful of changing it in the rpc function that retrieve first messages at opening, maybe add a parameter for that.
 
     const [ loading, setLoading ] = useState(false);
     const [ messages, setMessages ] = useState<any[]>([]);
@@ -63,38 +65,20 @@ const ConversationScreen = () => {
     const { convId } = useLocalSearchParams();
     const { user } = useUserContext();
 
-    
     const flatListRef = useRef(null);
 
-    const checkIfConvExistLocally = () => {
-        return storage.contains(`${convId}-timestamp`)
-    }
-
-    const checkForTimestampDiff = async() => {
-        const last_local_timestamp = storage.getString(`${convId}-timestamp`);
-        try{
-            const { data, error } = await supabase.from('messages').select('created_at').gte('created_at', last_local_timestamp);
-            console.log("DATA :", data);
-            if(error){
-                console.log("Error in checkForTimestampDiff function when fetching last timestamp, in [...convId].tsx", error);
-            }
-        }catch(error: unknown){
-            console.log("Error in chechForTimeStampDiff function in [...convId].tsx",error);
-        }finally{
-
-        } 
-    }
-
-    let storage: MMKV;
+    // let storage: MMKV;
+    // storage = new MMKV({
+    //     id: `user-${user.id}-storage`,
+    //     encryptionKey: 'hunter2',
+    // });
     useEffect(() => {
-        storage = new MMKV({
-            id: `user-${user.id}-storage`,
-        });
-        if(checkIfConvExistLocally()){
-            checkForTimestampDiff();
-        }else{
-            
+        const initConversationStorage = async () => {
+            await ConversationStorageDatabase.initDatabase();
+            const messages = await getLocalConversations();
+            setMessages(messages);
         }
+        initConversationStorage();
         const fetchConversationData = async () => {
             try{
                 setLoading(true);
@@ -103,8 +87,8 @@ const ConversationScreen = () => {
                 if(conv_error){
                     console.log('Conv_Error :', conv_error);
                 }
-                console.log("conv_data :", conv_data.messages);
-                setMessages(conv_data.messages);
+                // console.log("conv_data :", conv_data.messages);
+                // setMessages(conv_data.messages);
                 setParticipants(conv_data.participants);
                 setDeviceTokens(conv_data.device_tokens);
                 readLastMessageStatus(conv_data.messages[0].id);
@@ -119,6 +103,23 @@ const ConversationScreen = () => {
         subscribeToTypingStatus();
         subscrbeToMessagesStatus();
     }, []);
+
+    const getLocalConversations = async () => {
+        // await ConversationStorageDatabase.clearDatabaseAndFiles();
+
+        const localConversation = await ConversationStorageDatabase.getConversationById(convId[0]);
+        if(localConversation == null || localConversation == undefined || localConversation.length == 0){
+            // console.log("NO CONVERSATION FOUND IN LOCAL DB, FETCHING FROM SUPABASE...");
+            const messages = await ConversationStorageDatabase.newConversationUpload(convId[0], user.id);
+            // console.log("NEW CONVERSATION :", messages);
+            return messages;
+        }else{
+            // console.log("CONVERSATION FOUND, NOW HAVE TO CHECK FOR MESSAGES...");
+            const localMessages = await ConversationStorageDatabase.loadLocalMessages(convId[0], user.id, 1, PAGE_SIZE);
+            // console.log("LOCAL MESSAGES :", localMessages);
+            return localMessages;
+        }
+    }
 
     const fetchAttachments = async(msg_id: string) => {
         try{
@@ -144,9 +145,12 @@ const ConversationScreen = () => {
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]}, handleReceivedMessage)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table:'messages', filter:'conversation_id=eq.'+convId[0]}, handleDeletedMessage)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'message_reactions', filter:'conversation_id=eq.'+convId[0]}, handleNewReactionReceived)
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table:'message_reactions'}, handleDeleteReaction)
         .subscribe();
+        console.log("|+| SUBSCRIBE SUPABASE CHANNELS");
 
         return() => {
+            console.log("|-| UNSUBSCRIBE SUPABASE CHANNELS");
             insertAndDeleteChannels.unsubscribe();
         };
     }, [isAtBottom, messages])
@@ -185,6 +189,11 @@ const ConversationScreen = () => {
             }
             payload.new.attachments = result;
         }
+        if(payload.new.replied_to_id != null){
+            const msg_response = await getOrFetchResponse(payload.new.replied_to_id);
+            payload.new.reply_content = msg_response?.reply_content;
+            payload.new.reply_type = msg_response?.reply_type;
+        }
         payload.new.reactions = [];         //Add this to avoid style issue with the marginBottom 
         console.log("PAYLOAD :",payload);
         setMessages((prev) => [ payload.new, ...prev]);
@@ -198,16 +207,50 @@ const ConversationScreen = () => {
         setLoadingNewImage(false);
     }
 
+    const getOrFetchResponse = async(replied_id: any) => {
+        try{
+            //First check if the id of replied_to_id field is in the messages state variable.
+            //If not, fetch it from the database.
+            let message = null;
+            message = messages.find(msg => msg.id === replied_id);
+            console.log("MEssage after local find : ", message);
+            if(message == null || message == undefined ){
+                const { data: message_data, error: message_error } = await supabase.from('messages').select('content, type').eq('id', replied_id).single();
+                if(message_error){
+                    console.log('Error in getOrFetchResponse function when fetching replied message in [...convId].tsx', message_error);
+                }
+                message = message_data;
+                console.log("NO local message, fetch it :", message);
+            }
+            return { "reply_content": message.content, "reply_type": message.type };
+            
+        }catch(error: unknown){
+            console.log("Error in getOrFetchResponse function in [...convId].tsx", error);
+        }finally{
+
+        }
+    }
+
     const handleNewReactionReceived = async(payload: any) => {
         //Edit main message state variable
         console.log("PAYLOAD : ", payload.new)
         setMessages(prevMessages =>
             prevMessages.map(message =>
               message.id === payload.new.message_id
-                ? { ...message, reactions: [...message.reactions, {"reaction":payload.new.reaction, "created_at":payload.new.created_at,"user_id": payload.new.user_id}] }
+                ? { ...message, reactions: [...message.reactions, {"reaction":payload.new.reaction, "created_at":payload.new.created_at,"user_id": payload.new.user_id, "id": payload.new.id}] }
                 : message
             )
           );
+    }
+
+    const handleDeleteReaction = async(payload: any) => {
+        console.log("DELETE REACTION NEED TO BE HANDLED HERE :", payload);
+        setMessages(prevMessages =>
+            prevMessages.map(message => ({
+                ...message,
+                reactions: message.reactions.filter(reaction => reaction.id !== payload.old.id)
+            }))
+        );
     }
 
     /** -------------------------------------------------------
@@ -302,7 +345,7 @@ const ConversationScreen = () => {
             }else{
                 setPage(page+1)
             }
-            console.log("MORE MESSAGES :", messages_data);
+            // console.log("MORE MESSAGES :", messages_data);
             if(messages_data?.length != 0){
                 const newMessageArray: any = messages_data.messages;
                 setMessages((prev) => {const data = [...prev, ...newMessageArray]; const uniqueData = Array.from(new Set(data)); return uniqueData});
@@ -323,7 +366,7 @@ const ConversationScreen = () => {
                 setEndReached(true);
             }
         }catch(error: unknown){
-          console.log('Error in fetchMessages function in [...convId].tsx', error);
+          console.log('Error in loadMoreMessages function in [...convId].tsx', error);
         }finally{
           setLoadingMoreMessages(false);
           setCanTriggerLoadMore(true);
@@ -386,7 +429,7 @@ const ConversationScreen = () => {
                     delete updated[payload.payload.user];
                     return updated;
                 });
-            }, 3000);
+            }, 2000);
         }).subscribe();
     };
 
