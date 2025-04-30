@@ -181,11 +181,11 @@ const Attachment = (props: any) => {
     const item = props.item;
     const { user } = useUserContext();
     const toast = useToast();
+    // console.log("PROPS ATTACH : ", props.item.attachments);
 
     useEffect(() => {
         getAttachmentsUrls();
     }, []);
-    console.log("PROPS :", props.item.attachments);
 
     const getAttachmentsUrls = async () => {
         try{
@@ -222,7 +222,7 @@ const Attachment = (props: any) => {
                 localUrls[remote.index] = signedUrls[i];
             });
             }
-            console.log("LOCAL URLS :", localUrls);
+            // console.log("LOCALS URLS :",localUrls);
             setAttachmentsUrls(localUrls);
             // setLoadingUrls(true);
             // const urls = item.attachments.map((attachment: { url: any; local_path?: any }) =>

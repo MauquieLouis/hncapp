@@ -61,6 +61,9 @@ const ConversationScreen = () => {
     const [ replyToType, setReplyToType] = useState(null);
     const [ scrollY, setScrollY ] = useState(0);
     const [ page, setPage ] = useState(1);
+    const [ loadingNewMessages, setLoadingNewMessages ] = useState(false);
+    const [ oldestLocalMessage, setOldestLocalMessage ] = useState(null);
+    const [ localCount, setLocalCount ] = useState(0);
 
     const { convId } = useLocalSearchParams();
     const { user } = useUserContext();
@@ -111,13 +114,57 @@ const ConversationScreen = () => {
         if(localConversation == null || localConversation == undefined || localConversation.length == 0){
             // console.log("NO CONVERSATION FOUND IN LOCAL DB, FETCHING FROM SUPABASE...");
             const messages = await ConversationStorageDatabase.newConversationUpload(convId[0], user.id);
-            // console.log("NEW CONVERSATION :", messages);
-            return messages;
+            //Here loadLocalMessages instead of settings message with messages (to avoid much request with images)
+            //Like that :
+            const local_messages = await ConversationStorageDatabase.loadLocalMessages(convId[0], user.id, 1, PAGE_SIZE);
+            return local_messages;
         }else{
-            // console.log("CONVERSATION FOUND, NOW HAVE TO CHECK FOR MESSAGES...");
-            const localMessages = await ConversationStorageDatabase.loadLocalMessages(convId[0], user.id, 1, PAGE_SIZE);
-            // console.log("LOCAL MESSAGES :", localMessages);
-            return localMessages;
+            //There is already a conversation !
+            console.log("CHECK FOR MESSAGE DIFF");
+            await checkMessageDiff();
+            console.log("MESSAGE DIFF HAVE BEEN PROCESS")
+            const local_messages = await ConversationStorageDatabase.loadLocalMessages(convId[0], user.id, 1, PAGE_SIZE);
+            const local_count = await ConversationStorageDatabase.countMessagesConversation(convId[0]);
+            console.log(" === LOCAL MESSAGES.length", local_messages.length);
+            console.log("LOCAL COUNT REQUEST :", local_count);
+            console.log("OLDEST DATE MESSAGES :", local_messages[local_messages.length-1].created_at, local_messages[local_messages.length-1].content);
+            setOldestLocalMessage(local_messages[local_messages.length-1].created_at);
+            setLocalCount(local_count);
+            return local_messages;
+        }
+    }
+
+    const checkMessageDiff = async () => {
+        try{
+            setLoadingNewMessages(true);
+            const last_local_message_timestamp = await ConversationStorageDatabase.getLastMessageForConversationId(convId[0]);
+            const { data: last_supabase_message, error } = await supabase
+                .from('messages')
+                .select('created_at')
+                .eq('conversation_id', convId[0])
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+            if(last_local_message_timestamp == last_supabase_message){
+                //Everything is ok, same message on remote server and in local
+                setLoadingNewMessages(false);
+                return;
+            }else{
+                //Must load all the message between
+                const { data: messagesDiff, error: messageDiffError } = await supabase.rpc('load_more_messages_after_date',
+                    {'p_conversation_id': convId[0], 'p_user_id': user.id, 'p_after': last_local_message_timestamp}
+                );
+                if(messageDiffError){
+                    console.log("Error when fetching message diff in checkMessageDiff function in [...convId].tsx", error);
+                }
+                //Store the new messages in local Db : 
+                await ConversationStorageDatabase.uploadNewMessages(messagesDiff.messages, convId[0], user.id);
+            }
+        }catch(error: unknown){
+            console.log("Error in checkMessageDiff function in [...convId].tsx", error);
+            
+        }finally{
+            setLoadingNewMessages(false);
         }
     }
 
@@ -136,7 +183,7 @@ const ConversationScreen = () => {
     }
 
     useEffect(() => {
-        console.log("is at bottom CHANGE : ", isAtBottom);
+        // console.log("is at bottom CHANGE : ", isAtBottom);
         if(isAtBottom) markMessageAsRead();
         /** ---------------------------------------------------------------
          *  ==== ====  S U B S C R I B E   T O   M E S S A G E S  ==== ====
@@ -147,10 +194,10 @@ const ConversationScreen = () => {
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'message_reactions', filter:'conversation_id=eq.'+convId[0]}, handleNewReactionReceived)
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table:'message_reactions'}, handleDeleteReaction)
         .subscribe();
-        console.log("|+| SUBSCRIBE SUPABASE CHANNELS");
+        // console.log("|+| SUBSCRIBE SUPABASE CHANNELS");
 
         return() => {
-            console.log("|-| UNSUBSCRIBE SUPABASE CHANNELS");
+            // console.log("|-| UNSUBSCRIBE SUPABASE CHANNELS");
             insertAndDeleteChannels.unsubscribe();
         };
     }, [isAtBottom, messages])
@@ -198,7 +245,7 @@ const ConversationScreen = () => {
         console.log("PAYLOAD :",payload);
         setMessages((prev) => [ payload.new, ...prev]);
         setOffset((prevOffset) => prevOffset + 1);
-        console.log("IS AT BOTTOM :", isAtBottom);
+        // console.log("IS AT BOTTOM :", isAtBottom);
         if(payload.new.user_id != user.id && isAtBottom){
             console.log("NOT SUPPOSED TO SCROLL TO BOTTOM !!!!");
             console.log("OFFSET :", offset);
@@ -373,9 +420,89 @@ const ConversationScreen = () => {
       }
     }, [loadingMoreMessages, offset]);
 
-    const debouncedFetchData = useCallback(debounce(loadMoreMessages, 300), [loadMoreMessages]);
+    // useEffect(() => {
+    //     console.log(" !!! OLDEST LOCAL MESSAGE CHANGED !!", oldestLocalMessage);
+    // }, [oldestLocalMessage])
+
+    const loadMoreMessagesV2 = useCallback(async() => {
+        if (!canTriggerLoadMore || loadingMoreMessages || endReached ) return;
+
+        try{
+            setCanTriggerLoadMore(false);
+            setLoadingMoreMessages(true);
+            // |- 1 -| : Try to load 50 more message from local DB
+            // |- 2 -| : Check if there is 50 message : if not, count how much there is, andl oad the 50 more from supabase (and store them locally)
+            // |- 3 -| : If there is no more message in local db fetch from supabase
+            // |- 4 -| : load them in state and upload them in local db
+            // |- 5 -|
+            // |- 6 -|
+            
+            //Get lasts messages.
+            //Check if length < PAGE_SIZE if that's the case that means there is no more local messages 
+            //Also check if length = 0 but that is already made by the check page_size
+            // if last date is the same as oldestLocalMessage
+            let next_messages;
+            console.log("message.length <= localCount :", messages.length, "<=", localCount);
+            if(oldestLocalMessage == null) throw new Error("Can't load oldest message because 'oldestLocalMessage' state variable is null ... in loadMoreMessagesV2 in [...convId].tsx")
+            console.log(" *-*-*-*-*-*- oldestLocalMessage : ", oldestLocalMessage,
+                " ---- ",
+                oldestLocalMessage.toString(), 
+                " ---- ", 
+                new Date(oldestLocalMessage),
+            " ----- ",
+            Math.floor(oldestLocalMessage/1000),
+            " ----- ",
+            oldestLocalMessage/1000
+            );
+            if(messages.length < localCount){
+                //FETCH LOCAL DATABASE
+                console.log("FETCH LOCAL DATABASE");
+                next_messages = await ConversationStorageDatabase.getMessagesAfterDate(convId[0], oldestLocalMessage.toString(), PAGE_SIZE);
+            }else{
+                //FETCH SUPABASE
+                console.log("FETCH SUPABASE before", (oldestLocalMessage));
+                const { data, error } = await supabase.rpc('load_more_messages_cursor',
+                    {
+                        'p_conversation_id': convId[0],
+                        'p_user_id': user.id,
+                        'p_before': new Date(oldestLocalMessage),
+                        'p_limit': PAGE_SIZE
+                });
+                if(error){
+                    console.error("Error in when loading more message in loadMoreMessageV2 function in [...convId].tsx", error);
+                }
+                next_messages = data.messages;
+                await ConversationStorageDatabase.uploadNewMessages(next_messages, convId[0], user.id);
+
+            }
+            // console.log("->->->->->Next_messages", next_messages)
+            //Set new oldestLocalMessage
+            console.log("New oldest date :", next_messages[next_messages.length-1].created_at);
+            setOldestLocalMessage(next_messages[next_messages.length-1].created_at);
+            
+            console.log("UPLOAD NEW MESSAGES DONE ! ---*****")
+            next_messages = await ConversationStorageDatabase.getMessagesAfterDate(convId[0], oldestLocalMessage.toString(), PAGE_SIZE);
+            console.log("DOWNLOAD NEW MESSAGES DONE ! 222 ---*****")
+            setMessages((prev) => {const data = [...prev, ...next_messages]; const uniqueData = Array.from(new Set(data)); return uniqueData});
+            
+            // const local_messages = await ConversationStorageDatabase.loadLocalMessages(convId[0], user.id, page+1, PAGE_SIZE);
+        
+        }catch(error: unknown){
+            console.log('Error in loadMoreMessageV2 function in [...convId].tsx', error);
+        }
+        finally{
+            setLoadingMoreMessages(false);
+            setCanTriggerLoadMore(true);
+        }
+    },[loadingMoreMessages, offset, oldestLocalMessage]);
+
+    // const debouncedFetchData = useCallback(debounce(loadMoreMessages, 300), [loadMoreMessages]);
+    const debouncedFetchData2 = useCallback(debounce(loadMoreMessagesV2, 180), [loadMoreMessagesV2]);
+
     const handleLoadMoreMessage = () => {
-        debouncedFetchData();
+        if(messages.length < PAGE_SIZE) return;
+        console.log("++++++ handle Load More Messages ++++++");
+        debouncedFetchData2();
     }
 
     /** ---------------------------------------------------------------------------
@@ -410,7 +537,7 @@ const ConversationScreen = () => {
         // const atBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 20;
         // Check if the user is at the top (small threshold to allow minor scrolling)
         const atTop = contentOffset.y <= 10; // Adjust threshold if needed
-        console.log("contentOffset", contentOffset.y);
+        // console.log("contentOffset", contentOffset.y);
         setScrollY(contentOffset.y);
         setIsAtBottom(atTop); //It's call bottom here because flatlist is inverted.
     };
@@ -468,7 +595,7 @@ const ConversationScreen = () => {
      */
     const readLastMessageStatus = async(message_id: any) => {
         try{
-            console.log("MESSAGE ID :", message_id);
+            // console.log("MESSAGE ID :", message_id);
             const { data: last_status, error: error_status } = await supabase.from('message_status').select('*').eq('message_id',message_id).neq('user_id',user.id);
             if(error_status){
                 console.log('Error in readLastMessageStatus when trying to read last message_status function in [...convId].tsx', error_status);

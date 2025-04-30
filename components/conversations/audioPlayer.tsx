@@ -60,20 +60,32 @@ const AudioPlayer = (props: any) => {
     const getAttachmentsUrlsAndLoad = async () => {
             try{
                 setLoadingUrl(true);
-                const urls = item.attachments.map((attachment: { url: string }) => attachment.url);
-                const { data, error } = await supabase.storage.from('Conversations').createSignedUrls(urls, 5400);
-                if(error){
-                    console.log("Error in ImageDisplay when creatingSignedUrls function in components/attachment.tsx file :", error);
+
+                // console.log("ITEM ATTACHMENT AUDIO :", item)
+                let signedUrl;
+                if(item.attachments[0]?.local_path){
+                    //OFFLINE AUDIO
+                    signedUrl = item.attachments[0].local_path;
+                    setAttachmentsUrl(signedUrl);
+                    loadAudio(signedUrl);
+                }else{
+                    //ONLINE AUDIO 
+                    const url = item.attachments[0].url;
+                    const { data, error } = await supabase.storage.from('Conversations').createSignedUrls(url, 5400);
+                    if(error){
+                        console.log("Error in AudioPlayer when creatingSignedUrls function in components/audipPlayer.tsx file :", error);
+                    }
+                    if(data){
+                        signedUrl = data.map((signedURL) => signedURL.signedUrl)
+                        setAttachmentsUrl(signedUrl[0]);
+                        loadAudio(signedUrl[0]);
+                    }
                 }
-                if(data){
-                    const signedUrls = data.map((signedURL) => signedURL.signedUrl)
-                    setAttachmentsUrl(signedUrls[0]);
-                    loadAudio(signedUrls[0]);
-                }
+                // const urls = item.attachments.map((attachment: { url: string }) => attachment.url);
                 // const isPlayingGlobal = currentUrl === signedUrls[0];
 
             }catch(error: unknown){
-                console.log("Error in ImageDisplay function in components/attachment.tsx file :", error);
+                console.log("Error in AudioPlayer function in components/AudioPlayer.tsx file :", error);
             }finally{
                 setLoadingUrl(false);
             }

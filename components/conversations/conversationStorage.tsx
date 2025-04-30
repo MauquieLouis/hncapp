@@ -171,7 +171,7 @@ class ConversationStorageDatabase {
             console.error("Database not initialized");
             return;
         }
-        const local_path = await this.insertNewAttachmentInLocalStorage(attachment.url);
+        const local_path = await this.insertNewAttachmentInLocalStorage(attachment.url, attachment.type);
         const { id, url, type, size, created_at } = attachment;
         try {
             const attachment_result = await this.db.runAsync(`
@@ -202,7 +202,7 @@ class ConversationStorageDatabase {
         
     }
 
-    private async insertNewAttachmentInLocalStorage(url: any) {
+    private async insertNewAttachmentInLocalStorage(url: any, type: string) {
         // -1- First download image from url
         // -2- Get it in base64 format
         // -3- Save it with file-system expo
@@ -211,16 +211,8 @@ class ConversationStorageDatabase {
                 console.error("❌ Error: FileSystem.documentDirectory is null in insertNewAttachmentInLocalStorage function conversationStorage.tsx: ");
                 return null;
             }
-            const { data, error } = await supabase.storage.from("Conversations").download(url);
-            if (error) {
-                console.error("❌ Error downloading attachment in insertNewAttachmentInLocalStorage function conversationStorage.tsx: ", error); 
-            }
-            if(!data) {
-                console.error("❌ No data returned in insertNewAttachmentInLocalStorage function conversationStorage.tsx: ", error);
-                return null;
-            }
-            const base64Data = await this.blobToBase64(data);
-            // console.log("Base64 data: ", base64Data);
+            
+            let base64Data;
             const fileName = url
             const fileUri = FileSystem.documentDirectory + fileName;
             // 🔧 Ensure the directory exists
@@ -229,10 +221,30 @@ class ConversationStorageDatabase {
             if (!dirInfo.exists) {
                 await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
             }
-            await FileSystem.writeAsStringAsync(fileUri, base64Data, {
-                encoding: FileSystem.EncodingType.Base64,
-            });
-            console.log("✅ File saved to: ", fileUri);
+            console.log(" ******** TYPE :",type)
+            if(type.startsWith('audio')){
+                const { data, error } = await supabase.storage.from('Conversations').createSignedUrl(url, 60*60);
+                if(error) throw error;
+                const remoteUrl = data?.signedUrl;
+                if(!remoteUrl) throw new Error('No signed URL returned.');
+                const downloadRes = await FileSystem.downloadAsync(remoteUrl, fileUri);
+                console.log("Uploaded to :", downloadRes.uri);
+            }else{
+                const { data, error } = await supabase.storage.from("Conversations").download(url);
+                if (error) {
+                    console.error("❌ Error downloading attachment in insertNewAttachmentInLocalStorage function conversationStorage.tsx: ", error); 
+                }
+                if(!data) {
+                    console.error("❌ No data returned in insertNewAttachmentInLocalStorage function conversationStorage.tsx: ", error);
+                    return null;
+                }
+                base64Data = await this.blobToBase64(data);
+                // console.log("Base64 data: ", base64Data);
+                await FileSystem.writeAsStringAsync(fileUri, base64Data, {
+                    encoding: FileSystem.EncodingType.Base64,
+                });
+                console.log("✅ File saved to: ", fileUri);
+            }
             return fileUri;
 
         }catch(error){
@@ -380,6 +392,7 @@ class ConversationStorageDatabase {
             }
             this.insertMessage(message, conversationId);
         });
+        console.log("✅ Upload should have succeed");
     }
 
 
@@ -396,6 +409,30 @@ class ConversationStorageDatabase {
             LIMIT ? OFFSET ?;`, 
             [conversationId, pageSize, ((page - 1) * pageSize)]
         );
+        await this.loadAttachmentsAndReactionsForMessages(messages);
+        return messages;
+    }
+
+    async getMessagesAfterDate(conversationId: string, afterDate: string, limit: number = 50){
+        if (!this.db) {
+            console.error("Database not initialized");
+            return [];
+        }
+        const query = `
+            SELECT * FROM messages
+            WHERE conversation_id = ?
+            AND datetime(created_at) < datetime(?)
+            AND (deleted_at IS NULL)
+            ORDER BY datetime(created_at) DESC
+            LIMIT ?
+        ` ;
+
+        const messages = await this.db.getAllAsync(query, [conversationId, afterDate, limit]);
+        await this.loadAttachmentsAndReactionsForMessages(messages);
+        return messages;
+    }
+
+    async loadAttachmentsAndReactionsForMessages(messages: any){
         for(const message of messages) {
             //Check for attachment with this message.id
             if(message.has_attachment) {
@@ -417,6 +454,52 @@ class ConversationStorageDatabase {
             }
         }
         return messages;
+    }
+
+    async getLastMessageForConversationId(conversationId: any){
+        if (!this.db) {
+            console.error("Database not initialized");
+            return null;
+        }
+        const result = await this.db.getFirstAsync(`
+            SELECT created_at FROM messages
+            WHERE conversation_id = ?
+            ORDER BY created_at DESC
+            LIMIT 1
+        `, [conversationId]);
+        return result?.created_at || null;
+    }
+
+    async getOldestMessageStoredInDb(conversationId: any){
+        if (!this.db) {
+            console.error("Database not initialized");
+            return null;
+        }
+        const result = await this.db.getFirstAsync(`
+            SELECT created_at FROM messages
+            WHERE conversation_id = ?
+            ORDER BY created_at ASC
+            LIMIT 1
+        `, [conversationId]);
+        return result?.created_ad || null;
+    }
+
+    async countMessagesConversation(conversationId: any){
+        if (!this.db) {
+            console.error("Database not initialized");
+            return null;
+        }
+        try {
+            const result = await this.db.getFirstAsync(
+                `SELECT COUNT(*) as count FROM messages WHERE conversation_id = ?`,
+                [conversationId]
+            );
+    
+            return result?.count ?? 0;
+        } catch (error) {
+            console.error("Failed to count messages:", error);
+            return null;
+        }
     }
 
 

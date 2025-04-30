@@ -90,7 +90,7 @@ async function registerForPushNotificationsAsync() {
     }
     try{
       const pushTokenString = (await Notifications.getExpoPushTokenAsync({projectId})).data;
-      console.log("PUSH TOKEN STRING :",pushTokenString);
+      // console.log("PUSH TOKEN STRING :",pushTokenString);
       return pushTokenString;
     }catch(e: unknown){
       handleRegistrationError(`${e}`);
@@ -123,7 +123,7 @@ const updateOrInsertDeviceToken = async(userId: any, device_token: any) => {
     if(device_token_error){
       console.log("Error in updateOrInsertDeviceToken function when upserting device token in main _layout.tsx", device_token_error);
     }
-    console.log("DATA DEVICE TOKEN :", device_token_data);
+    // console.log("DATA DEVICE TOKEN :", device_token_data);
   }catch(error: unknown) {
     console.log("Error in updateOrInsertDeviceToken function in main _layout.tsx", error);
   }finally{
@@ -138,7 +138,6 @@ const MainStack = () => {
   const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
   const { session, loading, user } = useUserContext();
 
-  console.log("SESSION:");
   const notificationListener = useRef<Notifications.EventSubscription>();
   const responseListener = useRef<Notifications.EventSubscription>();
   useEffect(() => {
@@ -161,7 +160,7 @@ const MainStack = () => {
     
     useEffect(() => {
       if(session && expoPushToken){
-        console.log("USER AND TOKEN", user.id, expoPushToken);
+        // console.log("USER AND TOKEN", user.id, expoPushToken);
         updateOrInsertDeviceToken(user.id, expoPushToken);
         
       }

@@ -45,7 +45,7 @@ const AudioRecorder = (props: any) =>{
     }
   }
   useEffect(() => {
-    console.log("RECORDING DETECTED ", recording);
+    // console.log("RECORDING DETECTED ", recording);
   }, [recording]);
 
   const record = async () => {
