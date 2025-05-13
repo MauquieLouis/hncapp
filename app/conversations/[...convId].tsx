@@ -39,7 +39,7 @@ const debounce = (func: { (): Promise<void>; apply?: any; }, delay: number | und
 
 const ConversationScreen = () => {
     
-    const PAGE_SIZE = 50; // If changing this, number, be careful of changing it in the rpc function that retrieve first messages at opening, maybe add a parameter for that.
+    const PAGE_SIZE = 10; // If changing this, number, be careful of changing it in the rpc function that retrieve first messages at opening, maybe add a parameter for that.
 
     const [ loading, setLoading ] = useState(false);
     const [ messages, setMessages ] = useState<any[]>([]);
@@ -76,8 +76,10 @@ const ConversationScreen = () => {
     //     encryptionKey: 'hunter2',
     // });
     useEffect(() => {
+
         const initConversationStorage = async () => {
             await ConversationStorageDatabase.initDatabase();
+            await checkForDeleteMessage();
             const messages = await getLocalConversations();
             setMessages(messages);
         }
@@ -102,11 +104,61 @@ const ConversationScreen = () => {
             }
         }
         markMessageAsRead();
-        fetchConversationData();
+        // fetchConversationData();
         subscribeToTypingStatus();
         subscrbeToMessagesStatus();
     }, []);
 
+    const checkForDeleteMessage = async() => {
+        try{
+            setLoading(true);
+            //Get the most recent date of deleted message in local db
+            //Get the most recent date of deleted message in supabase
+            const { data: deleted_message, error: deleted_error } = await supabase
+                .from('messages')
+                .select('deleted_at')
+                .eq('conversation_id', convId[0])
+                .order('deleted_at', { ascending: false })
+                .not('deleted_at', 'is', null)
+                .limit(1)
+                .single();
+            if(deleted_error){
+                console.log("Error when fetching last deleted message in checkForDeleteMessage function in [...convId].tsx", deleted_error);
+            }
+            console.log("DELETED MESSAGE :", deleted_message);
+            if(deleted_message == null || deleted_message == undefined){
+                console.log("NO DELETED MESSAGE FOUND IN SUPABASE");
+                return;
+            }
+            const local_deleted_message = await ConversationStorageDatabase.getMostRecentDeletedMessage(convId[0]);
+            console.log("LOCAL DELETED MESSAGE :", local_deleted_message);
+            //If the date are the same thats OK, if not we need to get all deleted message between theses two dates and update local message database
+            if(deleted_message.deleted_at == local_deleted_message.deleted_at){
+                return;
+            }else{
+                console.log("DELETED MESSAGE FOUND IN LOCAL DB");
+                //Get all the deleted message between these two dates
+                const { data: deleted_messages, error: deleted_messages_error } = await supabase.rpc('get_deleted_messages_between',
+                    {
+                    'p_conversation_id': convId[0], 
+                    'p_user_id':user.id, 
+                    'p_after': local_deleted_message.deleted_at, 
+                    'p_before': deleted_message.deleted_at}
+                );
+                console.log("PARMAS ----> ", convId[0], user.id, local_deleted_message.deleted_at, deleted_message.deleted_at);
+                if(deleted_messages_error){
+                    console.log("Error when fetching deleted messages in checkForDeleteMessage function in [...convId].tsx", deleted_messages_error);
+                }
+                console.log("DELETED MESSAGES :", deleted_messages);
+                await ConversationStorageDatabase.updateDeletedMessages(deleted_messages, convId[0], user.id);
+            }
+        }catch(error: unknown){
+            console.error("Error in checkForDeleteMessage function in [...convId].tsx", error);
+        }finally{
+            setLoading(false);
+        }
+    }
+    
     const getLocalConversations = async () => {
         // await ConversationStorageDatabase.clearDatabaseAndFiles();
 
@@ -425,6 +477,7 @@ const ConversationScreen = () => {
     // }, [oldestLocalMessage])
 
     const loadMoreMessagesV2 = useCallback(async() => {
+        console.log("INSIDE LOAD MORE MESSAGES : (canTriggerLoadMore , loadingMoreMessages) = (", canTriggerLoadMore,(','), loadingMoreMessages,").");
         if (!canTriggerLoadMore || loadingMoreMessages || endReached ) return;
 
         try{
@@ -457,7 +510,12 @@ const ConversationScreen = () => {
             if(messages.length < localCount){
                 //FETCH LOCAL DATABASE
                 console.log("FETCH LOCAL DATABASE");
-                next_messages = await ConversationStorageDatabase.getMessagesAfterDate(convId[0], oldestLocalMessage.toString(), PAGE_SIZE);
+                let number_of_messages_to_fetch = localCount - messages.length
+                if(number_of_messages_to_fetch > PAGE_SIZE){
+                    number_of_messages_to_fetch = PAGE_SIZE;
+                }
+                console.log("NUMBER OF MESSAGES TO FETCH :", number_of_messages_to_fetch);
+                next_messages = await ConversationStorageDatabase.getMessagesAfterDate(convId[0], oldestLocalMessage.toString(), number_of_messages_to_fetch);
             }else{
                 //FETCH SUPABASE
                 console.log("FETCH SUPABASE before", (oldestLocalMessage));
@@ -468,6 +526,7 @@ const ConversationScreen = () => {
                         'p_before': new Date(oldestLocalMessage),
                         'p_limit': PAGE_SIZE
                 });
+                console.log("UPLOAD NEW MESSAGES DONE ! ---*****")
                 if(error){
                     console.error("Error in when loading more message in loadMoreMessageV2 function in [...convId].tsx", error);
                 }
@@ -480,9 +539,8 @@ const ConversationScreen = () => {
             console.log("New oldest date :", next_messages[next_messages.length-1].created_at);
             setOldestLocalMessage(next_messages[next_messages.length-1].created_at);
             
-            console.log("UPLOAD NEW MESSAGES DONE ! ---*****")
             next_messages = await ConversationStorageDatabase.getMessagesAfterDate(convId[0], oldestLocalMessage.toString(), PAGE_SIZE);
-            console.log("DOWNLOAD NEW MESSAGES DONE ! 222 ---*****")
+            console.log("DOWNLOAD NEW MESSAGES DONE ! ---*****")
             setMessages((prev) => {const data = [...prev, ...next_messages]; const uniqueData = Array.from(new Set(data)); return uniqueData});
             
             // const local_messages = await ConversationStorageDatabase.loadLocalMessages(convId[0], user.id, page+1, PAGE_SIZE);
@@ -497,9 +555,13 @@ const ConversationScreen = () => {
     },[loadingMoreMessages, offset, oldestLocalMessage]);
 
     // const debouncedFetchData = useCallback(debounce(loadMoreMessages, 300), [loadMoreMessages]);
-    const debouncedFetchData2 = useCallback(debounce(loadMoreMessagesV2, 180), [loadMoreMessagesV2]);
+    const debouncedFetchData2 = useCallback(debounce(loadMoreMessagesV2, 300), [loadMoreMessagesV2]);
 
     const handleLoadMoreMessage = () => {
+        /**
+         *  -------- TODO ----------
+        //Set here the loading icon message
+         */
         if(messages.length < PAGE_SIZE) return;
         console.log("++++++ handle Load More Messages ++++++");
         debouncedFetchData2();
@@ -540,6 +602,13 @@ const ConversationScreen = () => {
         // console.log("contentOffset", contentOffset.y);
         setScrollY(contentOffset.y);
         setIsAtBottom(atTop); //It's call bottom here because flatlist is inverted.
+
+        const offsetY = event.nativeEvent.contentOffset.y;
+        if (offsetY < 50) {
+            handleLoadMoreMessage();
+        }
+
+        
     };
 
     /** -------------------------------------------------------------------------
@@ -638,13 +707,14 @@ const ConversationScreen = () => {
                         keyExtractor={(item) => item.id}
                         extraData={messages}
                         // onContentSizeChange={scrollToBottom} // To use when new message received.
-                        onEndReached={handleLoadMoreMessage}
+                        // onEndReached={handleLoadMoreMessage}
                         onMomentumScrollBegin={() => {setCanTriggerLoadMore(true)}}
                         onEndReachedThreshold={0.1}
                         ListFooterComponent={loadingMoreMessages? <Center>
                             <Spinner size="large" color={"blue"}/>
                         </Center>  : null}
                         onScroll={handleScroll}
+                        removeClippedSubviews={true}
                         scrollEventThrottle={16}
                         ListHeaderComponent={<Box style={{height:70}}>
                             {isSeen ? 

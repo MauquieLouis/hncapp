@@ -14,6 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { VStack } from "../ui/vstack";
 import ReactionActionSheet from "./reactionActionSheet";
 
+import ConversationStorageDatabase from '@/components/conversations/conversationStorage';
+
 
 const FlatListMessage = (props: any) => {
 
@@ -44,24 +46,26 @@ const FlatListMessage = (props: any) => {
 
     const deleteMessage = useCallback(async () => {
         try{
-            //SOFT DELETE THE MESSAGE
+            //SOFT DELETE THE MESSAGE online and localy
+            await ConversationStorageDatabase.deleteMessage(item.id);
             const { data: data_soft_delete_msg, error: error_soft_delete_msg } = await supabase.from('messages').update({deleted_at:new Date().toISOString()}).eq('id',item.id);
             //DELETE ALL THE ASSOCIATED ATTACHMENTS
             const { data: deleted_attachments, error: error_deleted_attachment } = await supabase.from('attachments').delete().eq('message_id',item.id).select();
+            console.log("DELETED ATTACHMENTS :", deleted_attachments);
             //DELETE ASSOCIATED ATTACHMENTS IN STORAGE
-            if(deleted_attachments){
+            if(deleted_attachments?.length !== 0 && deleted_attachments !== null){
                 const urls: string[] = deleted_attachments.map(item => item.url);
                 console.log("URLS TO DELETE : ",urls);
                 const { data: data_delete_attachment, error: error_delete_attachment } = await supabase.storage.from('Conversations').remove(urls);
                 if(error_delete_attachment){
-                    console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file :", error_delete_attachment);
+                    console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file (1):", error_delete_attachment);
                 }
             }
             if(error_soft_delete_msg){
                 console.log("Error in deleteMessage function when soft deleting msg in components/attachment.tsx file :", error_soft_delete_msg);
             }
             if(error_deleted_attachment){
-                console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file :", error_deleted_attachment);
+                console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file (2):", error_deleted_attachment);
             }
         }catch(error: unknown){
             console.log("Error in deleteMessage function in components/attachment.tsx file :", error);

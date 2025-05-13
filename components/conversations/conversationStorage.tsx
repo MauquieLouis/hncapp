@@ -5,6 +5,7 @@ import { supabase } from "@/libs/initSupabase";
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { useUserContext } from "@/contexts/userContext";
+import Attachment from "./attachment";
 
 class ConversationStorageDatabase {
     static instance: SQLiteAnyDatabase | null = null;
@@ -361,7 +362,7 @@ class ConversationStorageDatabase {
                 return;
             }
             const { data: conv_data, error: conv_error } = await supabase.rpc('get_conversation_messages2', 
-            {'p_conversation_id': conversationId, 'p_user_id':userId});
+            {'p_conversation_id': conversationId, 'p_user_id':userId, 'p_page_size':10});
             if(conv_error){
                 console.log('Conv_Error :', conv_error);
             }
@@ -379,19 +380,35 @@ class ConversationStorageDatabase {
     }
 
     async uploadNewMessages(messages: any, conversationId: any, userId: any) {
-        messages.forEach((message: any) => {
-            if(message.attachments) {
-                message.attachments.forEach((attachment: any) => {
-                    this.insertNewAttachement(attachment, message.id);
-                });
+        for(let message of messages) {
+            if(message.has_attachment) {
+                for(let attachment of message.attachments) {
+                    await this.insertNewAttachement(attachment, message.id);
+                }
             }
             if(message.reactions) {
-                message.reactions.forEach((reaction: any) => {
-                    this.insertReaction(reaction, message.id, conversationId);
-                });
+                for(let reaction of message.reactions) {
+                    await this.insertReaction(reaction, message.id, conversationId);
+                }
+
             }
-            this.insertMessage(message, conversationId);
-        });
+            await this.insertMessage(message, conversationId);
+        }
+        // messages.forEach(async (message: any) => {
+        //     console.log("CHECK ATTACHMENTS----")
+        //     if(message.attachments) {
+        //         await message.attachments.forEach(async (attachment: any) => {
+        //             await this.insertNewAttachement(attachment, message.id);
+        //         });
+        //     }
+        //     console.log("CHECK REACTIONS----")
+        //     if(message.reactions) {
+        //         await message.reactions.forEach(async (reaction: any) => {
+        //             await this.insertReaction(reaction, message.id, conversationId);
+        //         });
+        //     }
+            // console.log("☻ ♥ INSERT MESSAGE----")
+        // });
         console.log("✅ Upload should have succeed");
     }
 
@@ -435,6 +452,13 @@ class ConversationStorageDatabase {
     async loadAttachmentsAndReactionsForMessages(messages: any){
         for(const message of messages) {
             //Check for attachment with this message.id
+            if(message.replied_to_id && message.replied_to_id !== null) {
+                const reply = await this.db.getFirstAsync(`
+                    SELECT id, content, type FROM messages WHERE id = ?
+                `, [message.replied_to_id]);
+                message.reply_type = reply.type;
+                message.reply_content = reply.content;
+            }
             if(message.has_attachment) {
                 const attachments = await this.db.getAllAsync(`
                     SELECT id, url, type, size, created_at, local_path FROM attachments WHERE message_id = ?
@@ -501,6 +525,144 @@ class ConversationStorageDatabase {
             return null;
         }
     }
+
+    /**
+     * ---------------------------------------
+     * Method to delete a message from the storage
+     * ---------------------------------------
+    */
+    async deleteMessage(messageId: string) {
+        if (!this.db) {
+            console.error("Database not initialized");
+            return;
+        }
+        try {
+            // Check for attachments and delete them
+            const attachments = await this.db.getAllAsync(`
+                SELECT local_path FROM attachments WHERE message_id = ?
+            `, [messageId]);
+            for (const attachment of attachments) {
+                if (attachment.local_path) {
+                    await this.deleteAttachment(attachment.id);
+                    // Delete the file from local storage
+                    await this.deleteAttachmentFromLocalStorage(attachment.local_path);
+                }
+            }
+            await this.db.runAsync(`
+                UPDATE messages SET deleted_at = datetime('now') WHERE id = ?
+            `, [messageId]);
+            console.log("✅ Message deleted: ", messageId);
+        } catch (error) {
+            console.error("❌ Error deleting message: ", error); 
+        }
+    }
+
+    async deleteAttachment(attachmentId: string) {
+        if (!this.db) {
+            console.error("Database not initialized");
+            return;
+        }
+        try {
+            await this.db.runAsync(`
+                DELETE FROM attachments WHERE id = ?
+            `, [attachmentId]);
+            console.log("✅ Attachment deleted: ", attachmentId);
+        } catch (error) {
+            console.error("❌ Error deleting attachment: ", error); 
+        }
+    }   
+
+    private async deleteAttachmentFromLocalStorage(fileName: string): Promise<boolean> {
+        try {
+          if (!FileSystem.documentDirectory) {
+            console.error("❌ FileSystem.documentDirectory is null in deleteAttachmentFromLocalStorage.");
+            return false;
+          }
+      
+          const fileUri = FileSystem.documentDirectory + fileName;
+          const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      
+          if (!fileInfo.exists) {
+            console.warn("⚠️ File does not exist, nothing to delete: ", fileUri);
+            return false;
+          }
+      
+          await FileSystem.deleteAsync(fileUri, { idempotent: true });
+          console.log("✅ File deleted from local storage: ", fileUri);
+          return true;
+      
+        } catch (error) {
+          console.error("❌ Error deleting file from local storage: ", error);
+          return false;
+        }
+    }
+
+    async deleteReaction(reactionId: string) {
+        if (!this.db) {
+            console.error("Database not initialized");
+            return;
+        }
+        try {
+            await this.db.runAsync(`
+                DELETE FROM message_reactions WHERE id = ?
+            `, [reactionId]);
+            console.log("✅ Reaction deleted: ", reactionId);
+        } catch (error) {
+            console.error("❌ Error deleting reaction: ", error); 
+        }
+    }
+
+    async getMostRecentDeletedMessage(conversationId: string) {
+        if(!this.db) {
+            console.error("Database not initialized");
+            return null;
+        }
+        try {
+            const result = await this.db.getFirstAsync(`
+                SELECT * FROM messages
+                WHERE conversation_id = ?
+                AND deleted_at IS NOT NULL
+                ORDER BY deleted_at DESC
+                LIMIT 1
+            `, [conversationId]);
+            return result;
+        } catch (error) {
+            console.error("❌ Error fetching most recent deleted message: ", error); 
+            return null;
+        }
+    }
+
+    async updateDeletedMessages(messages: any, conversationId: string, userId: string) {
+        if(!this.db) {
+            console.error("Database not initialized");
+            return;
+        }
+        try {
+            //Go through all the messages and update their deleted_at field
+            for(let message of messages) {
+                console.log("UPDATE DELETED MESSAGE :", message);
+                if(message.deleted_at) {
+                    await this.db.runAsync(`
+                        UPDATE messages SET deleted_at = datetime(?) WHERE id = ?
+                    `, [message.deleted_at, message.id]);
+                }
+                //Check for attachments and delete them
+                if(message.has_attachments) {
+                    const attachments = await this.db.getAllAsync(`
+                        SELECT * FROM attachments WHERE message_id = ?
+                    `, [message.id]);
+                    for(let attachment of attachments) {
+                        await this.deleteAttachment(attachment.id);
+                        // Delete the file from local storage
+                        await this.deleteAttachmentFromLocalStorage(attachment.local_path);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("❌ Error updating deleted messages: ", error); 
+        }
+    }
+
 
 
     /** 
