@@ -603,10 +603,11 @@ const ConversationScreen = () => {
         setScrollY(contentOffset.y);
         setIsAtBottom(atTop); //It's call bottom here because flatlist is inverted.
 
-        const offsetY = event.nativeEvent.contentOffset.y;
-        if (offsetY < 50) {
-            handleLoadMoreMessage();
-        }
+        // const offsetY = event.nativeEvent.contentOffset.y;
+        // console.log("OFFSET Y :", contentOffset.y);
+        // if (contentOffset.y < 50) {
+        //     handleLoadMoreMessage();
+        // }
 
         
     };
@@ -707,9 +708,9 @@ const ConversationScreen = () => {
                         keyExtractor={(item) => item.id}
                         extraData={messages}
                         // onContentSizeChange={scrollToBottom} // To use when new message received.
-                        // onEndReached={handleLoadMoreMessage}
+                        onEndReached={handleLoadMoreMessage}
                         onMomentumScrollBegin={() => {setCanTriggerLoadMore(true)}}
-                        onEndReachedThreshold={0.1}
+                        onEndReachedThreshold={0.28}
                         ListFooterComponent={loadingMoreMessages? <Center>
                             <Spinner size="large" color={"blue"}/>
                         </Center>  : null}
