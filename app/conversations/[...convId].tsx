@@ -698,7 +698,7 @@ const ConversationScreen = () => {
                 <Text>LOADING !!!</Text>
             :
                 <>
-                    <Text>CONVERSATION ID : {convId[0]}</Text>
+                    {/* <Text>CONVERSATION ID : {convId[0]}</Text> */}
                     <FlatList
                         ref={flatListRef}
                         data={messages}
