@@ -26,16 +26,6 @@ const debounce = (func: { (): Promise<void>; apply?: any; }, delay: number | und
     }
 }
 
-// const documentPath = FileSystem.documentDirectory;
-// console.log("DOCUMENT DIRECTORY Path :", documentPath);
-
-// export const storage = new MMKV({
-//     id: `user-test-storage`,
-//     path: `${documentPath}/storage`,
-//     encryptionKey: 'hunter2',
-//     mode: Mode.MULTI_PROCESS,
-// });
-
 
 const ConversationScreen = () => {
     
@@ -45,7 +35,7 @@ const ConversationScreen = () => {
     const [ messages, setMessages ] = useState<any[]>([]);
     const [ text, setText ] = useState('');
     const [ participants, setParticipants ] = useState(null);
-    const [ devicesTokens, setDeviceTokens ] = useState([]);
+    const [ devicesTokens, setDeviceTokens ] = useState<string[]>([]);
     const [ loadingSend, setLoadingSend ] = useState(false);
     const [ typingUsers, setTypingUsers ] = useState({});
     const [ loadingMoreMessages, setLoadingMoreMessages ] = useState(false);
@@ -87,10 +77,10 @@ const ConversationScreen = () => {
         const fetchConversationData = async () => {
             try{
                 setLoading(true);
-                const { data: conv_data, error: conv_error } = await supabase.rpc('get_conversation_messages2', 
+                const { data: conv_data, error: conv_error } = await supabase.rpc('get_participants_and_token_and_lastmessage', 
                     {'p_conversation_id': convId[0], 'p_user_id':user.id});
                 if(conv_error){
-                    console.log('Conv_Error :', conv_error);
+                    console.error('Conv_Error :', conv_error);
                 }
                 // console.log("conv_data :", conv_data.messages);
                 // setMessages(conv_data.messages);
@@ -98,16 +88,20 @@ const ConversationScreen = () => {
                 setDeviceTokens(conv_data.device_tokens);
                 readLastMessageStatus(conv_data.messages[0].id);
             }catch(error: unknown){
-                console.log('Error in fetchConversation function in Messagings.tsx', error);
+                console.error('Error in fetchConversation function in Messagings.tsx', error);
             }finally{
                 setLoading(false);
             }
         }
         markMessageAsRead();
-        // fetchConversationData();
+        fetchConversationData();
         subscribeToTypingStatus();
         subscrbeToMessagesStatus();
     }, []);
+
+    useEffect(() => {
+        console.log("DEVICE TOKENS :", devicesTokens);
+    }, [devicesTokens])
 
     const checkForDeleteMessage = async() => {
         try{
@@ -132,6 +126,7 @@ const ConversationScreen = () => {
             }
             const local_deleted_message = await ConversationStorageDatabase.getMostRecentDeletedMessage(convId[0]);
             console.log("LOCAL DELETED MESSAGE :", local_deleted_message);
+            if(!local_deleted_message) return;
             //If the date are the same thats OK, if not we need to get all deleted message between theses two dates and update local message database
             if(deleted_message.deleted_at == local_deleted_message.deleted_at){
                 return;
@@ -380,7 +375,7 @@ const ConversationScreen = () => {
         }catch(error: unknown){
             console.log('Error in sendTextMessage function in [...convId].tsx', error);
         }finally{
-            // sendPushNotification(["ExponentPushToken[LAeDpVJcdT2PZz3kEnrFwj]"]);
+            sendPushNotification(devicesTokens);
             setIsSeen(false);
             setText('');
             setLoadingSend(false);
@@ -396,25 +391,30 @@ const ConversationScreen = () => {
     async function sendPushNotification(expoPushToken: string[]) {
         //ExponentPushToken[LAeDpVJcdT2PZz3kEnrFwj]
         for(let token of expoPushToken){
-            const notif = {
-              to: token,
-              sound: 'default',
-              title: "CONV",
-              body: text,
-              identifier: "notificationId", // Ensures it updates instead of creating a new one
-              data: { someData: 'goes here'},
-    
-            };
-          
-            await fetch('https://exp.host/--/api/v2/push/send', {
-              method: 'POST',
-              headers: {
-                Accept: 'application/json',
-                'Accept-encoding': 'gzip, deflate',
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(notif),
-            });
+            if(token.startsWith('ExponentPushToken[')){
+                let body_notif = text;
+                if(text.trim() === '') body_notif='-Send-Attachment-';
+                console.log("SEND PUSH NOTIFICATION TO TOKEN :", token);
+                const notif = {
+                    to: token,
+                    sound: 'default',
+                    title: convId[0],
+                    body: body_notif,
+                    identifier: "notificationId", // Ensures it updates instead of creating a new one
+                    data: { someData: 'goes here'},
+                    
+                };
+                
+                await fetch('https://exp.host/--/api/v2/push/send', {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Accept-encoding': 'gzip, deflate',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(notif),
+                });
+            }
         }
       }
 
@@ -665,7 +665,7 @@ const ConversationScreen = () => {
      */
     const readLastMessageStatus = async(message_id: any) => {
         try{
-            // console.log("MESSAGE ID :", message_id);
+            console.log("READ LAST MESSAGE STATUS MESSAGE ID :", message_id);
             const { data: last_status, error: error_status } = await supabase.from('message_status').select('*').eq('message_id',message_id).neq('user_id',user.id);
             if(error_status){
                 console.log('Error in readLastMessageStatus when trying to read last message_status function in [...convId].tsx', error_status);

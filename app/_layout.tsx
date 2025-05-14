@@ -160,7 +160,7 @@ const MainStack = () => {
     
     useEffect(() => {
       if(session && expoPushToken){
-        // console.log("USER AND TOKEN", user.id, expoPushToken);
+        console.log("USER AND TOKEN", user.id, expoPushToken);
         updateOrInsertDeviceToken(user.id, expoPushToken);
         
       }
