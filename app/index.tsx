@@ -9,7 +9,7 @@ export default function Index() {
     style={styles.container}
     >
       {/* ============ This is a way to make as default screen : Redirect ============ */}
-        <Redirect href="/conversations/conversationsList" /> 
+        {/* <Redirect href="/conversations/conversationsList" />  */}
       {/* ============================================================================ */}
       <Text style={styles.text} >Home Screen.</Text>
       <Link href="/about" style={styles.button}>
@@ -18,6 +18,9 @@ export default function Index() {
       <View style={{padding:10}}></View>
       <Link href="conversations/conversationsList" style={styles.button}>
         CONVERSATIONS
+      </Link>
+      <Link href="profile/profileScreen" style={styles.button}>
+        Profile --
       </Link>
       {/* <Link href="/(tabs)" style={styles.button}>
         Tabs

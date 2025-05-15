@@ -13,6 +13,7 @@ const MainFile = () => {
             <Stack.Screen name="index" />
             <Stack.Screen name="conversations"/>
             <Stack.Screen name="+not-found" />
+            <Stack.Screen name="profile" />
         </Stack>
         <StatusBar style="dark" />
     </ThemeProvider>
