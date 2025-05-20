@@ -3,11 +3,12 @@ import { Text } from "react-native";
 import { Image } from "@/components/ui/image";
 import { Avatar as AvatarGStackUI, AvatarBadge, AvatarImage, AvatarFallbackText } from "@/components/ui/avatar";
 
-export default function Avatar(){
+export default function Avatar(props: { width?: any; height?: any; }){
+    const { width = 50, height = 50 } = props;
 
     return(
         // <AvatarGStackUI size={"2xl"} >
-        <AvatarGStackUI style={{width:150, height:150}} >
+        <AvatarGStackUI style={{width, height}} >
             <AvatarFallbackText>D</AvatarFallbackText>
             <AvatarImage source={{ uri: "https://picsum.photos/200" }} />
             {/* <AvatarImage source={{ uri: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8dXNlcnxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=800&q=60" }} /> */}

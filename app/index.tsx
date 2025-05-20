@@ -1,8 +1,10 @@
 import React, { Text, View, StyleSheet } from "react-native";
 import { Link, Redirect } from 'expo-router';
+import { useUserContext } from "@/contexts/userContext";
 
 export default function Index() {
 
+  const { profile } = useUserContext();
 
   return (
     <View
@@ -19,8 +21,19 @@ export default function Index() {
       <Link href="conversations/conversationsList" style={styles.button}>
         CONVERSATIONS
       </Link>
-      <Link href="profile/profileScreen" style={styles.button}>
+      {/* <Link href={{
+              pathname: 'profile/[id]', 
+              params: {id: profile.user_id}
+            }} 
+          style={styles.button}>
         Profile --
+      </Link> */}
+      <Link href={`profile/${profile.user_id}`} 
+          style={styles.button}>
+        Profile --
+      </Link>
+      <Link href="profile/profileList" style={styles.button}>
+        Profile List
       </Link>
       {/* <Link href="/(tabs)" style={styles.button}>
         Tabs
