@@ -14,6 +14,7 @@ const MainFile = () => {
             <Stack.Screen name="conversations"/>
             <Stack.Screen name="+not-found" />
             <Stack.Screen name="profile" />
+            <Stack.Screen name="notifications" />
         </Stack>
         <StatusBar style="dark" />
     </ThemeProvider>
