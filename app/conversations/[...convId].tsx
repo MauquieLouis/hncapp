@@ -66,7 +66,7 @@ const ConversationScreen = () => {
     //     encryptionKey: 'hunter2',
     // });
     useEffect(() => {
-
+        console.log("CONVERSATION ID :", convId[0]);
         const initConversationStorage = async () => {
             await ConversationStorageDatabase.initDatabase();
             await checkForDeleteMessage();
