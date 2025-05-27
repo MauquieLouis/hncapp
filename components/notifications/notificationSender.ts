@@ -46,26 +46,35 @@ export async function insertNotification({
  * @returns {Promise<{ data: any, error: any }>}
  */
 export async function unsendNotification({
-    id,
+    // id,
     recipient_id,
-  actor_id = null,
-  type,
-  post_id = null,
-}:{
-  id: string | null,
-  recipient_id: string;
-  actor_id?: string | null;
-  type: string;
-  post_id?: string | null;
-}){
+    actor_id = null,
+    type,
+    // post_id = null,
+  }:{
+    // id: string | null,
+    recipient_id: string;
+    actor_id?: string | null;
+    type: string;
+    // post_id?: string | null;
+  }){
 
-try{
-    const { data, error } = await supabase
-    .from('notifications')
-    .delete()
-    .eq('actor_id', actor_id).eq('type', type).eq('post_id',post_id);
-    return { data, error };
-}catch(error: unknown){
-    console.error("Error in unsendNotification function in components/notifications.notificationSender.tsx", error);
-}
+  try{
+      const { data, error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('actor_id', actor_id).eq('type', type).eq('recipient_id',recipient_id);
+      // const { data, error } = await supabase
+      // .from('notifications')
+      // .delete()
+      // .match({
+      //   recipient_id,
+      //   actor_id,
+      //   type,
+      // });
+      // .eq('post_id',post_id);
+      return { data, error };
+  }catch(error: unknown){
+      console.error("Error in unsendNotification function in components/notifications.notificationSender.tsx", error);
+  }
 }

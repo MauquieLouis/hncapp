@@ -11,6 +11,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
+import { insertNotification, unsendNotification } from '@/components/notifications/notificationSender';
 
 export default function ProfileId() {
 
@@ -142,6 +143,12 @@ export default function ProfileId() {
         } else {
           console.log('Friend request unsent:', data);
         }
+        //unsend notification
+        const { data: unsend_data, error: unsend_error} = await unsendNotification({
+          recipient_id: profileDisplayed.user_id, actor_id: profile.user_id, type:'friend_request'});
+        if(unsend_error){
+          console.error("Error when unsending notification in sendOrUnsedFriendRequest function in profileId.tsx", unsend_error);
+        }
         setCanRequestFriendship(true);
         return;
       }
@@ -150,6 +157,15 @@ export default function ProfileId() {
         .insert([
           { user_id_1: profile.user_id, user_id_2: profileDisplayed.user_id, status: 'pending' },
         ]);
+        const { data: notif_data, error: notif_error } = await insertNotification({
+          recipient_id: profileDisplayed.user_id, 
+          actor_id: profile.user_id, 
+          type: 'friend_request', 
+          post_id: null
+        });
+        if(notif_error){
+          console.error("Error when inserting notification in sendOrUnsedFriendRequest function in profileId.tsx", notif_error);
+        }
       if (error) {
         console.error('Error sending friend request:', error);
       } else {
