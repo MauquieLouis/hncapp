@@ -12,20 +12,20 @@ import { supabase } from "@/libs/initSupabase";
  */
 export async function insertNotification({
   recipient_id,
-  actor_id = null,
   type,
-  post_id = null,
+  object_id = null,
+  actor_id = null,
 }: {
   recipient_id: string;
-  actor_id?: string | null;
   type: string;
-  post_id?: string | null;
+  object_id?: string | null;
+  actor_id?: string | null;
 }) {
     try{
         const { data, error } = await supabase
           .from('notifications')
           .insert([
-            {recipient_id: recipient_id, actor_id: actor_id, type: type, post_id: post_id},
+            {recipient_id: recipient_id, actor_id: actor_id, type: type, object_id: object_id},
           ]);
           return { data, error };
     }catch(error: unknown){

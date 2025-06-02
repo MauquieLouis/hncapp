@@ -12,6 +12,7 @@ import { VStack } from '@/components/ui/vstack';
 import { Button } from '@/components/ui/button';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader } from '@/components/ui/modal';
+import NotifcationItem from '@/components/notifications/notificationItem';
 
 export default function NotificationsList() {
 
@@ -24,10 +25,17 @@ export default function NotificationsList() {
   const router = useRouter();
   const { profile } = useUserContext();
 
+  const closeNotifModal = ( ) => {
+    setDisplayNotif(null);
+    setShowNotifModal(false);
+  }
+
   useEffect(() => {
       // console.log("Notifs List: ", profile);
       getAllNotifications();
   }, []);
+
+  useEffect(() => { console.log(" displayNotif ", displayNotif)}, [ displayNotif]);
 
   const getAllNotifications = async () => {
     try{
@@ -65,6 +73,32 @@ export default function NotificationsList() {
     }
   }
 
+  const acceptFriendRequest = async () => {
+    try{
+      const { data, error } = await supabase.from('friends').update({'status': 'accepted'}).eq('id', displayNotif.object_id)
+      if(error){
+        console.error("Error accepting friend request in acceptFriendRequest function in notificationsList.tsx :", error);
+      }
+    }catch(error: unknown){
+      console.error("Error in acceptFriendRequest function in notificationsList.tsx :", error);
+    }finally{
+
+    }
+  }
+
+  const declineFriendRequest = async () => {
+    try{
+      const { data, error } = await supabase.from('friends').delete().eq('id', displayNotif.object_id);
+      if(error){
+        console.error("Error declining friend request in declineFriendRequest function in notificationsList.tsx :", error);
+      }
+    }catch(error: unknown){
+      console.error("Error in declineFriendRequest function in notificationsList.tsx :", error);
+    }finally{
+
+    }
+  }
+
   return (
     <>
       <Box style={[styles.container, {/*borderColor:"blue", borderWidth:1*/}]}>
@@ -75,35 +109,7 @@ export default function NotificationsList() {
           data={notificationsList}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <TouchableOpacity
-            onPress={() => {setShowNotifModal(true);}}
-              style={{/*borderColor:"red", borderWidth:1,*/ flexDirection:"row", alignItems:"center", justifyContent:"flex-start", padding:10, borderBottomColor:"white", borderBottomWidth:1, width:"90%", marginLeft:"5%"}}>
-                <Avatar/>
-                <VStack style={{flex:1, paddingLeft:10}}>
-                <Text style={{color:"white", paddingLeft:15, fontSize:20}}>
-                  {item.type}
-                </Text>
-                <Text style={{color:"white", paddingLeft:15, fontSize:14}}>
-                  {item.username}
-                </Text>
-                </VStack>
-                <Ionicons name="information-circle-outline" size={36} color="white" style={{marginLeft:0}} />
-                <Modal isOpen={showNotifModal} onClose={() => setShowNotifModal(false)} style={{width:"100%", height:"100%"}}>
-                  <ModalBackdrop/>
-                  <ModalContent>
-                    <ModalHeader>
-                      <ModalCloseButton></ModalCloseButton>
-                    </ModalHeader>
-                      {/* <Button onPress={() => console.log("Notification pressed")}>View</Button> */}
-                      <TouchableOpacity style={{backgroundColor:"rgba(70,127,70,0.5)", borderRadius:10, padding:2, marginRight:5}}>
-                        <Ionicons name="checkbox-outline" size={36} color="white" />
-                      </TouchableOpacity>
-                      <TouchableOpacity style={{backgroundColor:"rgba(127,70,70,0.5)", borderRadius:10, padding:2}}>
-                        <Ionicons name="close-circle-outline" size={36} color="white" />
-                      </TouchableOpacity>
-                  </ModalContent>
-                </Modal>
-              </TouchableOpacity>
+            <NotifcationItem notification={item} acceptFriendRequest={acceptFriendRequest} declineFriendRequest={declineFriendRequest}/>
             )}
             />
           }

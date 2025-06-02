@@ -136,7 +136,7 @@ export default function ProfileId() {
           .from('friends')
           .delete()
           .eq('user_id_1', profile.user_id)
-          .eq('user_id_2', profileDisplayed.user_id)
+          .eq('user_id_2', profileDisplayed.user_id).select();
           // .eq('status', 'pending');
         if (error) {
           console.error('Error unsending friend request:', error);
@@ -156,21 +156,23 @@ export default function ProfileId() {
         .from('friends')
         .insert([
           { user_id_1: profile.user_id, user_id_2: profileDisplayed.user_id, status: 'pending' },
-        ]);
-        const { data: notif_data, error: notif_error } = await insertNotification({
-          recipient_id: profileDisplayed.user_id, 
-          actor_id: profile.user_id, 
-          type: 'friend_request', 
-          post_id: null
-        });
-        if(notif_error){
-          console.error("Error when inserting notification in sendOrUnsedFriendRequest function in profileId.tsx", notif_error);
+        ]).select();
+        if (error) {
+          console.error('Error sending friend request:', error);
+        } else {
+          console.log('Friend request sent:', data);
         }
-      if (error) {
-        console.error('Error sending friend request:', error);
-      } else {
-        console.log('Friend request sent:', data);
-      }
+        if(data){
+          const { data: notif_data, error: notif_error } = await insertNotification({
+            recipient_id: profileDisplayed.user_id, 
+            actor_id: profile.user_id, 
+            type: 'friend_request', 
+            object_id: data![0].id
+          });
+          if(notif_error){
+            console.error("Error when inserting notification in sendOrUnsedFriendRequest function in profileId.tsx", notif_error);
+          }
+        }
       setCanRequestFriendship(false);
     }catch(error: unknown){
       console.error("Error in sendFriendRequest function in profileId.tsx", error);
