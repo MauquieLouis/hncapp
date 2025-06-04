@@ -12,7 +12,7 @@ import { VStack } from '@/components/ui/vstack';
 import { Button } from '@/components/ui/button';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader } from '@/components/ui/modal';
-import NotifcationItem from '@/components/notifications/notificationItem';
+import NotificationFriendOrFollowRequest from '@/components/notifications/notificationFriendOrFollowRequest';
 
 export default function NotificationsList() {
 
@@ -40,9 +40,10 @@ export default function NotificationsList() {
   const getAllNotifications = async () => {
     try{
         setLoading(true);
+        console.log(profile.user_id);
         const { data: notifications, error: notifications_error } = await supabase
           .rpc('get_notifications_with_actor_info', {
-            recipient_id: profile.user_id,
+            p_recipient_id: "0ea25b59-40fb-448a-ab5d-b9b72c419130",
           });
         // const { data: notifications, error: notifications_error } = await supabase.from("notifications").select("*").eq("recipient_id", profile.user_id);
         if(notifications_error){
@@ -59,46 +60,19 @@ export default function NotificationsList() {
     }
   }
 
-  const getNotifToDisplay = async (notif: any) => {
-    try{
-      if(notif.type === "friend_request"){
-        //Get the firend request details
-      }
-      if(notif.type === "follow_request"){
-        //Get the follow request details
-      }
-
-    }catch(error:unknown){
-      console.error("Error in getNotifToDisplay in notificationsList.tsx :", error);
+  
+  const renderItem = ({ item }: { item: any }) => {
+    if(item.type === "friend_request" || item.type === "follow_request"){
+      return (
+        <NotificationFriendOrFollowRequest
+          notification={item}
+          setShowNotifModal={setShowNotifModal}
+          setDisplayNotif={setDisplayNotif}
+        />
+      );
     }
+    return null;
   }
-
-  const acceptFriendRequest = async () => {
-    try{
-      const { data, error } = await supabase.from('friends').update({'status': 'accepted'}).eq('id', displayNotif.object_id)
-      if(error){
-        console.error("Error accepting friend request in acceptFriendRequest function in notificationsList.tsx :", error);
-      }
-    }catch(error: unknown){
-      console.error("Error in acceptFriendRequest function in notificationsList.tsx :", error);
-    }finally{
-
-    }
-  }
-
-  const declineFriendRequest = async () => {
-    try{
-      const { data, error } = await supabase.from('friends').delete().eq('id', displayNotif.object_id);
-      if(error){
-        console.error("Error declining friend request in declineFriendRequest function in notificationsList.tsx :", error);
-      }
-    }catch(error: unknown){
-      console.error("Error in declineFriendRequest function in notificationsList.tsx :", error);
-    }finally{
-
-    }
-  }
-
   return (
     <>
       <Box style={[styles.container, {/*borderColor:"blue", borderWidth:1*/}]}>
@@ -108,9 +82,7 @@ export default function NotificationsList() {
           <FlatList
           data={notificationsList}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <NotifcationItem notification={item} acceptFriendRequest={acceptFriendRequest} declineFriendRequest={declineFriendRequest}/>
-            )}
+          renderItem={renderItem}
             />
           }
         </Box>
