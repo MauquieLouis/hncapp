@@ -63,7 +63,7 @@ export default function Index() {
           <TouchableOpacity style={styles.boxStyle}
             onPress={() => {
                 // console.log("user list");
-                router.push("/profile/profileList");
+                router.push({pathname: "/profile/profileList", params: { type : "all"}});
               }}
           >
             <Ionicons name="list-outline" size={50} color="white" />

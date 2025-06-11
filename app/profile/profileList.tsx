@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import React, { View, StyleSheet, Text, FlatList, TouchableOpacity } from 'react-native';
-import { Link, Stack, useRouter } from 'expo-router';
+import { Link, useRouter, useLocalSearchParams } from 'expo-router';
 import { useUserContext } from '@/contexts/userContext';
 import { useEffect } from 'react';
 import { Box } from '@/components/ui/box';
@@ -8,6 +8,7 @@ import Avatar from '@/components/profile/avatar';
 import { HStack } from '@/components/ui/hstack';
 import { supabase } from '@/libs/initSupabase';
 import { Spinner } from '@/components/ui/spinner';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ProfileList() {
 
@@ -17,10 +18,21 @@ export default function ProfileList() {
 
   const router = useRouter();
   const { profile } = useUserContext();
+  const { type } = useLocalSearchParams();
 
   useEffect(() => {
       console.log("Profile List: ", profile);
-      getAllProfiles();
+      if(type === "all"){
+        console.log("Fetching all profiles");
+        getAllProfiles();
+      }else if(type === "follower_id" || type === "following_id"){
+        console.log("Type: ", type);
+        getFollowProfiles();
+        //Fetch follower or following
+      }if(type === "friends"){
+        console.log("Fetching friends list");
+        getFriendsList();
+      }
   }, []);
 
   const getAllProfiles = async () => {
@@ -35,6 +47,46 @@ export default function ProfileList() {
       }
     }catch(e){
       console.log("Error fetching profiles in profileList.tsx :", e);
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  const getFollowProfiles = async () => {
+    try{
+      setLoading(true);
+      const { data, error } = await supabase.rpc('get_follow_profiles', {
+        input_user_id: profile.user_id,
+        follow_type: type // or 'following'
+      });
+      if (error) {
+        console.error('Error when fetching followers in getFollowProfiles in profileList.tsx:', error);
+      } else {
+        console.log('Followers with profile data:', data);
+        setProfileList(data);
+      }
+    }catch(e){
+      console.error("Error in getFollowProfiles function", e);
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  const getFriendsList = async () => {
+    try{
+      setLoading(true);
+      const { data, error } = await supabase.rpc('get_friends_profiles', {
+        input_user_id: profile.user_id,
+      });
+
+      if (error){
+        console.error('Error when fetching friends in getFriendsList function in profileList.tsx', error);
+      }else{
+        console.log("Friends :",data);
+        setProfileList(data);
+      } 
+    }catch(e){
+      console.error("Error in getFriendsList function", e);
     }finally{
       setLoading(false);
     }
@@ -57,6 +109,9 @@ export default function ProfileList() {
                 <Text style={{color:"white", paddingLeft:15, fontSize:20}}>
                   {item.username} - {item.firstname} {item.lastname}
                 </Text>
+                {type === "follower_id" || type === "following_id" ? <TouchableOpacity>
+                  <Ionicons name="trash-outline" size={24} color="rgba(180,60,60,0.6)" style={{marginLeft:20}}/>
+                </TouchableOpacity>:<></>}
               </TouchableOpacity>
             )}
             />

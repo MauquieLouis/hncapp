@@ -51,6 +51,7 @@ const NotifcationFriendOrFollowRequest = ({ notification }: { notification: any;
             console.error("Error adding to following list in acceptFriendRequest function in notificationsList.tsx :", followError, followErrorMe);
           }else{
             console.log("Follow data: ", followData);
+            console.log("Follow me data: ", followDataMe);
           }
           setIsAccepted(true);
         }catch(error: unknown){

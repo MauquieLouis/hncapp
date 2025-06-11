@@ -12,23 +12,31 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 import { insertNotification, unsendNotification } from '@/components/notifications/notificationSender';
+import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader } from '@/components/ui/modal';
+import { VStack } from '@/components/ui/vstack';
+import ChangeAvatar from '@/components/profile/changeAvatar';
 
 export default function ProfileId() {
 
     const [ profileDisplayed, setProfileDisplayed ] = useState<any>(null);
-    const [loading, setLoading ] = useState<boolean>(false);
+    const [ loading, setLoading ] = useState<boolean>(false);
     const [ friendsNumber, setFriendsNumber ] = useState<number>(0);
     const [ followersNumber, setFollowersNumber ] = useState<number>(0);
-    const [ areFiends, setAreFriends ] = useState<boolean>(false);
+    const [ areFriends, setAreFriends ] = useState<boolean>(false);
     const [ canRequestFriendship, setCanRequestFriendship ] = useState<boolean>(true);
     const [ isMyProfile, setIsMyProfile ] = useState<boolean>(false);
     const [ conversationId, setConversationId ] = useState<string | null>(null);
+    const [ settingsModal, setSettingModal ] = useState<boolean>(false);
 
     const { profile } = useUserContext();
     const { profileId } = useLocalSearchParams();
     const router = useRouter();
 
     const ICON_SIZE = 32;
+
+    const closeSettingsModal = () => {
+      setSettingModal(false);
+    }
 
     useEffect(() => {
       if(profile.user_id == profileId){
@@ -78,6 +86,7 @@ export default function ProfileId() {
           console.log("Friends: ", friends);
           setFriendsNumber(friends.length);
         }
+        console.log("Profile ID: ", profileId);
         const { data: followers, error: followers_error } = await supabase.from("followers").select("*").eq("following_id", profileId);
         if(followers_error){
           console.log("Error whent fetching followers in getFriendsAndFollowerNumber Function in profileList.tsx :", followers_error);
@@ -226,6 +235,14 @@ export default function ProfileId() {
     // return filteredConversations.length ? filteredConversations[0] : null;
   }
 
+  const changeFriendProfilePicture = async () => {
+    try{
+
+    }catch(error: unknown) {
+
+    }
+  }
+
   return (
     <>
       {loading ? <Spinner/> :
@@ -234,25 +251,38 @@ export default function ProfileId() {
         <Box style={{/*borderColor:"red", borderWidth:1,*/ flex:3, alignItems:"center", justifyContent:"center"}}>
           <HStack >
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
-              <Text style={{color:"white"}}> {friendsNumber}</Text>
-              <Text style={{color:"white"}}> FRIENDS</Text>
+              <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "friends"}});}}>
+                <Text style={{color:"white"}}> {friendsNumber}</Text>
+                <Text style={{color:"white"}}> FRIENDS</Text>
+              </TouchableOpacity>
             </Box>
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ flex:4, alignItems:"center", justifyContent:"center"}}>
               <Avatar width={150} height={150}/>
-              <TouchableOpacity 
-              onPress={() => {
-                console.log("EDIT PROFILE PICTURE");
-              }}
-              style={{position:"absolute",
-               bottom:2, 
-               right:2, 
-               borderColor:"white", 
-               borderWidth:2, 
-               borderRadius:15, 
-               padding:5,
-               backgroundColor:"rgba(0,0,0,0.5)"}}>
-                <Ionicons name="camera-reverse-outline" size={ICON_SIZE} color="white" />
-              </TouchableOpacity>
+              {isMyProfile ? 
+                <TouchableOpacity 
+                onPress={() => {
+                  console.log("OPEN PARAM MODAL");
+                  setSettingModal(true);
+                }}
+                style={{position:"absolute",
+                  bottom:2, 
+                  left:2, 
+                  borderColor:"white", 
+                  borderWidth:2, 
+                  borderRadius:15, 
+                  padding:5,
+                  backgroundColor:"rgba(0,0,0,0.5)"}}>
+                  <Ionicons name="settings-outline" size={ICON_SIZE} color="white" />
+                </TouchableOpacity>
+              :
+              <>
+                { areFriends ? 
+                  <ChangeAvatar/>
+                :
+                  <></> 
+                }
+              </>
+              }
             </Box>
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
               <Text style={{color:"white"}}> {followersNumber}</Text>
@@ -265,7 +295,7 @@ export default function ProfileId() {
           <Box style={{borderBottomColor:"white", borderBottomWidth:1, width:"340"}}></Box>
         </Box>
         <Box style={{/*borderColor:"green", borderWidth:1,*/ flex:7, alignItems:"center", justifyContent:"center", width:"100%"}}>
-          {areFiends ? <>
+          {areFriends ? <>
           {isMyProfile ? <></>
             :
             <>
@@ -370,6 +400,36 @@ export default function ProfileId() {
         </Box>
       </Box>
   }
+    <Modal isOpen={settingsModal} onClose={() => closeSettingsModal()}>
+      <ModalHeader>
+        <ModalCloseButton />
+      </ModalHeader>
+      <ModalBackdrop />
+      <ModalContent style={{backgroundColor:"rgba(170,170,170,0.8)"}}>
+        <VStack style={{padding:10, width:"100%"}} space='2xl'>
+            <TouchableOpacity onPress={() =>{ router.push({pathname: "/profile/profileList", params: { type : "following_id"}}); closeSettingsModal(); }} style={{}}>
+              <HStack style={{alignItems:"center"}}>
+                
+                <Ionicons name="people-circle-outline" size={ICON_SIZE} color="white" />
+                <Text>Following list</Text>  
+              </HStack>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "follower_id"}}); closeSettingsModal(); }} style={{}}>
+              <HStack style={{alignItems:"center"}}>
+                <Ionicons name="people-outline" size={ICON_SIZE} color="white" />
+                <Text>Follower list</Text>  
+              </HStack>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => console.log("ttes")} style={{}}>
+              <HStack style={{alignItems:"center"}}>
+                <Ionicons name="trash-outline" size={ICON_SIZE} color="white" />
+                <Text>Delete Account</Text>  
+              </HStack>
+            </TouchableOpacity>
+          
+        </VStack>
+      </ModalContent>
+    </Modal>
     </>
   );
 }
