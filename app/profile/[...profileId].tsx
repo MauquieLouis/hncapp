@@ -277,7 +277,7 @@ export default function ProfileId() {
               :
               <>
                 { areFriends ? 
-                  <ChangeAvatar/>
+                  <ChangeAvatar userId={profileDisplayed.user_id} added_by={profile.user_id}/>
                 :
                   <></> 
                 }
