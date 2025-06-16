@@ -47,14 +47,14 @@ const ChangeAvatar = (props: any) => {
             }else{
                 console.log("Avatar uploaded successfully:", data);
                 // Update the profile with the new avatar URL
-                const { data: publicURL } = supabase.storage.from('avatars').getPublicUrl(data.path);
+                // const { data: publicURL } = supabase.storage.from('avatars').getPublicUrl(data.path);
                 const { data: updt, error: updt_error } = await supabase.from('avatars').update({is_current: false})
                     .eq('user_id', props.userId); 
                 if(updt_error){
                     console.error("Error updating all previous avatars in uploadAvatar function in components/profile/changeAvatar.tsx", updt_error);
                 }
                 const { data: avatar_data, error: avatar_error } = await supabase.from('avatars')
-                    .insert({user_id: props.userId, image_url: publicURL.publicUrl, is_current: true, added_by: props.added_by});
+                    .insert({user_id: props.userId, image_url: props.userId+'/'+fileName, is_current: true, added_by: props.added_by});
                 if(avatar_error){
                     console.error("Error inserting new avatar in uploadAvatar function in components/profile/changeAvatar.tsx", avatar_error);
                 }

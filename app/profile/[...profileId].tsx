@@ -257,7 +257,7 @@ export default function ProfileId() {
               </TouchableOpacity>
             </Box>
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ flex:4, alignItems:"center", justifyContent:"center"}}>
-              <Avatar width={150} height={150}/>
+              <Avatar width={150} height={150} user_id={profileId as string}/>
               {isMyProfile ? 
                 <TouchableOpacity 
                 onPress={() => {
@@ -327,6 +327,7 @@ export default function ProfileId() {
                     style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}} 
                     onPress={() => {
                       console.log("Create a Post for",profileId);
+                      router.push({pathname: "/profile/createPost", params: { poster_id: profile.user_id, user_id: profileId }});
                     }}>
                     <HStack>
                       <Ionicons name="flask-outline" size={ICON_SIZE-16} color="white" />

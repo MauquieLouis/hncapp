@@ -7,6 +7,7 @@ const ProfileStack = () => {
     <Stack>
       <Stack.Screen name="[...profileId]" options={{ headerShown: false }}/>
       <Stack.Screen name="profileList" options={{ headerShown: false }}/>
+      <Stack.Screen name="createPost" options={{ headerShown: false }}/>
     </Stack>
   );
 }
