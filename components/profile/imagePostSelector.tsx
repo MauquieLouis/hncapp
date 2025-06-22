@@ -17,22 +17,23 @@ import { supabase } from "@/libs/initSupabase";
 import { ScrollView } from "react-native-gesture-handler";
 import { Video } from "expo-av";
 import * as DocumentPicker from 'expo-document-picker';
+import { HStack } from "@/components/ui/hstack";
 
-const ImagePostSelector = (user_id) => {
+const ImagePostSelector = (props: { setAssets: any }) => {
 
     const [ media, setMedia ] = useState<ImagePicker.ImagePickerAsset[]>([]);
      
 
     const pickImage = async () => {
-        // let result = await ImagePicker.launchImageLibraryAsync({
-        //     mediaTypes: ['images', 'videos'],
-        //     // allowsEditing: true,
-        //     // aspect: [4,3],
-        //     quality:1,
-        //     base64: true,
-        //     allowsMultipleSelection: true,
-        //     selectionLimit: 9,
-        // });
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images', 'videos'],
+            // allowsEditing: true,
+            // aspect: [4,3],
+            quality:1,
+            // base64: true,
+            allowsMultipleSelection: true,
+            selectionLimit: 9,
+        });
         // if(!result.canceled){
         //     setMedia(result.assets);
         //     // setImages(result.assets[0].uri);
@@ -47,15 +48,16 @@ const ImagePostSelector = (user_id) => {
         console.log("\t")
         console.log("~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-");
         console.log(" ~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-");
-        console.log("~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-");
-        const result = await DocumentPicker.getDocumentAsync({
-            type: ['image/*', 'video/*'],
-            multiple: true,
-        });
+        console.log("~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-~=*°*=~-"); 
+        // const result = await DocumentPicker.getDocumentAsync({
+        //     type: ['image/*', 'video/*'],
+        //     multiple: true,
+        // }); 
 
         console.log("RESULT :", result);
         if(!result.canceled){
             setMedia(result.assets);
+            props.setAssets(result.assets);
             // setImages(result.assets[0].uri);
             // compressImage(result.assets[0].uri);
             // uploadImage(result.assets);
@@ -76,6 +78,8 @@ const ImagePostSelector = (user_id) => {
         console.log("RESULT :", result);
         if(!result.canceled){
             setMedia((prev) => [...prev, ...result.assets]);
+            props.setAssets((prev: any) => [...prev, ...result.assets]);
+
             // setImages(result.assets[0].uri);
             // compressImage(result.assets[0].uri);
             // uploadImage(result.assets);
@@ -97,6 +101,8 @@ const ImagePostSelector = (user_id) => {
         console.log("RESULT :", result);
         if(!result.canceled){
             setMedia((prev) => [...prev, ...result.assets]);
+            props.setAssets((prev) => [...prev, ...result.assets]);
+
             // setImages(result.assets[0].uri);
             // compressImage(result.assets[0].uri);
             // uploadImage(result.assets);
@@ -172,7 +178,7 @@ const ImagePostSelector = (user_id) => {
     return(
         <Box style={{ flex:6, height:"100%", padding:"10%"}}>
             {/* IMAGE SELECTION ZONE */}
-            <Box style={{ justifyContent: 'center', alignItems: 'center', height:"15%", padding:1, marginBottom:16, flexDirection:"row"}}>
+            <HStack style={{ justifyContent: 'center', alignItems: 'center', height:"15%", padding:1, marginBottom:16, flexDirection:"row"}} space={"md"}>
                 <TouchableOpacity 
                     onPress={() => {
                         console.log("Open video camera here");
@@ -197,7 +203,7 @@ const ImagePostSelector = (user_id) => {
                     style={{ width:"15%",  height:"100%", borderColor:"grey", borderWidth:5, borderRadius:16, justifyContent:"center", alignItems:"center"}}>
                     <Ionicons name="image-outline" size={24} color="grey"/>
                 </TouchableOpacity>
-            </Box>
+            </HStack>
             <Box>
                 <ScrollView horizontal={true} >
                     {media.map((item, index) => (
