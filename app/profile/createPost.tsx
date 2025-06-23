@@ -14,6 +14,8 @@ import { uploadManyFilesOnBucket, uploadOneFileOnBucket } from "@/components/fil
 import { supabase } from "@/libs/initSupabase";
 import { useUserContext } from "@/contexts/userContext";
 import * as MediaLibrary from 'expo-media-library';
+import AudioRecorder from "@/components/conversations/audioRecorder";
+import AudioAnimRecorder from "@/components/files/AudioAnimRecorder";
 
 
 const CreatePost = () => {
@@ -230,16 +232,22 @@ const CreatePost = () => {
                 </>
                 :
                 <>
-                    {legend === "vocal" ? 
-                    <Box style={{justifyContent: 'center', alignItems: 'center'}}>
-                        <TouchableOpacity style={{ borderColor:'rgba(127,127,127,0.6)', borderWidth:3, padding:22, borderRadius:70 }}
-                                    onPress={() => setLegend("vocal")}>
-                                        <Ionicons name="mic-outline" size={70} color="rgba(127,127,127,0.8)" />
-                                    </TouchableOpacity>
+                    {legend === "vocal" ?
+                    <>
+                    <Box style={{justifyContent: 'flex-end', alignItems: 'flex-end', borderColor:"red", borderWidth:1}}>
+                        {/* <TouchableOpacity style={{ borderColor:'rgba(127,127,127,0.6)', borderWidth:3, padding:22, borderRadius:70 }}
+                        onPress={() => setLegend("vocal")}>
+                        <Ionicons name="mic-outline" size={70} color="rgba(127,127,127,0.8)" />
+                        </TouchableOpacity> */}
+                        <AudioAnimRecorder DPZWidth={200} xDPZPos={0} DPZHeight={150} yDPZPos={0}/>
+                        {/* <AudioAnimRecorder DPZWidth={200}/> */}
+                    </Box>
+                    <Box style={{justifyContent: 'flex-end', alignItems: 'flex-end', borderColor:"red", borderWidth:1}}>
                         <TouchableOpacity onPress={() => { setLegend(null) }}>
                             <Ionicons name="close-circle" size={46} color={"black"}/>
                         </TouchableOpacity>
                     </Box>
+                    </> 
                     :
                     <Box style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
                         <HStack space={"xl"}>

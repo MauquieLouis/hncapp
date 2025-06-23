@@ -11,13 +11,12 @@ import * as FileSystem from 'expo-file-system';
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { Box } from "@/components/ui/box";
-import RecordEffect from "./recordEffect";
+import RecordEffect from "../conversations/recordEffect";
 import { Spinner } from "../ui/spinner";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 
-let DROP_ZONE = { width: 207, height: 130 };
 
-const AudioRecorder = (props: any) =>{
+const AudioAnimRecorder = (props: any) =>{
   
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState<Boolean>(false);
@@ -36,7 +35,9 @@ const AudioRecorder = (props: any) =>{
   const viewRef = useRef<Animated.View>(null);
   const toast = useToast();
   
-  
+  let DROP_ZONE = { width: 207, height: 130 };
+  let xDPZPos = -position.x
+  let yDPZPos = 0
 
   const measurePosition = () => {
     if(viewRef.current){
@@ -45,8 +46,25 @@ const AudioRecorder = (props: any) =>{
       });
     }
   }
+  if(props.DPZWidth){
+    console.log("DPZWIDTH defined :", props.DPZWidth);
+    DROP_ZONE.width = props.DPZWidth
+  }
+  if(props.DPZHeight){
+    console.log("DPZWHEIGHT defined :", props.DPZHeight);
+    DROP_ZONE.height = props.DPZHeight
+  }
+  if(props.xDPZPos == 0 || props.xDPZPos){
+    console.log("xDPZPOS defined :", props.xDPZPos);
+    xDPZPos = props.xDPZPos
+  }
+  if(props.yDPZPos == 0 || props.yDPZPos){
+    console.log("yDPZPOS defined :", props.yDPZPos);
+    yDPZPos = props.yDPZPos
+  }
   useEffect(() => {
     // console.log("RECORDING DETECTED ", recording);
+    console.log("PROPSS AUDIO ANIM :", props.DPZWidth);
   }, [recording]);
 
   const record = async () => {
@@ -113,7 +131,7 @@ const AudioRecorder = (props: any) =>{
           //Send message here
           console.log('Recording stopped and stored at', uri);
           const audio_name = `${props.convId}/Audio/${uuidv4()}.m4a`;
-          await uploadAudio(uri, audio_name);
+        //   await uploadAudio(uri, audio_name);
         }
         setRecording(null);
 
@@ -126,37 +144,6 @@ const AudioRecorder = (props: any) =>{
       console.log("RECORDING NOT EXISTING... in stop recording function", recording);
     }
   };
-
-  const uploadAudio = async (uri: any, audioName: string) => {
-    try{
-      setSendingAudio(true);
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const fileName = audioName;
-
-      const base64audio = await FileSystem.readAsStringAsync(uri, {encoding: FileSystem.EncodingType.Base64});
-      const audioBuffer = Uint8Array.from(atob(base64audio), (c) => c.charCodeAt(0)).buffer;
-      const { data, error } = await supabase.storage.from('Conversations').upload(fileName, audioBuffer, {contentType: 'audio/m4a',});
-      console.log("DATA :",data);
-      if (error){
-        console.log("Error when uploading audio in uploadAudio function in audioRecorder.tsx", error);
-      }
-      const message_id = await props.sendMessageFunction(true, "audio");
-      const { data: attach_data, error: attach_error } = await supabase.from('attachments').insert({
-          message_id: message_id,
-          url: audioName,
-          type: 'audio/m4a',
-          size: blob.size
-      });
-      if(attach_error){
-        console.log("Error in stopRecording function when inserting new attachement in audioRecorder.tsx :", attach_error);
-      }
-    }catch(error: unknown){
-      console.log("ERROR : error in uploadAudio function in audioRecorder.tsx", error);
-    }finally{
-      setSendingAudio(false);
-    }
-  }
 
   useEffect(() => {
     (async () => {
@@ -281,11 +268,13 @@ const AudioRecorder = (props: any) =>{
 
   const styles = StyleSheet.create({
   container:{
+    borderColor:"red",
+    borderWidth:1
   },
   dropZone: {
     position: "absolute",
-    bottom: 0,
-    left: -position.x,
+    bottom: yDPZPos,
+    left: xDPZPos,
     width: DROP_ZONE.width,
     height: DROP_ZONE.height,
     borderColor:"rgba(239, 62, 62, 0.49)",
@@ -354,4 +343,4 @@ const AudioRecorder = (props: any) =>{
   );
 }
 
-export default AudioRecorder;
+export default AudioAnimRecorder;
