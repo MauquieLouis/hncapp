@@ -14,6 +14,7 @@ import { Box } from "@/components/ui/box";
 import RecordEffect from "../conversations/recordEffect";
 import { Spinner } from "../ui/spinner";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { uploadAudio } from "./fileUpload";
 
 
 const AudioAnimRecorder = (props: any) =>{
@@ -47,25 +48,23 @@ const AudioAnimRecorder = (props: any) =>{
     }
   }
   if(props.DPZWidth){
-    console.log("DPZWIDTH defined :", props.DPZWidth);
     DROP_ZONE.width = props.DPZWidth
   }
   if(props.DPZHeight){
-    console.log("DPZWHEIGHT defined :", props.DPZHeight);
     DROP_ZONE.height = props.DPZHeight
   }
   if(props.xDPZPos == 0 || props.xDPZPos){
-    console.log("xDPZPOS defined :", props.xDPZPos);
     xDPZPos = props.xDPZPos
   }
   if(props.yDPZPos == 0 || props.yDPZPos){
-    console.log("yDPZPOS defined :", props.yDPZPos);
     yDPZPos = props.yDPZPos
   }
   useEffect(() => {
-    // console.log("RECORDING DETECTED ", recording);
-    console.log("PROPSS AUDIO ANIM :", props.DPZWidth);
-  }, [recording]);
+    if(!props.iconSize){
+      setIconSize(32);
+    }
+  }, [])
+
 
   const record = async () => {
     try {
@@ -109,7 +108,7 @@ const AudioAnimRecorder = (props: any) =>{
           console.log("DURATION :", status.durationMillis);
           const durationMillis = status.durationMillis || 0; // Get duration in milliseconds
           const durationSeconds = durationMillis / 1000; // Convert to seconds
-          if (durationSeconds < 1.5) {
+          if (durationSeconds < 0.8) {
             console.warn('Recording too short, discarding...');
             toast.show({
               duration: 1200,
@@ -130,8 +129,9 @@ const AudioAnimRecorder = (props: any) =>{
           }
           //Send message here
           console.log('Recording stopped and stored at', uri);
-          const audio_name = `${props.convId}/Audio/${uuidv4()}.m4a`;
-        //   await uploadAudio(uri, audio_name);
+          props.setAudioUrl(uri);
+          // const audio_name = `${props.user_id}/Audio/${uuidv4()}.m4a`;
+          // // await uploadAudio(uri, audio_name, 'posts');
         }
         setRecording(null);
 
@@ -174,9 +174,9 @@ const AudioAnimRecorder = (props: any) =>{
 
   const isInDropZone = useCallback((x: number,y: number) => {
     'worklet';
-    max_dx_mvt = width_screen-width_drop_zone-(width_mic_container-width_mic_icon);
-    max_dy_mvt_neg = height_drop_zone-height_mic_container;
-    max_dy_mvt_pos = height_mic_container-height_mic_icon;
+    max_dx_mvt = width_screen-width_drop_zone-(width_mic_container-width_mic_icon)-xDPZPos;
+    max_dy_mvt_neg = height_drop_zone-height_mic_container+yDPZPos;
+    max_dy_mvt_pos = height_mic_container-height_mic_icon-yDPZPos;
     if(x < -max_dx_mvt && y > -max_dy_mvt_neg && y < max_dy_mvt_pos ){
       console.log("drpZ :");
       return true;

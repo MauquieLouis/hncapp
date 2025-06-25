@@ -77,8 +77,7 @@ export async function uploadManyFilesOnBucket(files: any, bucket: any, folder: a
     }
 }
 
-
-export async function uploadAudio(uri: any, audioName: string){
+export async function uploadAudio(uri: any, audioName: string, bucket: string){
     try{
       const response = await fetch(uri);
       const blob = await response.blob(); //Allows to get blob.size
@@ -86,7 +85,7 @@ export async function uploadAudio(uri: any, audioName: string){
 
       const base64audio = await FileSystem.readAsStringAsync(uri, {encoding: FileSystem.EncodingType.Base64});
       const audioBuffer = Uint8Array.from(atob(base64audio), (c) => c.charCodeAt(0)).buffer;
-      const { data, error } = await supabase.storage.from('Conversations').upload(fileName, audioBuffer, {contentType: 'audio/m4a',});
+      const { data, error } = await supabase.storage.from(bucket).upload(fileName, audioBuffer, {contentType: 'audio/m4a',});
       console.log(" Audio data DATA :",data);
       if (error){
         console.log("Error when uploading audio in uploadAudio function in components/files/fileUpload.ts", error);
@@ -94,5 +93,6 @@ export async function uploadAudio(uri: any, audioName: string){
     }catch(error: unknown){
       console.log("ERROR : error in uploadAudio function in components/files/fileUpload.ts", error);
     }finally{
+
     }
   }

@@ -10,22 +10,25 @@ import { Textarea, TextareaInput } from "@/components/ui/textarea";
 import { HStack } from "@/components/ui/hstack";
 import * as ImagePicker from 'expo-image-picker';
 import 'react-native-get-random-values';
-import { uploadManyFilesOnBucket, uploadOneFileOnBucket } from "@/components/files/fileUpload";
+import { uploadAudio, uploadManyFilesOnBucket, uploadOneFileOnBucket } from "@/components/files/fileUpload";
 import { supabase } from "@/libs/initSupabase";
 import { useUserContext } from "@/contexts/userContext";
 import * as MediaLibrary from 'expo-media-library';
 import AudioRecorder from "@/components/conversations/audioRecorder";
 import AudioAnimRecorder from "@/components/files/AudioAnimRecorder";
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
+import UniversarlAudioPlayer from "@/components/files/universalAudioPlayer";
 
 
 const CreatePost = () => {
-
 
     const [ text, setText ] = useState("");
     const [ vocal, setVocal ] = useState(null);
     const [ legend, setLegend ] = useState<null | "text" | "vocal">(null);
     const [ assets, setAssets ] = useState<ImagePicker.ImagePickerAsset[]>([]);
-
+    const [ sendingAudio, setSendingAudio ] = useState(false);
+    const [ audioUrl, setAudioUrl] = useState(null);
 
     const [status, requestPermission] = MediaLibrary.usePermissions();
 
@@ -49,7 +52,6 @@ const CreatePost = () => {
         console.log("Legend changed: ", legend);
     },[legend]);
 
-    
     const postPost = async () => {
         try{
             console.log("ASSETS :", assets);
@@ -70,6 +72,16 @@ const CreatePost = () => {
             //Now the file is/are uploaded, upload the post data (check if it's text or audio)
             if(filenames){
                 console.log("fileNames :", filenames);
+                //Check for audio attachment if not set url to null
+                let audio_name;
+                if(audioUrl){
+                    //Post the audio description here : 
+                    audio_name = `${user_id}/Audio/${uuidv4()}.m4a`;
+                    await uploadAudio(audioUrl, audio_name, 'posts');
+                    //Create
+                }else{
+                    audio_name = null
+                }
                 //Create the post first (to get the id for post_attachments)
                 const { data: post_data, error: error_data } = await supabase.from('posts').insert([
                     {
@@ -77,7 +89,7 @@ const CreatePost = () => {
                         caption: text,
                         visibility: 'public',
                         added_by: profile.user_id,
-                        //file_url: TBD
+                        file_url: audio_name
                     }
                 ]).select('*');
 
@@ -109,10 +121,10 @@ const CreatePost = () => {
                         console.log("Data post attach data :", post_attach_data);
                     }
                 }
+                
             }else{
                 console.warn("NO FILES PROVIDED IN POST...")
             }
-
 
         }catch(error: unknown) {
             console.error("Error in postPost function in profile/createPost.tsx: ", error);
@@ -120,72 +132,6 @@ const CreatePost = () => {
 
         }
     }
-
-    // const uploadImage = async (files: ImagePicker.ImagePickerAsset[]) => {
-    //         try{
-    //             //Create the attachement and send Message
-    //             // for(let file in files as ImagePicker.ImagePickerAsset[]){
-    //             //     console.log("FILE :", files[file].fileName);
-    //             // }
-    //             // return;
-    //             // setLoadingSend(true);
-    //             const fileNames = [];
-    //             for(let file of files as ImagePicker.ImagePickerAsset[]){
-    //                 // const filename = uuidv6();
-    //                 const ext = (file.fileName ?? '').split('.').pop();
-    //                 const fileName = uuidv6()+"."+ext;
-    //                 console.log("NEW FILENAME : ", fileName);
-    //                 fileNames.push(fileName);
-    //                 // console.log("FILE simple :", file);
-    //                 if(file.type == 'video'){
-    //                     const fileContent = await FileSystem.readAsStringAsync(file.uri, {encoding: FileSystem.EncodingType.Base64});
-    //                     const {data, error} = await supabase.storage.from('Conversations')
-    //                     .upload(convId+'/'+fileName, decode(fileContent),
-    //                     {cacheControl: '3600', upsert:false, contentType:file.mimeType});
-    //                     if(error){
-    //                         console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
-    //                     }
-    //                     console.log("DATA UPLOAD:", data);
-    //                 }else{
-    //                     console.log("NOT A VIDEO :");
-    //                     const fileResized = await compressImage(file.uri);
-    //                     console.log("FILE RESIZED :", fileResized?.uri);
-    //                     const fileContent = await FileSystem.readAsStringAsync(fileResized?.uri, {encoding: FileSystem.EncodingType.Base64});
-    //                     const {data, error} = await supabase.storage.from('Conversations')
-    //                     .upload(convId+'/'+fileName, decode(fileContent as string),
-    //                     {cacheControl: '3600', upsert:false, contentType:file.mimeType});
-    //                     if(error){ 
-    //                         console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
-    //                     }
-    //                     console.log("DATA UPLOAD:", data);
-    //                 }
-    //                 //Upload the file on supabase
-    //             }
-    //             const message_id = await sendTextMessage(true, 'attachment');
-    //             console.log("message iD :", message_id);
-    //             let index = 0;
-    //             for(let file of files as ImagePicker.ImagePickerAsset[]){
-    //                 const fileName = fileNames[index];
-    //                 index++;
-    //                 console.log("FILE :", file.fileName);
-    //                 const { data: attach_data, error: attach_error } = await supabase.from('attachments').insert({
-    //                     message_id: message_id,
-    //                     url: convId+'/'+fileName,
-    //                     type: file.mimeType,
-    //                     size: file.fileSize
-    //                 });
-    //                 if(attach_error){
-    //                     console.log("Error in uploadImage function when inserting new attachement in [...convId].tsx :", attach_error);
-    
-    //                 }
-    //             }
-                
-    //         }catch(error:unknown){
-    //             console.log("Error in uploadImage function [...convId].tsx :", error);
-    //         }finally{
-    //             setLoadingSend(false);
-    //         }
-    //     }
 
 
     return (
@@ -234,15 +180,32 @@ const CreatePost = () => {
                 <>
                     {legend === "vocal" ?
                     <>
-                    <Box style={{justifyContent: 'flex-end', alignItems: 'flex-end', borderColor:"red", borderWidth:1}}>
+                    <Box style={{justifyContent: 'flex-end', alignItems: 'flex-end', flexDirection:"row"}}>
+                        {audioUrl ? 
+                        <Box style={{paddingRight:35}}>
+                            <UniversarlAudioPlayer url={audioUrl}/>
+                        </Box>
+                        : 
+                        <></>   }
                         {/* <TouchableOpacity style={{ borderColor:'rgba(127,127,127,0.6)', borderWidth:3, padding:22, borderRadius:70 }}
                         onPress={() => setLegend("vocal")}>
                         <Ionicons name="mic-outline" size={70} color="rgba(127,127,127,0.8)" />
                         </TouchableOpacity> */}
-                        <AudioAnimRecorder DPZWidth={200} xDPZPos={0} DPZHeight={150} yDPZPos={0}/>
-                        {/* <AudioAnimRecorder DPZWidth={200}/> */}
+                        { audioUrl ? 
+                        <TouchableOpacity onPress={() => {
+                            setAudioUrl(null);
+                        }}>
+                            <Ionicons name="trash-outline" size={46} color={'black'}/>
+                        </TouchableOpacity>
+                        :
+                            <>
+                            {/* Pour le param yDPZPos au lieu de -160 metre un pourcentage avec Dimension.screen width ect... */}
+                            <AudioAnimRecorder DPZWidth={200} xDPZPos={0} DPZHeight={150} yDPZPos={-130} user_id={user_id} setAudioUrl={setAudioUrl}/>
+                            {/* <AudioAnimRecorder DPZWidth={200}/> */}
+                            </>
+                        }
                     </Box>
-                    <Box style={{justifyContent: 'flex-end', alignItems: 'flex-end', borderColor:"red", borderWidth:1}}>
+                    <Box style={{justifyContent: 'flex-end', alignItems: 'flex-end', paddingTop:25 }}>
                         <TouchableOpacity onPress={() => { setLegend(null) }}>
                             <Ionicons name="close-circle" size={46} color={"black"}/>
                         </TouchableOpacity>

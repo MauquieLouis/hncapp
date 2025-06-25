@@ -15,6 +15,7 @@ import { insertNotification, unsendNotification } from '@/components/notificatio
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader } from '@/components/ui/modal';
 import { VStack } from '@/components/ui/vstack';
 import ChangeAvatar from '@/components/profile/changeAvatar';
+import PostsList from '@/components/profile/postsList';
 
 export default function ProfileId() {
 
@@ -246,7 +247,7 @@ export default function ProfileId() {
   return (
     <>
       {loading ? <Spinner/> :
-      <Box style={[styles.container, {/*borderColor:"blue", borderWidth:1*/}]}>
+      <Box style={[styles.container, {borderColor:"blue", borderWidth:1}]}>
 
         <Box style={{/*borderColor:"red", borderWidth:1,*/ flex:3, alignItems:"center", justifyContent:"center"}}>
           <HStack >
@@ -296,49 +297,53 @@ export default function ProfileId() {
         </Box>
         <Box style={{/*borderColor:"green", borderWidth:1,*/ flex:7, alignItems:"center", justifyContent:"center", width:"100%"}}>
           {areFriends ? <>
-          {isMyProfile ? <></>
-            :
-            <>
-              <HStack style={{
-                /*borderColor:"red", borderWidth:1, */
-                flex:2, 
-                alignItems:"center", 
-                justifyContent:"space-between",
-                width:"100%",
-                paddingLeft:"6%",
-                paddingRight:"6%",
-                backgroundColor:"#25292e",
-              }} >
-                <Box>
-                  <TouchableOpacity 
-                    style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}} 
-                    onPress={() => {
-                      console.log("Push Conv",conversationId);
-                      router.push(`/conversations/${conversationId}`)
-                    }}>
-                    <HStack>
-                      <Ionicons name="chatbubbles-outline" size={ICON_SIZE-16} color="white" />
-                      <Text style={{color:"white", paddingLeft:6}}>Open Discussion</Text>
-                    </HStack>
-                  </TouchableOpacity>
-                </Box>
-                <Box>
-                  <TouchableOpacity 
-                    style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}} 
-                    onPress={() => {
-                      console.log("Create a Post for",profileId);
-                      router.push({pathname: "/profile/createPost", params: { poster_id: profile.user_id, user_id: profileId }});
-                    }}>
-                    <HStack>
-                      <Ionicons name="flask-outline" size={ICON_SIZE-16} color="white" />
-                      <Text style={{color:"white", paddingLeft:6}}>Post For Friend</Text>
-                    </HStack>
-                  </TouchableOpacity>
-                </Box>
-              </HStack>
-              <Box style={{flex:10}}></Box>
-            </>
+            {isMyProfile ? <></>
+              :
+              <>
+                <HStack style={{
+                  /*borderColor:"red", borderWidth:1, */
+                  flex:2, 
+                  alignItems:"center", 
+                  justifyContent:"space-between",
+                  width:"100%",
+                  paddingLeft:"6%",
+                  paddingRight:"6%",
+                  backgroundColor:"#25292e",
+                }} >
+                  <Box>
+                    <TouchableOpacity 
+                      style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}} 
+                      onPress={() => {
+                        console.log("Push Conv",conversationId);
+                        router.push(`/conversations/${conversationId}`)
+                      }}>
+                      <HStack>
+                        <Ionicons name="chatbubbles-outline" size={ICON_SIZE-16} color="white" />
+                        <Text style={{color:"white", paddingLeft:6}}>Open Discussion</Text>
+                      </HStack>
+                    </TouchableOpacity>
+                  </Box>
+                  <Box>
+                    <TouchableOpacity 
+                      style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}} 
+                      onPress={() => {
+                        console.log("Create a Post for",profileId);
+                        router.push({pathname: "/profile/createPost", params: { poster_id: profile.user_id, user_id: profileId }});
+                      }}>
+                      <HStack>
+                        <Ionicons name="flask-outline" size={ICON_SIZE-16} color="white" />
+                        <Text style={{color:"white", paddingLeft:6}}>Post For Friend</Text>
+                      </HStack>
+                    </TouchableOpacity>
+                  </Box>
+                </HStack>
+              </>
             }
+            <Box style={{flex:10, borderColor:"orange", borderWidth:1, width:"100%"}}>
+              <PostsList height={"100%"}/>
+
+            </Box>
+
           </>:
           <>
             <HStack style={{
