@@ -4,21 +4,28 @@ import { Text } from "@/components/ui/text";
 import { FlatList } from "react-native";
 import { useUserContext } from "@/contexts/userContext";
 import { supabase } from "@/libs/initSupabase";
+import PostElemInPostsList from "./postElemInPostsList";
 
 
-const PostsList = (props: { height: any; }) => {
+const PostsList = (props: { height: any; user_id: string; folder_url: string }) => {
 
-    const [ postsList, setPostsList ] = useState(null);
+    const [ postsList, setPostsList ] = useState<any[]>([]);
 
     const { profile } = useUserContext();
 
     useEffect(() => {
+        console.log("PROPS :", props);
         getFirstPosts();
     }, []);
+    
+    useEffect(() => {
+        // getFirstPosts();
+        console.log("Post list changed !!! :", postsList);
+    }, [postsList]);
 
     const getFirstPosts = async () => {
         try{
-            const { data, error } = await supabase.from('posts').select('*').eq('user_id', profile.user_id);
+            const { data, error } = await supabase.from('posts').select('*').eq('user_id', props.user_id);
             if(error){
                 console.error("Error when fetching posts in getFirstPosts function in components/profile/postsList.tsx", error);
             }
@@ -33,14 +40,16 @@ const PostsList = (props: { height: any; }) => {
         }
     }
 
+    const renderItemFlatList = ({item, index}: {item: any, index: any}) => {
+            return <PostElemInPostsList item={item} folder_url={props.folder_url} bucket={'posts'}/>
+        }
+
     return(
         <Box style={{borderColor:"red", borderWidth:1, height:props.height, width:"100%", padding:5}}>
             <Text style={{color:"white"}}>HERE IS THE POST LIST</Text>
             <FlatList
                 data={postsList}
-                renderItem={() => (
-                    <Text>TEXT</Text>
-                )}
+                renderItem={renderItemFlatList}
             /> 
         </Box>
     );
