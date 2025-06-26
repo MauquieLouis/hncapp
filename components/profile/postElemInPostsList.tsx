@@ -7,10 +7,13 @@ import type { ICarouselInstance } from 'react-native-reanimated-carousel';
 import Carousel, { Pagination } from "react-native-reanimated-carousel";
 import { renderItem } from './render-item';
 import { useSharedValue, interpolate, Extrapolation } from 'react-native-reanimated';
+import AudioPlayer from '../conversations/audioPlayer';
+import UniversarlAudioPlayer from '../files/universalAudioPlayer';
 
 const PostElemInPostsList = (props: any) => {
 
     const [ urls, setUrls ] = useState([]);
+    const [ audioUrl, setAudioUrl ] = useState<string | null>(null);
 
     const item = props.item;
     const folder_url = props.folder_url;
@@ -45,6 +48,10 @@ const PostElemInPostsList = (props: any) => {
                     const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
                     setUrls(signedUrls);
                 }
+                if(item.file_url){
+                    const {data : audio_data, error: audio_error} = await supabase.storage.from(bucket).createSignedUrl(item.file_url,1200);
+                    setAudioUrl(audio_data?.signedUrl ?? null);
+                }
             }
         }catch(error: unknown){
             console.error("Error in getSignedUrlForFiles function in components/profile/postElemInPostsList.tsx", error);
@@ -76,71 +83,91 @@ const PostElemInPostsList = (props: any) => {
 
     const ref = React.useRef<ICarouselInstance>(null);
     return (
-        <Box>
-            <Carousel
-                ref={ref}
-                data={urls}
-                height={300}
-                loop={false}
-                onProgressChange={progress}
-                pagingEnabled={true}
-                snapEnabled={true}
-                width={320}
-                style={{
-					alignItems: "center",
-					justifyContent: "center",
-					width: "100%",
-					height: 300,
-                    borderColor:"white",
-                    borderWidth:1
-				}}
-				mode={"parallax"}
-                // modeConfig={{stackInterval:1}}
-                modeConfig={{
-					parallaxScrollingScale: 1,
-					parallaxScrollingOffset: 0,
-				}}
-                renderItem={renderItem({ rounded: true, imagesArray: urls})}
-            />
-            <Pagination.Custom<{ color: string }>
-                progress={progress}
-                data={urls.map((color) => ({ color }))}
-                size={12}
-                dotStyle={{
-                    borderRadius: 16,
-                    backgroundColor: "#8899FF",
-                }}
-                activeDotStyle={{
-                    borderRadius: 4,
-                    width: 12,
-                    height: 12,
-                    overflow: "hidden",
-                    backgroundColor: "#f1f1f1",
-                }}
-                containerStyle={{
-                    gap: 5,
-                    marginBottom: 10,
-                    alignItems: "center",
-                    height: 10,
-                }}
-                horizontal
-                onPress={onPressPagination}
-                customReanimatedStyle={(progress, index, length) => {
-                    let val = Math.abs(progress - index);
-                    if (index === 0 && progress > length - 1) {
-                    val = Math.abs(progress - length);
-                    }
+        <>
+            <Box>
+                <Carousel
+                    ref={ref}
+                    data={urls}
+                    height={340}
+                    loop={false}
+                    onProgressChange={progress}
+                    pagingEnabled={true}
+                    snapEnabled={true}
+                    width={340}
+                    style={{
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "100%",
+                        height: 300,
+                    }}
+                    mode={"parallax"}
+                    // modeConfig={{stackInterval:1}}
+                    modeConfig={{
+                        parallaxScrollingScale: 0.88,
+                        parallaxScrollingOffset: 58,
+                    }}
+                    renderItem={renderItem({ rounded: true, imagesArray: urls})}
+                />
+                <Pagination.Custom<{ color: string }>
+                    progress={progress}
+                    data={urls.map((color) => ({ color }))}
+                    size={12}
+                    dotStyle={{
+                        borderRadius: 16,
+                        backgroundColor: "#8899FF",
+                    }}
+                    activeDotStyle={{
+                        borderRadius: 4,
+                        width: 12,
+                        height: 12,
+                        overflow: "hidden",
+                        backgroundColor: "#f1f1f1",
+                    }}
+                    containerStyle={{
+                        gap: 5,
+                        marginBottom: 10,
+                        alignItems: "center",
+                        height: 10,
+                    }}
+                    horizontal
+                    onPress={onPressPagination}
+                    customReanimatedStyle={(progress, index, length) => {
+                        let val = Math.abs(progress - index);
+                        if (index === 0 && progress > length - 1) {
+                        val = Math.abs(progress - length);
+                        }
 
-                    return {
-                    transform: [
-                        {
-                        translateY: interpolate(val, [0, 1], [0, 0], Extrapolation.CLAMP),
-                        },
-                    ],
-                    };
-                }}
-            />
-        </Box>
+                        return {
+                        transform: [
+                            {
+                            translateY: interpolate(val, [0, 1], [0, 0], Extrapolation.CLAMP),
+                            },
+                        ],
+                        };
+                    }}
+                />
+            </Box>
+            <Box style={{width:"80%", marginLeft:"10%", borderTopColor:"white", borderTopWidth:1, }}>
+                {item.caption ?
+                    <Text>
+                        {item.caption}
+                    </Text>
+                : 
+                    <>
+                    {item.file_url ?
+                        <>
+                        {/** AUDIO HERE */} 
+                        {audioUrl ? 
+                            <UniversarlAudioPlayer url={audioUrl}/>
+                        :<></> }
+                        </>
+                    : 
+                        <></>
+                    }
+                    </>
+                }
+            </Box>
+        </>
     );
 
 }

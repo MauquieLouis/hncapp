@@ -45,8 +45,7 @@ const PostsList = (props: { height: any; user_id: string; folder_url: string }) 
         }
 
     return(
-        <Box style={{borderColor:"red", borderWidth:1, height:props.height, width:"100%", padding:5}}>
-            <Text style={{color:"white"}}>HERE IS THE POST LIST</Text>
+        <Box style={{height:props.height, width:"100%", padding:5}}>
             <FlatList
                 data={postsList}
                 renderItem={renderItemFlatList}

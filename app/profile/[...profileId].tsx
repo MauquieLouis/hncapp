@@ -247,7 +247,7 @@ export default function ProfileId() {
   return (
     <>
       {loading ? <Spinner/> :
-      <Box style={[styles.container, {borderColor:"blue", borderWidth:1}]}>
+      <Box style={[styles.container, {}]}>
 
         <Box style={{/*borderColor:"red", borderWidth:1,*/ flex:3, alignItems:"center", justifyContent:"center"}}>
           <HStack >
@@ -339,7 +339,7 @@ export default function ProfileId() {
                 </HStack>
               </>
             }
-            <Box style={{flex:10, borderColor:"orange", borderWidth:1, width:"100%"}}>
+            <Box style={{flex:10, width:"100%"}}>
               <PostsList height={"100%"} user_id={profileDisplayed.user_id as string} folder_url={profileId as string}/>
 
             </Box>
