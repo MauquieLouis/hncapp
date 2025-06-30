@@ -107,6 +107,14 @@ const PostElemInPostsList = (props: any) => {
                         parallaxScrollingOffset: 58,
                     }}
                     renderItem={renderItem({ rounded: true, imagesArray: urls})}
+                    onConfigurePanGesture={(gesture) => {
+                    gesture.activeOffsetX([-50,50]);
+                    // gesture.minVelocity(0);
+                    // gesture.activeOffsetY([-10,10]);
+                    //Maybe try to find a way toactivate or not the carousel ? like if click one tile on it will made the picture carousel available.
+                    //with enabled false.
+                    return gesture;
+                }}
                 />
                 <Pagination.Custom<{ color: string }>
                     progress={progress}
