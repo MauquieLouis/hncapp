@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { supabase } from '@/libs/initSupabase';
 import { Text } from '@/components/ui/text';
 import { Box } from '@/components/ui/box'; 
@@ -11,14 +11,15 @@ import AudioPlayer from '../conversations/audioPlayer';
 import UniversarlAudioPlayer from '../files/universalAudioPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import { HStack } from '../ui/hstack';
-import { FlatList, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { FlatList, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { useUserContext } from '@/contexts/userContext';
-import { Modal, ModalBackdrop, ModalContent, ModalHeader } from '../ui/modal';
 import { VStack } from '../ui/vstack';
 import Avatar from './avatar';
 import { Spinner } from '../ui/spinner';
-import { Input, InputField } from '../ui/input';
-import { Actionsheet, ActionsheetBackdrop, ActionsheetContent } from '../ui/actionsheet';
+import { Input, InputField, InputSlot } from '../ui/input';
+import { Image } from '../ui/image';
+import { Actionsheet, ActionsheetBackdrop, ActionsheetContent, ActionsheetDragIndicatorWrapper, ActionsheetDragIndicator } from '../ui/actionsheet';
+import { FormControl, FormControlLabel, FormControlLabelText } from '../ui/form-control';
 
 const PostElemInPostsList = (props: any) => {
 
@@ -211,6 +212,25 @@ const PostElemInPostsList = (props: any) => {
         }
     }
 
+    // const CommentInput = React.memo(({ text, setText, postComment }: { text: string; setText: (t: string) => void; postComment: () => void }) => {
+    //     return (
+    //         <HStack space="sm" style={{ borderColor: "red", borderWidth: 1 }}>
+    //             <Input variant="outline" size="md" style={styles.writingInput}>
+    //                 <InputField
+    //                     placeholder="Write message here..."
+    //                     onChangeText={(t) => setText(t)}
+    //                     value={text}
+    //                     multiline
+    //                     style={{ color: "black" }}
+    //                 />
+    //             </Input>
+    //             <TouchableOpacity onPress={postComment}>
+    //                 <Ionicons name="send-outline" size={32} color="white" />
+    //             </TouchableOpacity>
+    //         </HStack>
+    //     );
+    // });
+
     const ref = React.useRef<ICarouselInstance>(null);
     return (
         <>
@@ -331,18 +351,65 @@ const PostElemInPostsList = (props: any) => {
                     }
                     </>
                 }
+                {/* <HStack space="sm" style={{borderColor:"red", borderWidth:1}}>
+                    <Input variant="outline" size="md" style={styles.writingInput}>
+                        <InputField 
+                            // onFocus={() => setIsTextFocused(true)}
+                            // onBlur={() => setIsTextFocused(false)}
+                            placeholder="Write message here..." 
+                            onChangeText={(text) => setText(text)} 
+                            value={text}
+                            multiline={true}
+                            style={{color:"black"}}
+                            />
+                    </Input>
+                    <TouchableOpacity onPress={postComment}>
+                        <Ionicons name="send-outline" size={32} color="white" />
+                    </TouchableOpacity>
+                </HStack>      */}
             </Box>
-            <Actionsheet isOpen={modalComments} onClose={onCloseModalComments} style={{backgroundColor:"rgba(0,0,0,0.7)"}} snapPoints={[50]}>
+            {/* <Actionsheet  onClose={onCloseModalComments} >*/}
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding': undefined}
+                >
+                <Actionsheet isOpen={modalComments} onClose={onCloseModalComments}>
+                    <ActionsheetBackdrop/>
+                    <ActionsheetContent className="">
+                        <ActionsheetDragIndicatorWrapper>
+                            <ActionsheetDragIndicator/>
+                        </ActionsheetDragIndicatorWrapper>
+                        <VStack className="w-full pt-5">
+                            <HStack space="md" className="justify-center items-cneter">
+                                <Box>
+                                    <Image
+                                        source={{ uri: "https://i.imgur.com/UwTLr26.png" }}
+                                        resizeMode="contain"
+                                        className="flex-1"
+                                    />
+                                </Box>
+                            </HStack>
+                            <FormControl>
+                                <FormControlLabel>
+                                    <FormControlLabelText>
+                                        Write a comment here ...
+                                    </FormControlLabelText>
+                                </FormControlLabel>
+                                <Input className="w-full">
+                                    <InputSlot>
+                                        <Ionicons name="chatbubble-ellipses-outline" size={24} color="white" />
+                                    </InputSlot>
+                                    <InputField placeholder="CVC/CVV"/>
+                                </Input>
+                            </FormControl>
+                        </VStack>
+                    </ActionsheetContent>
+
+                </Actionsheet>
+            </KeyboardAvoidingView>
+            {/* <Actionsheet  onClose={onCloseModalComments} >
                 <ActionsheetBackdrop/>
                 <ActionsheetContent style={{backgroundColor:"rgba(100,100,100,0.7)", paddingVertical: 50}}>
-                {/* <ModalHeader> */}
                     <Text style={{fontSize:32, fontWeight:"bold"}}>Comments</Text>
-                {/* </ModalHeader> */}
-                    {/* <KeyboardAvoidingView */}
-                    {/* behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    // keyboardVerticalOffset={-0}
-                    // style={{ flex: 1 }} */}
-                    {/* > */}
                     {loading ? (
                         <Spinner />
                     ) : (
@@ -359,7 +426,7 @@ const PostElemInPostsList = (props: any) => {
                                 // onFocus={() => setIsTextFocused(true)}
                                 // onBlur={() => setIsTextFocused(false)}
                                 placeholder="Write message here..." 
-                                onChangeText={(text) => {setText(text);}} 
+                                onChangeText={(text) => setText(text)} 
                                 value={text}
                                 multiline={true}
                                 style={{color:"black"}}
@@ -369,9 +436,10 @@ const PostElemInPostsList = (props: any) => {
                             <Ionicons name="send-outline" size={32} color="white" />
                         </TouchableOpacity>
                     </HStack>
-                    {/* </KeyboardAvoidingView> */}
+                        
                 </ActionsheetContent>
-            </Actionsheet>
+            </Actionsheet> */}
+
         </>
     );
 
@@ -388,4 +456,4 @@ const styles = StyleSheet.create({
             textAlignVertical: 'top',
         }
     });
-export default PostElemInPostsList;
+export default memo(PostElemInPostsList);

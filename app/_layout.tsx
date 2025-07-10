@@ -16,6 +16,7 @@ import "@/global.css";
 import MainFile from "./MainFile";
 import { MMKV } from "react-native-mmkv";
 import * as FileSystem from 'expo-file-system';
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 
 Notifications.setNotificationHandler({
@@ -218,14 +219,16 @@ const MainStack = () => {
 
 export default function RootLayout() {
   return (
+            <SafeAreaProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GluestackUIProvider mode="light">
         <UserContextProvider props={undefined}>
           <AudioProvider>
-            <MainStack/>
+              <MainStack/>
           </AudioProvider>
         </UserContextProvider>
       </GluestackUIProvider>
     </GestureHandlerRootView>
+            </SafeAreaProvider>
   );
 }
