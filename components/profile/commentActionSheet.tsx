@@ -106,7 +106,7 @@ const ActionSheetForm = (props: {
 }
 
 
-const CommentActionSheet = (props: { modalComments: boolean | undefined; onCloseModalComments: (() => any) | undefined; item: { id: any; }; setCommentsFunction: any}) => {
+const CommentActionSheet = (props: { modalComments: boolean | undefined; onCloseModalComments: (() => any) | undefined; item: { id: any; }; setCommentNumber: any}) => {
     const [ loading, setLoading ] = useState(false);
     const [comments, setComments] = useState<any[]>([]);
 
@@ -127,6 +127,7 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
             } else {
                 console.log("Fetched comments: ", data);
                 setComments(data);
+                props.setCommentNumber(data.length);
             }
         }catch(error: unknown){
             console.error("Error in fetchComments function in components/profile/postElemInPostsList.tsx", error);
@@ -137,11 +138,11 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
 
         const renderComment = ({ item }: { item: any }) => (
         <Box style={{ borderBottomWidth:1, borderColor:"rgba(127,127,127,0.8)",  paddingVertical:10 }}>
-            <HStack space="sm" style={{ alignItems: "center", backgroundColor:"grey" }}>
+            <HStack space="sm" style={{ alignItems: "center" }}>
                 <Avatar user_id={item.user_id}/>
                 <VStack>
-                <Text style={{ fontWeight:"bold", color:"white"}}>{item.user_id}</Text>
-                <Text style={{ color:"white" }}>{item.text}</Text>
+                <Text style={{ fontWeight:"bold", color:"black"}}>{item.user_id}</Text>
+                <Text style={{ color:"black" }}>{item.text}</Text>
                 </VStack>
             </HStack>
         </Box>
@@ -162,7 +163,6 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
                         data={comments}
                         renderItem={renderComment}
                         keyExtractor={(item) => item.id.toString()}
-                        style={{ borderColor:"green", borderWidth:1 }}
                         />
                     )}
                     <HStack space="md" className="justify-center items-cneter">

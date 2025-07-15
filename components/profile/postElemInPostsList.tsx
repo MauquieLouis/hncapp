@@ -32,6 +32,7 @@ const PostElemInPostsList = (props: any) => {
     const [ comments, setComments ] = useState<any[]>([]);
     const [ loading, setLoading ] = useState<boolean>(false);
     const [ modalComments, setModalComments ] = useState<boolean>(false);
+    const [ commentNumber, setCommentNumber ] = useState<number>(0);
 
     const onCloseModalComments = () => {
         setModalComments(false);
@@ -268,6 +269,11 @@ const PostElemInPostsList = (props: any) => {
                             }
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => {setModalComments(true);}}>
+                            <Box style={{position:"absolute", borderColor:'#8888FF', borderWidth:2, right:-13, top:-7, borderRadius:10, padding:2}}>
+                                <Text style={{color:"white", fontSize:20, fontWeight:"bold"}}>
+                                    {commentNumber}
+                                </Text>
+                            </Box>
                             <Ionicons name="chatbubble-outline" size={32} color="white" />
                         </TouchableOpacity>
                     </HStack>
@@ -294,7 +300,7 @@ const PostElemInPostsList = (props: any) => {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding': undefined}
             >
-                <CommentActionSheet modalComments={modalComments} onCloseModalComments={onCloseModalComments} item={item}/>
+                <CommentActionSheet modalComments={modalComments} onCloseModalComments={onCloseModalComments} item={item} setCommentNumber={setCommentNumber}/>
                 {/* <Actionsheet isOpen={modalComments} onClose={onCloseModalComments}>
                     <ActionsheetBackdrop/>
                     <ActionsheetContent className="">
