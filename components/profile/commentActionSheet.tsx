@@ -12,7 +12,9 @@ import { useUserContext } from '@/contexts/userContext';
 import { Spinner } from '../ui/spinner';
 import Avatar from './avatar';
 
-const ActionSheetForm = (props: { item: { id: any; user_id: any; }; profile: any }) => {
+const ActionSheetForm = (props: {
+    setCommentsFunction(arg0: (prevComments: any) => any[]): unknown; item: { id: any; user_id: any; }; profile: any 
+}) => {
     const [text, setText] = useState('');
     const [ loading, setLoading ] = useState(false); 
 
@@ -32,6 +34,11 @@ const ActionSheetForm = (props: { item: { id: any; user_id: any; }; profile: any
                 user_id: props.profile.user_id,
                 text: text,
             }).select();
+
+            console.log("DATA : data", data);
+            if (data && Array.isArray(data) && data.length > 0) {
+                props.setCommentsFunction(prevComments => [ data[0], ...prevComments ]);
+            }
             if(error){
                 console.error("Error when posting comment in postComment function in components/profile/postElemInPostsList.tsx", error);   
             }
@@ -99,7 +106,7 @@ const ActionSheetForm = (props: { item: { id: any; user_id: any; }; profile: any
 }
 
 
-const CommentActionSheet = (props: { modalComments: boolean | undefined; onCloseModalComments: (() => any) | undefined; item: { id: any; }; }) => {
+const CommentActionSheet = (props: { modalComments: boolean | undefined; onCloseModalComments: (() => any) | undefined; item: { id: any; }; setCommentsFunction: any}) => {
     const [ loading, setLoading ] = useState(false);
     const [comments, setComments] = useState<any[]>([]);
 
@@ -167,7 +174,7 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
                             />
                         </Box>
                     </HStack>
-                    <ActionSheetForm item={props.item} profile={profile}/>
+                    <ActionSheetForm item={props.item} profile={profile} setCommentsFunction={setComments}/>
                     {/* <Button onPress={() => {submitComment(onSubmit)}} isDisabled={isSubmitting}>
                         <Text color="white">Submit</Text>
                     </Button> */}

@@ -70,7 +70,6 @@ const NotificationCommentOrLike = ({ notification }: { notification: any; }) => 
                 <ModalHeader>
                     <ModalCloseButton></ModalCloseButton>
                 </ModalHeader>
-                {/* <PostElemInPostsList item={post}/> */}
                 <PostElemInPostsList item={post} folder_url={profile.user_id} bucket={'posts'}/>
                 </ModalContent>
             </Modal>
