@@ -110,7 +110,7 @@ const PostsList = (props: { height: any; user_id: string; folder_url: string }) 
     }
 
     const renderItemFlatList = ({item, index}: {item: any, index: any}) => {
-            return <PostElemInPostsList item={item} folder_url={props.folder_url} bucket={'posts'} openActionSheetFunction={setModalComments}/>
+            return <PostElemInPostsList item={item} folder_url={props.folder_url} bucket={'posts'}/>
         }
 
     return(

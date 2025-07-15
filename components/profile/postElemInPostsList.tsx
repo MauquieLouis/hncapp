@@ -45,7 +45,7 @@ const PostElemInPostsList = (props: any) => {
     const { profile } = useUserContext();
 
     useEffect(()=> {
-        console.log("ITEM :",item);
+        console.log("ITEM postElemenInPostsList :",item);
         getSignedUrlForFiles();
     }, []);
 
@@ -60,7 +60,7 @@ const PostElemInPostsList = (props: any) => {
                 console.error("Error when getting post_attachments from post in getSignedUrlForFiles function in components/profile/postElemInPostsList.tsx",post_attachments_error);
             }
             else{
-                // console.log("Post_attach data : ", post_attachments);
+                console.log("Post_attach data : ", post_attachments);
                 const urls: string[] = [];
                 for(let post_attachment of post_attachments){
                     if(post_attachment.url){
@@ -68,6 +68,7 @@ const PostElemInPostsList = (props: any) => {
                     }
                     // console.log("POST ATTACH :", post_attachment);
                 }
+                console.log("URLs :", urls);
                 const { data, error } = await supabase.storage.from(bucket).createSignedUrls(urls, 1200);
                 if(error){
                     console.error("Error when creating signedUrls in getSignedUrlForFiles function in components/profile/postElemInPostsList.tsx", error);
@@ -75,6 +76,7 @@ const PostElemInPostsList = (props: any) => {
                     // console.log("DATA URLS :", data);
                     const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
                     setUrls(signedUrls);
+                    console.log("Signed URLs: ", signedUrls);
                 }
                 if(item.file_url){
                     const {data : audio_data, error: audio_error} = await supabase.storage.from(bucket).createSignedUrl(item.file_url,1200);

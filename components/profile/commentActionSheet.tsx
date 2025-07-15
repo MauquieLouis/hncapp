@@ -12,7 +12,7 @@ import { useUserContext } from '@/contexts/userContext';
 import { Spinner } from '../ui/spinner';
 import Avatar from './avatar';
 
-const ActionSheetForm = (props: { item: { id: any; }; profile: any }) => {
+const ActionSheetForm = (props: { item: { id: any; user_id: any; }; profile: any }) => {
     const [text, setText] = useState('');
     const [ loading, setLoading ] = useState(false); 
 
@@ -31,14 +31,40 @@ const ActionSheetForm = (props: { item: { id: any; }; profile: any }) => {
                 post_id: props.item.id,
                 user_id: props.profile.user_id,
                 text: text,
-            });
+            }).select();
             if(error){
                 console.error("Error when posting comment in postComment function in components/profile/postElemInPostsList.tsx", error);   
+            }
+            if (data && Array.isArray(data) && data.length > 0 && data[0].id) {
+                sendCommentNotification(data[0].id);
             }
         }catch(error: unknown){
             console.error("Error in postComment function in components/profile/postElemInPostsList.tsx", error);
         }finally{
             setLoading(false);
+        }
+    }
+
+    const sendCommentNotification = async (id: any) => {
+        try{
+            const { data, error } = await supabase.from('notifications').insert(
+                {
+                    recipient_id: props.item.user_id,
+                    actor_id: props.profile.user_id,
+                    type: 'commented',
+                    object_id: id,
+                    read: false
+                });
+            if(error){
+                console.error("Error when sending comment notification in sendCommentNotification function in components/profile/postElemInPostsList.tsx", error);
+            }else{
+                console.log("Comment notification sent successfully:", data);
+            }
+
+        }catch(error: unknown){
+            console.error("Error in sendCommentNotification function in components/profile/postElemInPostsList.tsx", error);
+        }finally{
+
         }
     }
 

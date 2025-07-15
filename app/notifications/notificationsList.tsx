@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader } from '@/components/ui/modal';
 import NotificationFriendOrFollowRequest from '@/components/notifications/notificationFriendOrFollowRequest';
+import NotificationCommentOrLike from '@/components/notifications/notificationCommentOrLike';
 
 export default function NotificationsList() {
 
@@ -65,6 +66,15 @@ export default function NotificationsList() {
     if(item.type === "friend_request" || item.type === "follow_request"){
       return (
         <NotificationFriendOrFollowRequest
+          notification={item}
+          setShowNotifModal={setShowNotifModal}
+          setDisplayNotif={setDisplayNotif}
+        />
+      );
+    }
+    if(item.type === "commented" || item.type === "post_liked"){
+      return (
+        <NotificationCommentOrLike
           notification={item}
           setShowNotifModal={setShowNotifModal}
           setDisplayNotif={setDisplayNotif}
