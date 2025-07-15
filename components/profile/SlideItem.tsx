@@ -28,7 +28,7 @@ export const SlideItem: React.FC<Props> = (props) => {
     );
 
     useEffect(() => {
-        console.log("SOURCES :", source);
+        // console.log("SOURCES :", source);
     }, []);
 
   return (

@@ -20,6 +20,8 @@ import { Input, InputField, InputSlot } from '../ui/input';
 import { Image } from '../ui/image';
 import { Actionsheet, ActionsheetBackdrop, ActionsheetContent, ActionsheetDragIndicatorWrapper, ActionsheetDragIndicator } from '../ui/actionsheet';
 import { FormControl, FormControlLabel, FormControlLabelText } from '../ui/form-control';
+import { Button } from '../ui/button';
+import CommentActionSheet from './commentActionSheet';
 
 const PostElemInPostsList = (props: any) => {
 
@@ -39,13 +41,17 @@ const PostElemInPostsList = (props: any) => {
     const bucket = props.bucket;
     const progress = useSharedValue<number>(0);
 
+
     const { profile } = useUserContext();
 
     useEffect(()=> {
         console.log("ITEM :",item);
         getSignedUrlForFiles();
-        fetchComments();
     }, []);
+
+    useEffect(() => {
+        console.log("Text changed:", text);
+    }, [text]);
 
     const getSignedUrlForFiles = async() => {
         try{
@@ -60,13 +66,13 @@ const PostElemInPostsList = (props: any) => {
                     if(post_attachment.url){
                         urls.push(`${folder_url}/${post_attachment.url}`);
                     }
-                    console.log("POST ATTACH :", post_attachment);
+                    // console.log("POST ATTACH :", post_attachment);
                 }
                 const { data, error } = await supabase.storage.from(bucket).createSignedUrls(urls, 1200);
                 if(error){
                     console.error("Error when creating signedUrls in getSignedUrlForFiles function in components/profile/postElemInPostsList.tsx", error);
                 }else{
-                    console.log("DATA URLS :", data);
+                    // console.log("DATA URLS :", data);
                     const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
                     setUrls(signedUrls);
                 }
@@ -81,25 +87,6 @@ const PostElemInPostsList = (props: any) => {
         }finally{
 
         }
-    }
-
-    const fetchComments = async () => {
-        try{
-            setLoading(true);
-            console.log("==============Fetching comments for post id: ", item.id);
-            const { data, error } = await supabase.from('comments').select('*').eq('post_id', item.id);
-            if (error) {
-                console.error("Error fetching comments in fetchComments function in components/profile/postElemInPostsList.tsx", error);
-            } else {
-                console.log("Fetched comments: ", data);
-                setComments(data);
-            }
-        }catch(error: unknown){
-            console.error("Error in fetchComments function in components/profile/postElemInPostsList.tsx", error);
-        } finally{
-            setLoading(false);
-        }
-
     }
 
     const defaultDataWith6Colors = [
@@ -180,56 +167,6 @@ const PostElemInPostsList = (props: any) => {
             //  false, or null
         }
     }
-
-    const renderComment = ({ item }: { item: any }) => (
-        <Box style={{ borderBottomWidth:1, borderColor:"rgba(127,127,127,0.8)",  paddingVertical:10 }}>
-            <HStack space="sm" style={{ alignItems: "center" }}>
-                <Avatar user_id={item.user_id}/>
-                <VStack>
-                <Text style={{ fontWeight:"bold", color:"white"}}>{item.user_id}</Text>
-                <Text style={{ color:"white" }}>{item.text}</Text>
-                </VStack>
-            </HStack>
-        </Box>
-    );
-
-    const postComment = async () => {
-        try{
-            if (text.trim() === '') return;
-            setLoading(true);
-            const { data, error } = await supabase.from('comments').insert({
-                post_id: item.id,
-                user_id: profile.user_id,
-                text: text,
-            });
-            if(error){
-                console.error("Error when posting comment in postComment function in components/profile/postElemInPostsList.tsx", error);   
-            }
-        }catch(error: unknown){
-            console.error("Error in postComment function in components/profile/postElemInPostsList.tsx", error);
-        }finally{
-            setLoading(false);
-        }
-    }
-
-    // const CommentInput = React.memo(({ text, setText, postComment }: { text: string; setText: (t: string) => void; postComment: () => void }) => {
-    //     return (
-    //         <HStack space="sm" style={{ borderColor: "red", borderWidth: 1 }}>
-    //             <Input variant="outline" size="md" style={styles.writingInput}>
-    //                 <InputField
-    //                     placeholder="Write message here..."
-    //                     onChangeText={(t) => setText(t)}
-    //                     value={text}
-    //                     multiline
-    //                     style={{ color: "black" }}
-    //                 />
-    //             </Input>
-    //             <TouchableOpacity onPress={postComment}>
-    //                 <Ionicons name="send-outline" size={32} color="white" />
-    //             </TouchableOpacity>
-    //         </HStack>
-    //     );
-    // });
 
     const ref = React.useRef<ICarouselInstance>(null);
     return (
@@ -351,28 +288,12 @@ const PostElemInPostsList = (props: any) => {
                     }
                     </>
                 }
-                {/* <HStack space="sm" style={{borderColor:"red", borderWidth:1}}>
-                    <Input variant="outline" size="md" style={styles.writingInput}>
-                        <InputField 
-                            // onFocus={() => setIsTextFocused(true)}
-                            // onBlur={() => setIsTextFocused(false)}
-                            placeholder="Write message here..." 
-                            onChangeText={(text) => setText(text)} 
-                            value={text}
-                            multiline={true}
-                            style={{color:"black"}}
-                            />
-                    </Input>
-                    <TouchableOpacity onPress={postComment}>
-                        <Ionicons name="send-outline" size={32} color="white" />
-                    </TouchableOpacity>
-                </HStack>      */}
             </Box>
-            {/* <Actionsheet  onClose={onCloseModalComments} >*/}
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding': undefined}
-                >
-                <Actionsheet isOpen={modalComments} onClose={onCloseModalComments}>
+            >
+                <CommentActionSheet modalComments={modalComments} onCloseModalComments={onCloseModalComments} item={item}/>
+                {/* <Actionsheet isOpen={modalComments} onClose={onCloseModalComments}>
                     <ActionsheetBackdrop/>
                     <ActionsheetContent className="">
                         <ActionsheetDragIndicatorWrapper>
@@ -388,7 +309,7 @@ const PostElemInPostsList = (props: any) => {
                                     />
                                 </Box>
                             </HStack>
-                            <FormControl>
+                            <FormControl isInvalid={isI}>
                                 <FormControlLabel>
                                     <FormControlLabelText>
                                         Write a comment here ...
@@ -398,47 +319,17 @@ const PostElemInPostsList = (props: any) => {
                                     <InputSlot>
                                         <Ionicons name="chatbubble-ellipses-outline" size={24} color="white" />
                                     </InputSlot>
-                                    <InputField placeholder="CVC/CVV"/>
+                                    <InputField placeholder="Write comment here"/>
                                 </Input>
                             </FormControl>
+                            <Button onPress={() => {submitComment(onSubmit)}} isDisabled={isSubmitting}>
+                                <Text color="white">Submit</Text>
+                            </Button>
                         </VStack>
                     </ActionsheetContent>
 
-                </Actionsheet>
+                </Actionsheet> */}
             </KeyboardAvoidingView>
-            {/* <Actionsheet  onClose={onCloseModalComments} >
-                <ActionsheetBackdrop/>
-                <ActionsheetContent style={{backgroundColor:"rgba(100,100,100,0.7)", paddingVertical: 50}}>
-                    <Text style={{fontSize:32, fontWeight:"bold"}}>Comments</Text>
-                    {loading ? (
-                        <Spinner />
-                    ) : (
-                        <FlatList
-                        data={comments}
-                        renderItem={renderComment}
-                        keyExtractor={(item) => item.id.toString()}
-                        style={{ borderColor:"green", borderWidth:1 }}
-                        />
-                    )}
-                    <HStack space="sm" style={{borderColor:"red", borderWidth:1}}>
-                        <Input variant="outline" size="md" style={styles.writingInput}>
-                            <InputField 
-                                // onFocus={() => setIsTextFocused(true)}
-                                // onBlur={() => setIsTextFocused(false)}
-                                placeholder="Write message here..." 
-                                onChangeText={(text) => setText(text)} 
-                                value={text}
-                                multiline={true}
-                                style={{color:"black"}}
-                                />
-                        </Input>
-                        <TouchableOpacity onPress={postComment}>
-                            <Ionicons name="send-outline" size={32} color="white" />
-                        </TouchableOpacity>
-                    </HStack>
-                        
-                </ActionsheetContent>
-            </Actionsheet> */}
 
         </>
     );
