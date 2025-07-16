@@ -136,7 +136,7 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
         }
     }
 
-        const renderComment = ({ item }: { item: any }) => (
+    const renderComment = ({ item }: { item: any }) => (
         <Box style={{ borderBottomWidth:1, borderColor:"rgba(127,127,127,0.8)",  paddingVertical:10 }}>
             <HStack space="sm" style={{ alignItems: "center" }}>
                 <Avatar user_id={item.user_id}/>

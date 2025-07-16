@@ -27,16 +27,25 @@ const PostElemInPostsList = (props: any) => {
 
     const [ urls, setUrls ] = useState([]);
     const [ audioUrl, setAudioUrl ] = useState<string | null>(null);
-    const [ isLiked, setIsLiked ] = useState(null);
+    const [ isLiked, setIsLiked ] = useState<boolean | null >(null);
     const [ text, setText ] = useState("");
     const [ comments, setComments ] = useState<any[]>([]);
     const [ loading, setLoading ] = useState<boolean>(false);
     const [ modalComments, setModalComments ] = useState<boolean>(false);
     const [ commentNumber, setCommentNumber ] = useState<number>(0);
+    const [ likeNumber, setLikeNumber ] = useState<number>(0);
+    const [ dislikeNumber, setDislikeNumber ] = useState<number>(0);
+
+    const [ likeActionSheet, setLikeActionSheet ] = useState<boolean>(false);
 
     const onCloseModalComments = () => {
         setModalComments(false);
     }
+
+    const onCloseLikeActionSheet = () => {
+        setLikeActionSheet(false);
+    }
+
     const item = props.item;
     const folder_url = props.folder_url;
     const bucket = props.bucket;
@@ -48,11 +57,41 @@ const PostElemInPostsList = (props: any) => {
     useEffect(()=> {
         console.log("ITEM postElemenInPostsList :",item);
         getSignedUrlForFiles();
+        getLikeAndDislikeCounts();
     }, []);
 
     useEffect(() => {
         console.log("Text changed:", text);
     }, [text]);
+
+    const getLikeAndDislikeCounts = async () => {
+        try{
+            const { data, error } = await supabase.from('post_likes').select('like, user_id').eq('post_id', item.id);
+            if(error){
+                console.error("Error when fetching likes and dislikes in getLikeAndDislikeCounts function in components/profile/postElemInPostsList.tsx", error);
+            }
+            if(data && Array.isArray(data)){
+                const likeCount = data.filter(like => like.like === true).length;
+                const dislikeCount = data.filter(like => like.like === false).length;
+                console.log("Like count: ", likeCount, "Dislike count: ", dislikeCount);
+                setLikeNumber(likeCount);
+                setDislikeNumber(dislikeCount);
+                const didILike = data.find(like => like.user_id === profile?.user_id);
+                if(didILike){
+                    setIsLiked(didILike.like);
+                }
+                else if (didILike == false){
+                    setIsLiked(false);
+                }
+            }
+
+        }catch(error: unknown){
+            console.error("Error in getLikeAndDislikeCounts function in components/profile/postElemInPostsList.tsx", error);
+        }finally{
+
+        }
+
+    }
 
     const getSignedUrlForFiles = async() => {
         try{
@@ -163,6 +202,28 @@ const PostElemInPostsList = (props: any) => {
         return { data, state: action };
     };
 
+    const handleLike=async()=>{
+        if(isLiked === true){
+            setLikeNumber(prev => prev - 1);
+        } else if (isLiked === false){
+            setLikeNumber(prev => prev + 1);
+            setDislikeNumber(prev => prev - 1);
+        }else{
+            setLikeNumber(prev => prev + 1);
+        }
+    }
+
+    const handleDislike=async()=>{
+        if(isLiked === false){
+            setDislikeNumber(prev => prev - 1);
+        } else if (isLiked === true){
+            setDislikeNumber(prev => prev + 1);
+            setLikeNumber(prev => prev - 1);
+        }else{
+            setDislikeNumber(prev => prev + 1);
+        }
+    }
+
     const handleReaction = async (action: any) => {
         const { state, error } =  await togglePostReaction(item.id, profile?.user_id, action);
         if (!error) {
@@ -247,8 +308,9 @@ const PostElemInPostsList = (props: any) => {
             </Box>
             <Box style={{width:"80%", marginLeft:"10%", borderBottomColor:"rgba(127,127,127,0.8)", borderBottomWidth:1, marginBottom:25, paddingBottom:10 }}>
                 <Box>
-                    <HStack style={{paddingVertical:15}} space={"xl"}>
+                    <HStack style={{paddingVertical:15}} space={"md"}>
                         <TouchableOpacity onPress={async()=> {
+                            await handleLike();
                             await handleReaction(true);
                         }}>
                             {isLiked
@@ -258,7 +320,15 @@ const PostElemInPostsList = (props: any) => {
                             <Ionicons name="heart-outline" size={34} color="white" />
                             }
                         </TouchableOpacity>
+                        {likeNumber > 0 ? 
+                            <TouchableOpacity 
+                            style={{padding:0, margin:0, justifyContent:"center", alignItems:"center"}} 
+                            onPress={() => {setLikeActionSheet(true);}}>
+                                <Text>{likeNumber}</Text>
+                            </TouchableOpacity>
+                        :<></>}
                         <TouchableOpacity onPress={async()=> {
+                            await handleDislike();
                             await handleReaction(false);
                         }}>
                             {isLiked == true || isLiked == null
@@ -268,6 +338,13 @@ const PostElemInPostsList = (props: any) => {
                              <Ionicons name="skull-outline" size={32} color="red" />
                             }
                         </TouchableOpacity>
+                        {dislikeNumber > 0 ?
+                            <TouchableOpacity 
+                            style={{padding:0, margin:0, justifyContent:"center", alignItems:"center"}} 
+                            onPress={() => {setLikeActionSheet(true);}}>
+                                <Text>{dislikeNumber}</Text>
+                            </TouchableOpacity>
+                        :<></>}
                         <TouchableOpacity onPress={() => {setModalComments(true);}}>
                             <Box style={{position:"absolute", borderColor:'#8888FF', borderWidth:2, right:-13, top:-7, borderRadius:10, padding:2}}>
                                 <Text style={{color:"white", fontSize:20, fontWeight:"bold"}}>
