@@ -22,6 +22,7 @@ import { Actionsheet, ActionsheetBackdrop, ActionsheetContent, ActionsheetDragIn
 import { FormControl, FormControlLabel, FormControlLabelText } from '../ui/form-control';
 import { Button } from '../ui/button';
 import CommentActionSheet from './commentActionSheet';
+import LikeOrDislikeActionSheet from './likeOrDislikeActionSheet';
 
 const PostElemInPostsList = (props: any) => {
 
@@ -37,6 +38,7 @@ const PostElemInPostsList = (props: any) => {
     const [ dislikeNumber, setDislikeNumber ] = useState<number>(0);
 
     const [ likeActionSheet, setLikeActionSheet ] = useState<boolean>(false);
+    const [ dislikeActionSheet, setDislikeActionSheet ] = useState<boolean>(false);
 
     const onCloseModalComments = () => {
         setModalComments(false);
@@ -44,6 +46,9 @@ const PostElemInPostsList = (props: any) => {
 
     const onCloseLikeActionSheet = () => {
         setLikeActionSheet(false);
+    }
+    const onCloseDislikeActionSheet = () => {
+        setDislikeActionSheet(false);
     }
 
     const item = props.item;
@@ -341,7 +346,7 @@ const PostElemInPostsList = (props: any) => {
                         {dislikeNumber > 0 ?
                             <TouchableOpacity 
                             style={{padding:0, margin:0, justifyContent:"center", alignItems:"center"}} 
-                            onPress={() => {setLikeActionSheet(true);}}>
+                            onPress={() => {setDislikeActionSheet(true);}}>
                                 <Text>{dislikeNumber}</Text>
                             </TouchableOpacity>
                         :<></>}
@@ -374,6 +379,8 @@ const PostElemInPostsList = (props: any) => {
                     </>
                 }
             </Box>
+            <LikeOrDislikeActionSheet isOpen={likeActionSheet} onClose={onCloseLikeActionSheet} post_id={item.id} like={true}/>
+            <LikeOrDislikeActionSheet isOpen={dislikeActionSheet} onClose={onCloseDislikeActionSheet} post_id={item.id} like={false}/>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding': undefined}
             >
