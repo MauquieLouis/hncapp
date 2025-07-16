@@ -33,15 +33,27 @@ const NotificationCommentOrLike = ({ notification }: { notification: any; }) => 
 
     const findPostLinked = async () => {
         try{
-            const { data, error } = await supabase.from('comments').select('post_id').eq('id', notification.object_id).single();
-            if(error){
-                console.error("Error finding post linked in findPostLinked function in components/notifications/notificationCommentOrLike.tsx", error);
+            let main_data: any, main_error: any;
+            if(notification.type =='post_liked'){
+                console.log("------- POST ID -------- :", notification.object_id);
+                const { data, error } = await supabase.from('post_likes').select('post_id').eq('id', notification.object_id).single();
+                main_data = data;
+                main_error = error;
             }else{
-                console.log("POST ID: ", data.post_id);
-                const { data: postData, error: postError } = await supabase.from('posts').select('*').eq('id', data.post_id).single();
+                const { data, error } = await supabase.from('comments').select('post_id').eq('id', notification.object_id).single();
+                main_data = data;
+                main_error = error;
+            }
+                
+            if(main_error){
+                console.error("Error finding post linked in findPostLinked function in components/notifications/notificationCommentOrLike.tsx", main_error);
+            }else{
+                console.log("POST ID: ", main_data.post_id);
+                const { data: postData, error: postError } = await supabase.from('posts').select('*').eq('id', main_data.post_id).single();
                 if(postError){
                     console.error("Error fetching post in findPostLinked function in components/notifications/notificationCommentOrLike.tsx", postError);   
                 }else{
+                    console.log("POST DATA : ", postData);
                     setPost(postData);
                 }
             }
@@ -54,7 +66,9 @@ const NotificationCommentOrLike = ({ notification }: { notification: any; }) => 
         <TouchableOpacity
             onPress={() => {setShowNotifModal(true); setDisplayNotif(notification);}}
             style={{ flexDirection:"row", alignItems:"center", justifyContent:"flex-start", padding:10, borderBottomColor:"white", borderBottomWidth:1, width:"90%", marginLeft:"5%"}}>
-            <Avatar/>
+            {post ? 
+            <Avatar user_id={post.user_id}/>:<></>
+            }
             <VStack style={{flex:1, paddingLeft:10}}>
             <Text style={{color:"white", paddingLeft:15, fontSize:20}}>
                 {notification.type}
@@ -70,7 +84,7 @@ const NotificationCommentOrLike = ({ notification }: { notification: any; }) => 
                 <ModalHeader>
                     <ModalCloseButton></ModalCloseButton>
                 </ModalHeader>
-                <PostElemInPostsList item={post} folder_url={profile.user_id} bucket={'posts'}/>
+                <PostElemInPostsList item={post} folder_url={[profile.user_id]} bucket={'posts'} profile={profile}/>
                 </ModalContent>
             </Modal>
         </TouchableOpacity>

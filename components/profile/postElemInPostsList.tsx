@@ -57,10 +57,16 @@ const PostElemInPostsList = (props: any) => {
     const progress = useSharedValue<number>(0);
 
 
-    const { profile } = useUserContext();
+    let { profile } = useUserContext();
 
     useEffect(()=> {
+        console.log("===========================================")
+        console.log("=========================================== PROFILE :", profile);
+        console.log("=========================================== PROPS :", props);
         console.log("ITEM postElemenInPostsList :",item);
+        if(profile == undefined || profile == null){
+            profile = props.profile;
+        }
         getSignedUrlForFiles();
         getLikeAndDislikeCounts();
     }, []);
@@ -136,15 +142,6 @@ const PostElemInPostsList = (props: any) => {
         }
     }
 
-    const defaultDataWith6Colors = [
-        "#B0604D",
-        "#899F9C",
-        "#B3C680",
-        "#5C6265",
-        "#F5D399",
-        "#F1F1F1",
-    ];
-
     const onPressPagination = (index: number) => {
         ref.current?.scrollTo({
         /**
@@ -197,11 +194,31 @@ const PostElemInPostsList = (props: any) => {
             {
                 onConflict: 'post_id,user_id',
             }
-            );
+            ).select();
 
         if (upsertError) {
             console.error('Upsert error:', upsertError);
             return { error: upsertError };
+        }
+        const { data: notificationData, error: notificationError } =
+        await supabase.rpc('insert_or_update_notification', {
+            _recipient_id: item.user_id,
+            _actor_id: profile?.user_id,
+            _type: 'post_liked',
+            _object_id: data[0].id,
+        });
+        // await supabase
+        // .from('notifications').upsert({
+        //     recipient_id: item.user_id,
+        //     actor_id: profile?.user_id,
+        //     type: 'post_liked',
+        //     object_id: postId,
+        //     read: false
+        // }, { onConflict: 'actor_id,type,object_id' }); 
+        if( notificationError ){
+            console.error("Error when inserting/updating notification in togglePostReaction function in components/profile/postElemInPostsList.tsx", notificationError);
+        }else{
+            console.log("Notification data: ", notificationData);
         }
 
         return { data, state: action };
@@ -257,7 +274,6 @@ const PostElemInPostsList = (props: any) => {
                         height: 300,
                     }}
                     mode={"parallax"}
-                    // modeConfig={{stackInterval:1}}
                     modeConfig={{
                         parallaxScrollingScale: 0.88,
                         parallaxScrollingOffset: 58,
@@ -265,10 +281,6 @@ const PostElemInPostsList = (props: any) => {
                     renderItem={renderItem({ rounded: true, imagesArray: urls})}
                     onConfigurePanGesture={(gesture) => {
                     gesture.activeOffsetX([-50,50]);
-                    // gesture.minVelocity(0);
-                    // gesture.activeOffsetY([-10,10]);
-                    //Maybe try to find a way toactivate or not the carousel ? like if click one tile on it will made the picture carousel available.
-                    //with enabled false.
                     return gesture;
                 }}
                 />
@@ -385,42 +397,6 @@ const PostElemInPostsList = (props: any) => {
                 behavior={Platform.OS === 'ios' ? 'padding': undefined}
             >
                 <CommentActionSheet modalComments={modalComments} onCloseModalComments={onCloseModalComments} item={item} setCommentNumber={setCommentNumber}/>
-                {/* <Actionsheet isOpen={modalComments} onClose={onCloseModalComments}>
-                    <ActionsheetBackdrop/>
-                    <ActionsheetContent className="">
-                        <ActionsheetDragIndicatorWrapper>
-                            <ActionsheetDragIndicator/>
-                        </ActionsheetDragIndicatorWrapper>
-                        <VStack className="w-full pt-5">
-                            <HStack space="md" className="justify-center items-cneter">
-                                <Box>
-                                    <Image
-                                        source={{ uri: "https://i.imgur.com/UwTLr26.png" }}
-                                        resizeMode="contain"
-                                        className="flex-1"
-                                    />
-                                </Box>
-                            </HStack>
-                            <FormControl isInvalid={isI}>
-                                <FormControlLabel>
-                                    <FormControlLabelText>
-                                        Write a comment here ...
-                                    </FormControlLabelText>
-                                </FormControlLabel>
-                                <Input className="w-full">
-                                    <InputSlot>
-                                        <Ionicons name="chatbubble-ellipses-outline" size={24} color="white" />
-                                    </InputSlot>
-                                    <InputField placeholder="Write comment here"/>
-                                </Input>
-                            </FormControl>
-                            <Button onPress={() => {submitComment(onSubmit)}} isDisabled={isSubmitting}>
-                                <Text color="white">Submit</Text>
-                            </Button>
-                        </VStack>
-                    </ActionsheetContent>
-
-                </Actionsheet> */}
             </KeyboardAvoidingView>
 
         </>
