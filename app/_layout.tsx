@@ -17,7 +17,7 @@ import MainFile from "./MainFile";
 import { MMKV } from "react-native-mmkv";
 import * as FileSystem from 'expo-file-system';
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
+import * as NavigationBar from 'expo-navigation-bar';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -137,11 +137,16 @@ const MainStack = () => {
   
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
-  const { session, loading, user } = useUserContext();
+  const { session, loading, user, theme } = useUserContext();
 
   const notificationListener = useRef<Notifications.EventSubscription>();
   const responseListener = useRef<Notifications.EventSubscription>();
+
+
   useEffect(() => {
+    // if(Platform.OS === 'android'){
+    //   NavigationB
+    // }
       registerForPushNotificationsAsync().then(token => setExpoPushToken(token ?? ''))
       .catch((error: any) => setExpoPushToken(`${error}`));
       
@@ -169,66 +174,53 @@ const MainStack = () => {
         storage = new MMKV({
           id: `user-${user.id}-storage`,
         });
-        // console.log("STORAGE :", storage);
       }
-      // const storedData = storage.getString('myKey');
-      // if(storedData !== undefined){
-      //   console.log("NO STORED DATA 1");
-      // }else{
-      //   console.log("NO STORED DATA 2");
-      // }
-    }, [expoPushToken, session]);
+      if(theme){
+        NavigationBar.setBackgroundColorAsync(theme.backgroundColor1);
+      }
+    }, [expoPushToken, session, theme]);
+
+    console.log("THEME :", theme);
 
   return (
     <>
-    {loading ? 
-      <Text>LOADING !!</Text>: 
+    {theme ?
+      // <GluestackUIProvider mode={theme.dark ? 'dark' : 'light'}>
       <>
-      {/* // <View style={{ flex: 1, alignItems: 'center', justifyContent: 'space-around' }}>
-      //   <Text>Your Expo push token: {expoPushToken}</Text>
-      //   <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      //     <Text>Title: {notification && notification.request.content.title} </Text>
-      //     <Text>Body: {notification && notification.request.content.body}</Text>
-      //     <Text>Data: {notification && JSON.stringify(notification.request.content.data)}</Text>
-      //   </View>
-      //   <Button
-      //     title="Press to Send Notification"
-      //     onPress={async () => {
-      //       await sendPushNotification(expoPushToken);
-      //     }}
-      //   />
-      // </View> */}
-       {session ?
-        <>
-          {/* <Stack>
-            <Stack.Screen name="index"  />
-            <Stack.Screen name="conversations" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-          <StatusBar style="dark" /> */}
-          <MainFile/>
-        </> 
-        :
-        <Auth/>
-      }
+        <StatusBar animated={true} style={theme.dark ? 'light':'dark'} backgroundColor={theme.backgroundColor1}/>
+        <GluestackUIProvider>
+          {loading ? 
+            <Text>LOADING !!</Text>: 
+            <>
+            {session ?
+              <>
+                <MainFile/>
+              </> 
+              :
+              <Auth/>
+            }
+            </>
+          }
+        </GluestackUIProvider>
       </>
+    :
+      <></>
     }
     </>
   );
 }
 
 export default function RootLayout() {
+
   return (
-            <SafeAreaProvider>
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <GluestackUIProvider mode="light">
-        <UserContextProvider props={undefined}>
-          <AudioProvider>
-              <MainStack/>
-          </AudioProvider>
-        </UserContextProvider>
-      </GluestackUIProvider>
-    </GestureHandlerRootView>
-            </SafeAreaProvider>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+          <UserContextProvider props={undefined}>
+            <AudioProvider>
+                <MainStack/>
+            </AudioProvider>
+          </UserContextProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }

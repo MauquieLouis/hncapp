@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, Touchable, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, Image, Touchable, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import { Box } from '../ui/box';
 import { HStack } from '../ui/hstack';
 import { VStack } from '../ui/vstack';
@@ -17,6 +17,8 @@ const LikeOrDislikeActionSheet = (props: { post_id: any; like: any; isOpen: bool
 
     const [ loading, setLoading ] = useState(false);
     const [ profiles, setProfiles ] = useState<any[]>([]);
+
+    const { theme } = useUserContext();
     
     useEffect(() => {
         fetchLikeOrDislikeProfiles();
@@ -41,22 +43,43 @@ const LikeOrDislikeActionSheet = (props: { post_id: any; like: any; isOpen: bool
         }
     }
 
+    const styles = StyleSheet.create({
+        actionSheetContent:{
+            backgroundColor: theme.backgroundColor2,
+        },
+        nameText:{
+            fontWeight:"bold",
+            color: theme.textColor1,
+        },
+        commentText:{
+            color: theme.textColor2
+        },
+        boxStyle:{
+            borderBottomWidth:1, borderColor:theme.dividerColor,  paddingVertical:10
+        },
+        titleText:{
+            color:theme.textColor1, fontWeight:"bold", fontSize:28
+        }
+    });
+
     const renderProfile = ({ item }: { item: any }) => (
-            <Box style={{ borderBottomWidth:1, borderColor:"rgba(127,127,127,0.8)",  paddingVertical:10 }}>
+            <Box style={styles.boxStyle}>
                 <HStack space="sm" style={{ alignItems: "center" }}>
                     <Avatar user_id={item.user_id}/>
                     <VStack>
-                    <Text style={{ fontWeight:"bold", color:"black"}}>{item.username}</Text>
-                    <Text style={{ color:"black" }}>{item.firstname} {item.lastname}</Text>
+                    <Text style={styles.nameText}>{item.username}</Text>
+                    <Text style={styles.commentText}>{item.firstname} {item.lastname}</Text>
                     </VStack>
                 </HStack>
             </Box>
         );
 
+    const iconColor=theme.iconColor
+
     return (
         <Actionsheet isOpen={props.isOpen} onClose={props.onClose}>
             <ActionsheetBackdrop/>
-            <ActionsheetContent className="">
+            <ActionsheetContent className="" style={styles.actionSheetContent}>
                 <ActionsheetDragIndicatorWrapper>
                     <ActionsheetDragIndicator/>
                 </ActionsheetDragIndicatorWrapper>
@@ -64,15 +87,15 @@ const LikeOrDislikeActionSheet = (props: { post_id: any; like: any; isOpen: bool
                     <Box style={{justifyContent:"center", alignItems:"center", paddingVertical:10}}>
                             {props.like ? 
                             <HStack space="sm" style={{ alignItems: "center" }}>
-                                <Ionicons name="heart-outline" size={32} color="black" />
-                                <Text style={{ color:"black", fontWeight:"bold", fontSize:28}}>
+                                <Ionicons name="heart-outline" size={32} color={iconColor} />
+                                <Text style={styles.titleText}>
                                     Like
                                 </Text>
                             </HStack>
                         :
                             <HStack space="sm" style={{ alignItems: "center" }}>
-                                <Ionicons name="skull-outline" size={32} color="black" />
-                                <Text style={{ color:"black", fontWeight:"bold", fontSize:28}}>
+                                <Ionicons name="skull-outline" size={32} color={iconColor} />
+                                <Text style={styles.titleText}>
                                     Dislike
                                 </Text>
                             </HStack>

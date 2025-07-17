@@ -10,9 +10,38 @@ import { useRouter } from 'expo-router';
 
 export default function Index() {
 
-  const { profile } = useUserContext();
+  const { profile, theme } = useUserContext();
   const router = useRouter();
+
+  const iconColor = theme?.textColor1;
   
+  const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.backgroundColor1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: {
+    color: theme.textColor1,
+    paddingTop:45,
+  },
+  button: {
+    fontSize: 20,
+    textDecorationLine: 'underline',
+    color: theme.textColor2,
+  },
+  boxStyle: {
+    borderColor: theme.borderColorLight,
+    borderWidth: 4,
+    width: 120,
+    height: 120,
+    borderRadius:5,
+    padding: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  }
+});
 
   return (
     <View
@@ -31,7 +60,7 @@ export default function Index() {
               }
             }}
           >
-            <Ionicons name="person-outline" size={50} color="white" />
+            <Ionicons name="person-outline" size={50} color={iconColor} />
           </TouchableOpacity>
           {/* ------------------------------------------------------------------
                                   C O N V E R S A T I O N S 
@@ -42,7 +71,7 @@ export default function Index() {
                 router.push("/conversations/conversationsList");
               }}
           >
-            <Ionicons name="chatbubbles-outline" size={50} color="white" />
+            <Ionicons name="chatbubbles-outline" size={50} color={iconColor} />
           </TouchableOpacity>
         </HStack>
         <HStack space="3xl">
@@ -55,7 +84,7 @@ export default function Index() {
               router.push("/notifications/notificationsList");
             }}
           >
-            <Ionicons name="notifications-outline" size={50} color="white" />
+            <Ionicons name="notifications-outline" size={50} color={iconColor} />
           </TouchableOpacity>
             {/* ------------------------------------------------------------------
                                     U S E R S   L I S T
@@ -66,7 +95,7 @@ export default function Index() {
                 router.push({pathname: "/profile/profileList", params: { type : "all"}});
               }}
           >
-            <Ionicons name="list-outline" size={50} color="white" />
+            <Ionicons name="list-outline" size={50} color={iconColor} />
           </TouchableOpacity>
         </HStack>
       </VStack>
@@ -78,26 +107,6 @@ export default function Index() {
         About Us
       </Link>
       <View style={{padding:10}}></View>
-      {/* <Link href="conversations/conversationsList" style={styles.button}>
-        CONVERSATIONS
-      </Link>
-      <Link href={{
-              pathname: 'profile/[id]', 
-              params: {id: profile.user_id}
-            }} 
-          style={styles.button}>
-        Profile --
-      </Link> 
-      <Link href={`profile/${profile.user_id}`} 
-          style={styles.button}>
-        Profile --
-      </Link>
-      <Link href="profile/profileList" style={styles.button}>
-        Profile List
-      </Link> */}
-      {/* <Link href="/(tabs)" style={styles.button}>
-        Tabs
-      </Link> */}
     </View>
   );
 }
@@ -105,27 +114,28 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#25292e',
+    backgroundColor: '#f5f5f4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boxStyle: {
+    width: 100,
+    height: 100,
+    backgroundColor: '#4a5568',
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   text: {
-    color: '#fff',
-    paddingTop:45,
+    fontSize: 20,
+    color: '#333',
   },
   button: {
-    fontSize: 20,
-    textDecorationLine: 'underline',
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#3b82f6',
     color: '#fff',
+    borderRadius: 5,
   },
-  boxStyle: {
-    borderColor: "white",
-    borderWidth: 2,
-    width: 120,
-    height: 120,
-    borderRadius:5,
-    padding: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  }
-})
+});

@@ -1,11 +1,16 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {supabase} from '../libs/initSupabase';
 
+import LightStyle from '../assets/themes/light';
+import DarkStyle from '../assets/themes/dark';
+// import PinkStyle from '../assets/themes/pink';
+
 export const UserContext = createContext({
     loading: false,
     profile: null,
     session: null,
     user: null,
+    theme: null,
 });
 
 export const UserContextProvider = ({ props, children}: {props: any, children: any}) => {
@@ -14,6 +19,8 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
     const [profile, setProfile] = useState<Record<string, any> | null>(null);
     const [session, setSession] = useState<Record<string, any> | null>(null);
     const [user, setUser] = useState<Record<string, any> | null>(null);
+    const [theme, setTheme] = useState<string | null>(null);
+
     async function loadProfile(userD = user) {
         if(userD == null){
             setLoading(false);
@@ -24,6 +31,7 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
             const { data: profileData, error: errorData } = await supabase.from('profiles').select('*').eq('user_id', userD.id);
             if(profileData){
                 setProfile(profileData[0]);
+                changeTheme(profileData[0]);
             }
             if(errorData){
                 console.error('Error in loadProfile() request in userContext.js', errorData);
@@ -33,6 +41,24 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
         }finally{
             setLoading(false);
         }
+    }
+
+    function changeTheme(profileUpdated: { [x: string]: any; }){
+        console.log("CHANGE THEME :", profileUpdated);
+        setTheme(DarkStyle);
+        // switch(profileUpdated["theme"]){
+        //     case 'light':
+        //         setTheme(LightStyle);
+        //     break;
+        //     case 'dark':
+        //         setTheme(DarkStyle);
+        //     break;
+        //     case 'perso':
+        //         setTheme(LightStyle);
+        //     break;
+        //     default:
+        //         setTheme(DarkStyle);
+        // }
     }
 
     useEffect(() => {
@@ -66,6 +92,7 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
         profile,
         session,
         user,
+        theme,
         signOut,
     };
 

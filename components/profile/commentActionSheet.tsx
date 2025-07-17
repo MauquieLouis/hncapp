@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, Touchable, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, Image, Touchable, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import { Box } from '../ui/box';
 import { HStack } from '../ui/hstack';
 import { VStack } from '../ui/vstack';
@@ -13,7 +13,7 @@ import { Spinner } from '../ui/spinner';
 import Avatar from './avatar';
 
 const ActionSheetForm = (props: {
-    setCommentsFunction(arg0: (prevComments: any) => any[]): unknown; item: { id: any; user_id: any; }; profile: any 
+    setCommentsFunction(arg0: (prevComments: any) => any[]): unknown; item: { id: any; user_id: any; }; profile: any; theme: any
 }) => {
     const [text, setText] = useState('');
     const [ loading, setLoading ] = useState(false); 
@@ -23,6 +23,8 @@ const ActionSheetForm = (props: {
     // useEffect(() => {
     //     console.log("PROFILE :", profile);
     // }, []);
+
+    const theme = props.theme;
 
     const postComment = async () => {
         try{
@@ -75,6 +77,19 @@ const ActionSheetForm = (props: {
         }
     }
 
+    const styles = StyleSheet.create({
+        inputStyle:{
+            borderColor:theme.borderColorLight,
+        },
+        inputField:{
+            color:theme.textColor1,
+        },
+        touchableBTN:{
+            marginTop: 0, padding: 8, borderRadius: 10, borderWidth: 3, borderColor: theme.borderColorDark, width:"15%"
+        }
+    });
+
+    const iconColor=theme.iconColor
 
     return(
         <HStack space="md" className='w-full justify-between items-center'>
@@ -84,11 +99,11 @@ const ActionSheetForm = (props: {
                         Write a comment here ...
                         </FormControlLabelText> */}
                 </FormControlLabel>
-                <Input className="w-full rounded-lg">
+                <Input className="w-full rounded-lg" style={styles.inputStyle}>
                     {/* <InputSlot>
                         <Ionicons name="chatbubble-ellipses-outline" size={24} color="grey" />
                     </InputSlot> */}
-                    <InputField placeholder="Write comment here" value={text} onChangeText={setText}/>
+                    <InputField placeholder="Write comment here" value={text} onChangeText={setText} style={styles.inputField}/>
                 </Input>
             </FormControl>
             <TouchableOpacity
@@ -98,8 +113,8 @@ const ActionSheetForm = (props: {
                     console.log('Comment submitted:', text);
                     setText(''); // Clear input after submission
                 }}
-                style={{ marginTop: 0, padding: 8, borderRadius: 10, borderWidth: 3, borderColor: '#007AFF', width:"15%" }}>
-                    <Ionicons name="send-outline" size={32} color="#007AFF"/>
+                style={styles.touchableBTN}>
+                    <Ionicons name="send-outline" size={32} color={iconColor}/>
             </TouchableOpacity>
         </HStack>
     )
@@ -114,7 +129,7 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
         fetchComments();
     },[]);
 
-    const { profile } = useUserContext();
+    const { profile, theme } = useUserContext();
 
 
     const fetchComments = async () => {
@@ -136,13 +151,26 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
         }
     }
 
+    const styles = StyleSheet.create({
+        actionSheetContent:{
+            backgroundColor: theme.backgroundColor2,
+        },
+        nameText:{
+            fontWeight:"bold",
+            color: theme.textColor1,
+        },
+        commentText:{
+            color: theme.textColor2
+        }
+    });
+
     const renderComment = ({ item }: { item: any }) => (
         <Box style={{ borderBottomWidth:1, borderColor:"rgba(127,127,127,0.8)",  paddingVertical:10 }}>
             <HStack space="sm" style={{ alignItems: "center" }}>
                 <Avatar user_id={item.user_id}/>
                 <VStack>
-                <Text style={{ fontWeight:"bold", color:"black"}}>{item.user_id}</Text>
-                <Text style={{ color:"black" }}>{item.text}</Text>
+                <Text style={styles.nameText}>{item.user_id}</Text>
+                <Text style={styles.commentText}>{item.text}</Text>
                 </VStack>
             </HStack>
         </Box>
@@ -151,7 +179,7 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
     return (
         <Actionsheet isOpen={props.modalComments} onClose={props.onCloseModalComments}>
             <ActionsheetBackdrop/>
-            <ActionsheetContent className="">
+            <ActionsheetContent className="" style={styles.actionSheetContent}>
                 <ActionsheetDragIndicatorWrapper>
                     <ActionsheetDragIndicator/>
                 </ActionsheetDragIndicatorWrapper>
@@ -174,7 +202,7 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
                             />
                         </Box>
                     </HStack>
-                    <ActionSheetForm item={props.item} profile={profile} setCommentsFunction={setComments}/>
+                    <ActionSheetForm item={props.item} profile={profile} setCommentsFunction={setComments} theme={theme}/>
                     {/* <Button onPress={() => {submitComment(onSubmit)}} isDisabled={isSubmitting}>
                         <Text color="white">Submit</Text>
                     </Button> */}

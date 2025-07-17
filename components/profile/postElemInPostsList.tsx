@@ -57,7 +57,7 @@ const PostElemInPostsList = (props: any) => {
     const progress = useSharedValue<number>(0);
 
 
-    let { profile } = useUserContext();
+    let { profile, theme } = useUserContext();
 
     useEffect(()=> {
         console.log("===========================================")
@@ -207,14 +207,6 @@ const PostElemInPostsList = (props: any) => {
             _type: 'post_liked',
             _object_id: data[0].id,
         });
-        // await supabase
-        // .from('notifications').upsert({
-        //     recipient_id: item.user_id,
-        //     actor_id: profile?.user_id,
-        //     type: 'post_liked',
-        //     object_id: postId,
-        //     read: false
-        // }, { onConflict: 'actor_id,type,object_id' }); 
         if( notificationError ){
             console.error("Error when inserting/updating notification in togglePostReaction function in components/profile/postElemInPostsList.tsx", notificationError);
         }else{
@@ -255,6 +247,45 @@ const PostElemInPostsList = (props: any) => {
     }
 
     const ref = React.useRef<ICarouselInstance>(null);
+
+    const styles = StyleSheet.create({
+        carousel:{
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: 300,
+        },
+        dotStyle:{
+            borderRadius: 16,
+            backgroundColor: theme.borderColorDark,
+        },
+        activeDotStyle:{
+            borderRadius: 4,
+            width: 12,
+            height: 12,
+            overflow: "hidden",
+            backgroundColor: theme.sliderColor2,
+        },
+        containerStyle:{
+            gap: 5,
+            marginBottom: 10,
+            alignItems: "center",
+            height: 10,
+        },
+        textLikeAndDislike:{
+            color: theme.textColor2,
+            fontSize: 16,
+            fontWeight: "bold",
+        },
+        textCommentNumber:{
+            color:theme.textColor1, fontSize:18
+        }
+    });
+
+    const notSelectedIconColor= theme.iconFocusedColor;
+    const selectedHeartIconColor= theme.textYellow;
+    const selectedSkulltIconColor= theme.textYellow;
+
     return (
         <>
             <Box>
@@ -267,12 +298,7 @@ const PostElemInPostsList = (props: any) => {
                     pagingEnabled={true}
                     snapEnabled={true}
                     width={340}
-                    style={{
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "100%",
-                        height: 300,
-                    }}
+                    style={styles.carousel}
                     mode={"parallax"}
                     modeConfig={{
                         parallaxScrollingScale: 0.88,
@@ -288,23 +314,9 @@ const PostElemInPostsList = (props: any) => {
                     progress={progress}
                     data={urls.map((color) => ({ color }))}
                     size={12}
-                    dotStyle={{
-                        borderRadius: 16,
-                        backgroundColor: "#8899FF",
-                    }}
-                    activeDotStyle={{
-                        borderRadius: 4,
-                        width: 12,
-                        height: 12,
-                        overflow: "hidden",
-                        backgroundColor: "#f1f1f1",
-                    }}
-                    containerStyle={{
-                        gap: 5,
-                        marginBottom: 10,
-                        alignItems: "center",
-                        height: 10,
-                    }}
+                    dotStyle={styles.dotStyle}
+                    activeDotStyle={styles.activeDotStyle}
+                    containerStyle={styles.containerStyle}
                     horizontal
                     onPress={onPressPagination}
                     customReanimatedStyle={(progress, index, length) => {
@@ -325,23 +337,23 @@ const PostElemInPostsList = (props: any) => {
             </Box>
             <Box style={{width:"80%", marginLeft:"10%", borderBottomColor:"rgba(127,127,127,0.8)", borderBottomWidth:1, marginBottom:25, paddingBottom:10 }}>
                 <Box>
-                    <HStack style={{paddingVertical:15}} space={"md"}>
+                    <HStack style={{paddingVertical:15}} space={"sm"}>
                         <TouchableOpacity onPress={async()=> {
                             await handleLike();
                             await handleReaction(true);
                         }}>
                             {isLiked
                              ?
-                            <Ionicons name="heart-outline" size={34} color="cyan" />
+                            <Ionicons name="heart-outline" size={34} color={selectedHeartIconColor} />
                             :
-                            <Ionicons name="heart-outline" size={34} color="white" />
+                            <Ionicons name="heart-outline" size={34} color={notSelectedIconColor} />
                             }
                         </TouchableOpacity>
                         {likeNumber > 0 ? 
                             <TouchableOpacity 
                             style={{padding:0, margin:0, justifyContent:"center", alignItems:"center"}} 
                             onPress={() => {setLikeActionSheet(true);}}>
-                                <Text>{likeNumber}</Text>
+                                <Text style={styles.textLikeAndDislike}>{likeNumber}</Text>
                             </TouchableOpacity>
                         :<></>}
                         <TouchableOpacity onPress={async()=> {
@@ -350,25 +362,27 @@ const PostElemInPostsList = (props: any) => {
                         }}>
                             {isLiked == true || isLiked == null
                              ?
-                             <Ionicons name="skull-outline" size={32} color="white" />
+                             <Ionicons name="skull-outline" size={32} color={notSelectedIconColor} />
                              :
-                             <Ionicons name="skull-outline" size={32} color="red" />
+                             <Ionicons name="skull-outline" size={32} color={selectedSkulltIconColor} />
                             }
                         </TouchableOpacity>
                         {dislikeNumber > 0 ?
                             <TouchableOpacity 
                             style={{padding:0, margin:0, justifyContent:"center", alignItems:"center"}} 
                             onPress={() => {setDislikeActionSheet(true);}}>
-                                <Text>{dislikeNumber}</Text>
+                                <Text style={styles.textLikeAndDislike}>{dislikeNumber}</Text>
                             </TouchableOpacity>
                         :<></>}
                         <TouchableOpacity onPress={() => {setModalComments(true);}}>
-                            <Box style={{position:"absolute", borderColor:'#8888FF', borderWidth:2, right:-13, top:-7, borderRadius:10, padding:2}}>
-                                <Text style={{color:"white", fontSize:20, fontWeight:"bold"}}>
-                                    {commentNumber}
-                                </Text>
-                            </Box>
-                            <Ionicons name="chatbubble-outline" size={32} color="white" />
+                            {commentNumber > 0 ?
+                                <Box style={{position:"absolute", borderColor:'#8888FF', borderWidth:2, right:-13, top:-7, borderRadius:10, padding:2}}>
+                                    <Text style={styles.textCommentNumber}>
+                                        {commentNumber}
+                                    </Text>
+                                </Box>
+                            :<></>}
+                            <Ionicons name="chatbubble-outline" size={32} color={notSelectedIconColor} />
                         </TouchableOpacity>
                     </HStack>
                 </Box>
@@ -404,15 +418,5 @@ const PostElemInPostsList = (props: any) => {
 
 }
 
-const styles = StyleSheet.create({
-        writingInput:{
-            width:"82%",
-            backgroundColor:"rgba(255,255,255,1)", 
-            borderRadius:15,
-            borderColor:"rgba(150,150,150,0.7)",
-            borderWidth:2,
-            // height: 40,
-            textAlignVertical: 'top',
-        }
-    });
+
 export default memo(PostElemInPostsList);

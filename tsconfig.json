@@ -18,5 +18,5 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts"
-  ]
+, "app/statics/themes/pink.js", "app/statics/themes/light.js", "app/statics/themes/dark.js"  ]
 }

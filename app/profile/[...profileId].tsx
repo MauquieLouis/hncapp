@@ -29,7 +29,7 @@ export default function ProfileId() {
     const [ conversationId, setConversationId ] = useState<string | null>(null);
     const [ settingsModal, setSettingModal ] = useState<boolean>(false);
 
-    const { profile } = useUserContext();
+    const { profile, theme } = useUserContext();
     const { profileId } = useLocalSearchParams();
     const router = useRouter();
 
@@ -244,17 +244,56 @@ export default function ProfileId() {
     }
   }
 
+  const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.backgroundColor2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  button: {
+    fontSize: 20,
+    textDecorationLine: 'underline',
+    color: '#fff',
+  },
+  container2: {
+    flex:3, alignItems:"center", justifyContent:"center"
+  },
+  settingsStyle: {
+    position:"absolute",
+    bottom:2, 
+    left:2, 
+    borderColor:theme.borderColorDark, 
+    borderWidth:2, 
+    borderRadius:15, 
+    padding:5,
+    backgroundColor:theme.dark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)"
+  },
+  text:{
+    color: theme.textColor1,
+  },
+  userNameText:{
+    fontSize: 22,
+    color: theme.textColor2,
+  },
+  bottomLine:{
+    borderBottomColor:"white", borderBottomWidth:1, width:"90%",marginLeft:'5%'
+  }
+});
+
+  const settingsIconColor = theme.iconColor2;
+
   return (
     <>
       {loading ? <Spinner/> :
       <Box style={[styles.container, {}]}>
 
-        <Box style={{/*borderColor:"red", borderWidth:1,*/ flex:3, alignItems:"center", justifyContent:"center"}}>
+        <Box style={styles.container2}>
           <HStack >
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
               <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "friends"}});}}>
-                <Text style={{color:"white"}}> {friendsNumber}</Text>
-                <Text style={{color:"white"}}> FRIENDS</Text>
+                <Text style={styles.text}> {friendsNumber}</Text>
+                <Text style={styles.text}> FRIENDS</Text>
               </TouchableOpacity>
             </Box>
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ flex:4, alignItems:"center", justifyContent:"center"}}>
@@ -265,15 +304,8 @@ export default function ProfileId() {
                   console.log("OPEN PARAM MODAL");
                   setSettingModal(true);
                 }}
-                style={{position:"absolute",
-                  bottom:2, 
-                  left:2, 
-                  borderColor:"white", 
-                  borderWidth:2, 
-                  borderRadius:15, 
-                  padding:5,
-                  backgroundColor:"rgba(0,0,0,0.5)"}}>
-                  <Ionicons name="settings-outline" size={ICON_SIZE} color="white" />
+                style={styles.settingsStyle}>
+                  <Ionicons name="settings-outline" size={ICON_SIZE} color={settingsIconColor} />
                 </TouchableOpacity>
               :
               <>
@@ -286,14 +318,14 @@ export default function ProfileId() {
               }
             </Box>
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
-              <Text style={{color:"white"}}> {followersNumber}</Text>
-              <Text style={{color:"white"}}>FOLLOWERS</Text>
+              <Text style={styles.text}> {followersNumber}</Text>
+              <Text style={styles.text}>FOLLOWERS</Text>
             </Box>
           </HStack>
           <Box style={{/*borderColor:"cyan", borderWidth:1*/}}>
-            <Text style={{color:"white", fontSize:22}}>{profileDisplayed ? profileDisplayed.username: "..."}</Text>
+            <Text style={[styles.userNameText]}>{profileDisplayed ? profileDisplayed.username: "..."}</Text>
           </Box>
-          <Box style={{borderBottomColor:"white", borderBottomWidth:1, width:"340"}}></Box>
+          <Box style={styles.bottomLine}></Box>
         </Box>
         <Box style={{/*borderColor:"green", borderWidth:1,*/ flex:7, alignItems:"center", justifyContent:"center", width:"100%"}}>
           {areFriends ? <>
@@ -398,10 +430,9 @@ export default function ProfileId() {
               </Box>
           </>
           }
-          <Link href="/" style={styles.button}>
-          {/* <Link href="/conversations/conversationsList" style={styles.button}> */}
+          {/* <Link href="/" style={styles.button}>
             Go back to index!
-          </Link>
+          </Link> */}
 
         </Box>
       </Box>
@@ -440,17 +471,3 @@ export default function ProfileId() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#25292e',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  button: {
-    fontSize: 20,
-    textDecorationLine: 'underline',
-    color: '#fff',
-  },
-});
