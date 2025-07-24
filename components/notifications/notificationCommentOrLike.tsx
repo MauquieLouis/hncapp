@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Box } from '@/components/ui/box';
 import Avatar from '@/components/profile/avatar';
 import { HStack } from '@/components/ui/hstack';
@@ -19,7 +19,7 @@ const NotificationCommentOrLike = ({ notification }: { notification: any; }) => 
     const [ isDeclined, setIsDeclined ] = useState<boolean>(false);
     const [ post, setPost ] = useState<any>(null);
   
-    const { profile } = useUserContext();
+    const { profile, theme } = useUserContext();
   
     const closeNotifModal = ( ) => {
       setDisplayNotif(null);
@@ -48,12 +48,10 @@ const NotificationCommentOrLike = ({ notification }: { notification: any; }) => 
             if(main_error){
                 console.error("Error finding post linked in findPostLinked function in components/notifications/notificationCommentOrLike.tsx", main_error);
             }else{
-                console.log("POST ID: ", main_data.post_id);
                 const { data: postData, error: postError } = await supabase.from('posts').select('*').eq('id', main_data.post_id).single();
                 if(postError){
                     console.error("Error fetching post in findPostLinked function in components/notifications/notificationCommentOrLike.tsx", postError);   
                 }else{
-                    console.log("POST DATA : ", postData);
                     setPost(postData);
                 }
             }
@@ -61,6 +59,19 @@ const NotificationCommentOrLike = ({ notification }: { notification: any; }) => 
             console.error("Error in findPostLinked function in components/notifications/notificationCommentOrLike.tsx", error);
         }
     }
+
+    const styles = StyleSheet.create({
+        titleText:{
+            color:theme.textColor1, 
+            paddingLeft:15, 
+            fontSize:20
+        },
+        mainText:{
+            color:theme.textColor2,
+            paddingLeft:15, 
+            fontSize:14
+        }
+    });
 
     return(
         <TouchableOpacity
@@ -70,10 +81,10 @@ const NotificationCommentOrLike = ({ notification }: { notification: any; }) => 
             <Avatar user_id={post.user_id}/>:<></>
             }
             <VStack style={{flex:1, paddingLeft:10}}>
-            <Text style={{color:"white", paddingLeft:15, fontSize:20}}>
+            <Text style={styles.titleText}>
                 {notification.type}
             </Text>
-            <Text style={{color:"white", paddingLeft:15, fontSize:14}}>
+            <Text style={styles.mainText}>
                 {notification.username}
             </Text>
             </VStack>

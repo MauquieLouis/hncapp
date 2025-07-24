@@ -17,6 +17,7 @@ import { TextInput } from 'react-native';
 import { v6 as uuidv6 } from 'uuid';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import { useUserContext } from '@/contexts/userContext';
 
 const ConversationCommands = (props: any) => {
 
@@ -35,6 +36,7 @@ const ConversationCommands = (props: any) => {
     const sendTextMessage = props.sendTextMessage;
     const sendTypingEvent = props.sendTypingEvent;
 
+    const { theme } = useUserContext();
 
     useEffect(() => {
         const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
@@ -198,18 +200,22 @@ const ConversationCommands = (props: any) => {
             // borderColor:"red", borderWidth:1
         },
         writingInput:{
-            backgroundColor:"rgba(255,255,255,1)", 
+            backgroundColor: theme.inputBGColor, 
             borderRadius:15,
-            borderColor:"rgba(150,150,150,0.7)",
+            borderColor:theme.inputBorderColor,
             borderWidth:2,
             height: Math.max(40, inputHeight),
             textAlignVertical: 'top',
+        },
+        writingInputField:{
+            color: theme.inputTextColor,
         },
         itemBox:{
             width:'13%',
             minHeight:50,
             // borderColor:"green",
-            // borderWidth:1
+            // borderWidth:1,
+            // borderRadius:50
         },
         itemBoxArrow:{
             width:'7%',
@@ -219,7 +225,7 @@ const ConversationCommands = (props: any) => {
         },
         itemIcon: {
             padding: 8, 
-            backgroundColor: 'white', 
+            backgroundColor: theme.backgroundColor2, 
             borderRadius: 50, 
             elevation: 5, 
             position: 'absolute', 
@@ -228,7 +234,7 @@ const ConversationCommands = (props: any) => {
         },
         itemIconArrow: {
             padding: 3, 
-            backgroundColor: 'white', 
+            backgroundColor: theme.backgroundColor2, 
             borderRadius: 50, 
             elevation: 5, 
             // justifyContent:"center",
@@ -238,6 +244,8 @@ const ConversationCommands = (props: any) => {
             zIndex:10
         }
     })
+
+    const iconColor= theme.iconColor2;
 
     const handleContentSizeChange = (event: any) => {
         const contentHeight = event.nativeEvent.contentSize.height;
@@ -264,7 +272,7 @@ const ConversationCommands = (props: any) => {
                         value={text}
                         multiline={true}
                         onContentSizeChange={handleContentSizeChange}
-                        style={{color:"black"}}
+                        style={styles.writingInputField}
                         />
                 </Input>
                 {/* <Textarea>
@@ -284,7 +292,7 @@ const ConversationCommands = (props: any) => {
                             inputRef.current?.blur();
                         }}
                     >
-                        <Ionicons name={'chevron-back-outline'} color={'black'} size={16}/>
+                        <Ionicons name={'chevron-back-outline'} color={iconColor} size={16}/>
                     </TouchableOpacity>
                 </Box>
                 // <></>
@@ -297,7 +305,7 @@ const ConversationCommands = (props: any) => {
                     onPress={() => {
                         pickImage();
                     }}>
-                        <Ionicons name={'image-outline'} color={'black'} size={iconSize} />
+                        <Ionicons name={'image-outline'} color={iconColor} size={iconSize} />
                     </TouchableOpacity>
                     }
                 </Box>
@@ -306,7 +314,7 @@ const ConversationCommands = (props: any) => {
                 <Box style={[styles.itemBox, styles.Audio]}>
                     {loadingSend ? 
                     <Spinner size="large" color={"blue"}/>: 
-                    <AudioRecorder sendMessageFunction={sendTextMessage} convId={convId} styleIcon={styles.itemIcon} iconSize={iconSize}/>
+                    <AudioRecorder sendMessageFunction={sendTextMessage} convId={convId} styleIcon={styles.itemIcon} iconSize={iconSize} iconColor={iconColor} theme={theme}/>
                 }
                 </Box></>
             }
@@ -320,7 +328,7 @@ const ConversationCommands = (props: any) => {
                     onPress={() => {
                         sendTextMessage(false, 'text');
                     }}>
-                    <Ionicons name={'send-outline'} color={'black'} size={iconSize} />
+                    <Ionicons name={'send-outline'} color={iconColor} size={iconSize} />
                 </TouchableOpacity>
                 }
             </Box>

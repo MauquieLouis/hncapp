@@ -296,7 +296,7 @@ const AudioRecorder = (props: any) =>{
   },
   draggable: {
     padding: 8, 
-    backgroundColor: 'white', 
+    backgroundColor: props.theme.backgroundColor2, 
     borderRadius: itemWidth/2, 
     elevation: 5, 
     // position: 'absolute', 
@@ -317,7 +317,7 @@ const AudioRecorder = (props: any) =>{
     <>
       {showDeletionZone ? 
         <Box style={styles.dropZone}>
-          <Ionicons name={'trash-outline'} color={'rgba(127,0,0,0.25)'} size={iconSize} />
+          <Ionicons name={'trash-outline'} color={"rgba(239, 62, 62, 0.49)"} size={iconSize} />
         </Box>
         :
         <></>  
@@ -340,7 +340,7 @@ const AudioRecorder = (props: any) =>{
           <Spinner size="large" color={"blue"}/>
           :
           <>
-            <Ionicons name={'mic-outline'} color={'black'} size={iconSize} />
+            <Ionicons name={'mic-outline'} color={props.iconColor} size={iconSize} />
             {isRecording ?
               <RecordEffect width={itemWidth}/>
               :

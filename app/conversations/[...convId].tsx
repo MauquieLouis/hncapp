@@ -1,4 +1,4 @@
-import React, { FlatList, Touchable, TouchableOpacity } from 'react-native';
+import React, { FlatList, Touchable, TouchableOpacity, StyleSheet } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { useUserContext } from '../../contexts/userContext';
@@ -56,7 +56,7 @@ const ConversationScreen = () => {
     const [ localCount, setLocalCount ] = useState(0);
 
     const { convId } = useLocalSearchParams();
-    const { user } = useUserContext();
+    const { user, theme } = useUserContext();
 
     const flatListRef = useRef(null);
 
@@ -692,8 +692,14 @@ const ConversationScreen = () => {
                     convId={convId}/>
     }
 
+    const styles = StyleSheet.create({
+        container:{
+            backgroundColor: theme.backgroundColor1,
+        }
+    });
+
     return(
-        <>
+        <Box style={styles.container}>
             { loading ?
                 <Text>LOADING !!!</Text>
             :
@@ -772,7 +778,7 @@ const ConversationScreen = () => {
                     />
                 </>
             }
-        </>
+        </Box>
     );
 };
 

@@ -1,4 +1,4 @@
-import React, { FlatList, View } from 'react-native';
+import React, { FlatList, View, StyleSheet } from 'react-native';
 // import { ButtonText, Button } from '@gluestack-ui/themed';
 // import { FlatList, Box, Text, HStack, VStack, Pressable } from 'react-native';
 // import { Box } from '@/src/components/ui/box';
@@ -18,9 +18,10 @@ const ConversationsListScreen = () => {
     const [conv_data, setConvData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [ myConversationsId, setMyConversationsId ] = useState<string[]>([]); 
-    const { user } = useUserContext();
-    const router = useRouter();
 
+
+    const { user,theme } = useUserContext();
+    const router = useRouter();
 
     useEffect(() => {
         getMyConversationIdList();
@@ -85,8 +86,32 @@ const ConversationsListScreen = () => {
         }
     }
 
+    const styles = StyleSheet.create({
+        container:{
+            backgroundColor:theme.backgroundColor1,
+            height:"100%"
+        },
+        boxStyle:{
+            borderBottomWidth:1,
+            borderBottomColor:theme.dividerColor,
+            width:"90%",
+            marginLeft:"5%",
+            paddingVertical:10
+        },
+        nameText:{
+            color:theme.textColor2,
+            fontWeight:"bold",
+        },
+        messageText:{
+            color:theme.textColor1
+        },
+        dateColor:{
+            color:theme.textColor1
+        }
+    });
+
     return(
-        <>
+        <Box style={styles.container}>
             {loading ? <>
                 <Text>
                     LOADING
@@ -96,19 +121,12 @@ const ConversationsListScreen = () => {
         <Box>
             <FlatList data={conv_data} 
                 renderItem={({ item }) => (
-                    <Box borderBottomWidth="$1"
-                    borderColor="$trueGray800"
-                    $dark-borderColor="$trueGray100"
-                    $base-pl={0}
-                    $base-pr={0}
-                    $sm-pl="$4"
-                    $sm-pr="$5"
-                    py="$2">
+                    <Box>
                         <Pressable onPress={() => {
                           router.push(`/conversations/${item.conversation_id}`)
-                        }}>
+                        }} style={styles.boxStyle}>
                             <HStack space="sm" >
-                                <Box borderColor="$red400" borderWidth="$1">
+                                <Box>
                                     <View
                                         // eslint-disable-next-line react-native/no-inline-styles
                                         style={{
@@ -119,18 +137,18 @@ const ConversationsListScreen = () => {
                                         }}
                                         />
                                 </Box>
-                                <Box borderColor="$red400" borderWidth="$1">
+                                <Box>
                                     <VStack>
-                                        <Box borderColor="$red400" borderWidth="$1">
-                                            <Text>{item.conversation_name}</Text>
+                                        <Box>
+                                            <Text style={styles.nameText}>{item.conversation_name}</Text>
                                         </Box>
-                                        <Box borderColor="$red400" borderWidth="$1">
+                                        <Box>
                                         <HStack space="sm">
-                                                <Box borderColor="$blue400" borderWidth="$1" w="$40" h="$10">
-                                                    <Text numberOfLines={1} ellipsizeMode="tail">{item.last_message.content}</Text>
+                                                <Box>
+                                                    <Text numberOfLines={1} ellipsizeMode="tail" style={styles.messageText}>{item.last_message.content}</Text>
                                                 </Box>
-                                                <Box borderColor="$blue400" borderWidth="$1" w="$40" h="$10">
-                                                    <Text>{item.last_message.created_at}</Text>
+                                                <Box>
+                                                    <Text style={styles.dateColor}>{item.last_message.created_at}</Text>
                                                 </Box>
                                         </HStack>
                                         </Box>
@@ -145,7 +163,7 @@ const ConversationsListScreen = () => {
         </Box>
         }
 
-        </>
+        </Box>
 
     );
 };

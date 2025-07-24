@@ -24,7 +24,7 @@ export default function NotificationsList() {
   const [ displayNotif, setDisplayNotif ] = useState<any>(null);
 
   const router = useRouter();
-  const { profile } = useUserContext();
+  const { profile, theme } = useUserContext();
 
   const closeNotifModal = ( ) => {
     setDisplayNotif(null);
@@ -83,10 +83,25 @@ export default function NotificationsList() {
     }
     return null;
   }
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.backgroundColor1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+
+    button: {
+      fontSize: 16,
+      textDecorationLine: 'underline',
+      color: '#fff',
+    },
+  });
+
   return (
     <>
       <Box style={[styles.container, {/*borderColor:"blue", borderWidth:1*/}]}>
-        <Text style={{color:"white"}}>TEST</Text>
         <Box style={{/*borderColor:"green", borderWidth:1,*/ flex:10, width:"100%"}}>
           {loading ? <Spinner/> :
           <FlatList
@@ -107,17 +122,4 @@ export default function NotificationsList() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#25292e',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
 
-  button: {
-    fontSize: 16,
-    textDecorationLine: 'underline',
-    color: '#fff',
-  },
-});
