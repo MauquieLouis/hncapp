@@ -27,10 +27,6 @@ LightStyle={
     discussionTextOther:'purple.800',
     sliderColor1:'#6b21a8',
     sliderColor2:'#d8b4fe',
-    pressableFeedBackColor:'violet.200',
-    chartBackground1:'#c084fc',
-    chartBackground2:'#e9d5ff',
-    chartStroke:'#a855f7',
     borderColorLight:'#c084fc',
     borderColorDark:'#6b21a8'
 };

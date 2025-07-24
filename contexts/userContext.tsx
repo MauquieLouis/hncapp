@@ -3,6 +3,8 @@ import {supabase} from '../libs/initSupabase';
 
 import LightStyle from '../assets/themes/light';
 import DarkStyle from '../assets/themes/dark';
+import WhiteStyle from '../assets/themes/white';
+import BlackStyle from '../assets/themes/black';
 // import PinkStyle from '../assets/themes/pink';
 
 export const UserContext = createContext({
@@ -45,7 +47,7 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
 
     function changeTheme(profileUpdated: { [x: string]: any; }){
         console.log("CHANGE THEME :", profileUpdated);
-        setTheme(DarkStyle);
+        setTheme(WhiteStyle);
         // switch(profileUpdated["theme"]){
         //     case 'light':
         //         setTheme(LightStyle);

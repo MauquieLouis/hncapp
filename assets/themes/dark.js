@@ -27,10 +27,6 @@ DarkStyle={
     discussionTextOther:'purple.800',
     sliderColor1:'#a855f7',
     sliderColor2:'#e9d5ff',
-    pressableFeedBackColor:'indigo.900',
-    chartBackground1:'#050505',
-    chartBackground2:'#7e22ce',
-    chartStroke:'#a855f7',
     borderColorLight:'#c084fc',
     borderColorDark:'#6b21a8'
 };
