@@ -78,3 +78,7 @@ export async function unsendNotification({
       console.error("Error in unsendNotification function in components/notifications.notificationSender.tsx", error);
   }
 }
+
+export async function sendPhoneNotification(){
+  
+}
