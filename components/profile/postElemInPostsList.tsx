@@ -24,6 +24,8 @@ import { Button } from '../ui/button';
 import CommentActionSheet from './commentActionSheet';
 import LikeOrDislikeActionSheet from './likeOrDislikeActionSheet';
 
+import {sendPhoneNotification} from '@/components/notifications/notificationSender';
+
 const PostElemInPostsList = (props: any) => {
 
     const [ urls, setUrls ] = useState([]);
@@ -36,6 +38,7 @@ const PostElemInPostsList = (props: any) => {
     const [ commentNumber, setCommentNumber ] = useState<number>(0);
     const [ likeNumber, setLikeNumber ] = useState<number>(0);
     const [ dislikeNumber, setDislikeNumber ] = useState<number>(0);
+    const [ notificationToken, setNotificationToken ] = useState<string | null>(null);
 
     const [ likeActionSheet, setLikeActionSheet ] = useState<boolean>(false);
     const [ dislikeActionSheet, setDislikeActionSheet ] = useState<boolean>(false);
@@ -69,11 +72,30 @@ const PostElemInPostsList = (props: any) => {
         }
         getSignedUrlForFiles();
         getLikeAndDislikeCounts();
+        getNotificationToken();
     }, []);
 
     useEffect(() => {
         console.log("Text changed:", text);
     }, [text]);
+
+    const getNotificationToken = async () => {
+        try{
+            const { data, error } = await supabase
+            .from('device_tokens')
+            .select('device_token')
+            .eq('user_id', item.user_id)
+            .single();
+            if(error){
+                console.error("Error when fetching notification token in getNotificationToken function in components/profile/postElemInPostsList.tsx", error);
+            }else{
+                console.log("Notification token data: ", data);
+                setNotificationToken(data?.device_token);
+            }
+        }catch(error: unknown){
+            console.error("Error in getNotificationToken function in components/profile/postElemInPostsList.tsx", error);
+        }
+    }
 
     const getLikeAndDislikeCounts = async () => {
         try{
@@ -181,6 +203,7 @@ const PostElemInPostsList = (props: any) => {
 
             return { data: null, state: null };
         }
+
         // Step 3: Else insert or update (toggle to other reaction or create new)
         const { data, error: upsertError } = await supabase
             .from('post_likes')
@@ -195,6 +218,7 @@ const PostElemInPostsList = (props: any) => {
                 onConflict: 'post_id,user_id',
             }
             ).select();
+
 
         if (upsertError) {
             console.error('Upsert error:', upsertError);
@@ -239,6 +263,14 @@ const PostElemInPostsList = (props: any) => {
     }
 
     const handleReaction = async (action: any) => {
+        if(isLiked === null){
+            //SEND NOTIF, because it should means it's liked or disliked for the first time
+            await sendPhoneNotification(
+                notificationToken ? [notificationToken] : [],
+                action ? "You get a like on your post" : "You get a disliked on your post",
+                "New reaction on your post",
+            );
+        }
         const { state, error } =  await togglePostReaction(item.id, profile?.user_id, action);
         if (!error) {
             setIsLiked(state);

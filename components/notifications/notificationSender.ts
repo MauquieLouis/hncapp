@@ -78,7 +78,37 @@ export async function unsendNotification({
       console.error("Error in unsendNotification function in components/notifications.notificationSender.tsx", error);
   }
 }
-
-export async function sendPhoneNotification(){
-  
+/**
+ * 
+ * @param expoPushToken: string[]
+ * @param body: string
+ * @param title: string 
+ */
+export async function sendPhoneNotification(expoPushToken: string[], body: string, title: string){
+  for(let token of expoPushToken){
+            if(token.startsWith('ExponentPushToken[')){
+                let body_notif = body;
+                if(body_notif.trim() === '') body_notif='-Send-Attachment-';
+                console.log("SEND PUSH NOTIFICATION TO TOKEN :", token);
+                const notif = {
+                    to: token,
+                    sound: 'default',
+                    title: title,
+                    body: body_notif,
+                    identifier: "notificationId", // Ensures it updates instead of creating a new one
+                    data: { someData: 'goes here'},
+                    
+                };
+                
+                await fetch('https://exp.host/--/api/v2/push/send', {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Accept-encoding': 'gzip, deflate',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(notif),
+                });
+            }
+        }
 }
