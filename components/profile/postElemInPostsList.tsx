@@ -442,7 +442,7 @@ const PostElemInPostsList = (props: any) => {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding': undefined}
             >
-                <CommentActionSheet modalComments={modalComments} onCloseModalComments={onCloseModalComments} item={item} setCommentNumber={setCommentNumber}/>
+                <CommentActionSheet modalComments={modalComments} onCloseModalComments={onCloseModalComments} item={item} setCommentNumber={setCommentNumber} token={notificationToken}/>
             </KeyboardAvoidingView>
 
         </>

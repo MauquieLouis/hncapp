@@ -12,8 +12,11 @@ import { useUserContext } from '@/contexts/userContext';
 import { Spinner } from '../ui/spinner';
 import Avatar from './avatar';
 
+import {sendPhoneNotification} from '@/components/notifications/notificationSender';
+
+
 const ActionSheetForm = (props: {
-    setCommentsFunction(arg0: (prevComments: any) => any[]): unknown; item: { id: any; user_id: any; }; profile: any; theme: any
+    setCommentsFunction(arg0: (prevComments: any) => any[]): unknown; item: { id: any; user_id: any; }; profile: any; theme: any; token: any
 }) => {
     const [text, setText] = useState('');
     const [ loading, setLoading ] = useState(false); 
@@ -68,6 +71,7 @@ const ActionSheetForm = (props: {
                 console.error("Error when sending comment notification in sendCommentNotification function in components/profile/postElemInPostsList.tsx", error);
             }else{
                 console.log("Comment notification sent successfully:", data);
+                await sendPhoneNotification(props.token ? [props.token] : [], text, "New comment on your post");
             }
 
         }catch(error: unknown){
@@ -121,7 +125,7 @@ const ActionSheetForm = (props: {
 }
 
 
-const CommentActionSheet = (props: { modalComments: boolean | undefined; onCloseModalComments: (() => any) | undefined; item: { id: any; }; setCommentNumber: any}) => {
+const CommentActionSheet = (props: { modalComments: boolean | undefined; onCloseModalComments: (() => any) | undefined; item: { id: any; }; setCommentNumber: any; token: any}) => {
     const [ loading, setLoading ] = useState(false);
     const [comments, setComments] = useState<any[]>([]);
 
@@ -130,7 +134,7 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
     },[]);
 
     const { profile, theme } = useUserContext();
-
+    const token = props.token;
 
     const fetchComments = async () => {
         try{
@@ -202,7 +206,7 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
                             />
                         </Box>
                     </HStack>
-                    <ActionSheetForm item={props.item} profile={profile} setCommentsFunction={setComments} theme={theme}/>
+                    <ActionSheetForm item={props.item} profile={profile} setCommentsFunction={setComments} theme={theme} token={token}/>
                     {/* <Button onPress={() => {submitComment(onSubmit)}} isDisabled={isSubmitting}>
                         <Text color="white">Submit</Text>
                     </Button> */}
