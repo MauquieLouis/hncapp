@@ -58,7 +58,6 @@ export const SlideItem: React.FC<Props> = (props) => {
       <TouchableOpacity 
         onPress={() => openModal && openModal(index)} activeOpacity={1} style={{ height:"100%"}} 
         onLongPress={() => {
-          console.log("Long Pressed", index);  
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
           openModalIconFunction && openModalIconFunction();
           // openActionSheetFunction(index);

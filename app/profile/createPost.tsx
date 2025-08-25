@@ -41,20 +41,8 @@ const CreatePost = () => {
     const { poster_id, user_id } = useLocalSearchParams();
     const { profile } = useUserContext();
 
-    useEffect(() => {
-        console.log("Poster ID: ", poster_id);
-        console.log("User ID: ", user_id);
-        // Here you can add logic to handle the creation of a post
-        // For example, you might want to fetch user data or initialize a form
-    }, []);
-
-    useEffect(() => {
-        console.log("Legend changed: ", legend);
-    },[legend]);
-
     const postPost = async () => {
         try{
-            console.log("ASSETS :", assets);
             let filenames;
 
             if (assets.length > 1) {
@@ -66,12 +54,11 @@ const CreatePost = () => {
                 filenames = [singleFilename]; // Wrap in array for consistency
             } else {
                 // No file in the assets 
-                console.log("NO FILE TO UPLOAD");
+                console.info("NO FILE TO UPLOAD");
                 return;
             }
             //Now the file is/are uploaded, upload the post data (check if it's text or audio)
             if(filenames){
-                console.log("fileNames :", filenames);
                 //Check for audio attachment if not set url to null
                 let audio_name;
                 if(audioUrl){
@@ -97,11 +84,9 @@ const CreatePost = () => {
                     console.error("Error when inserting post in postPost function in profile/createPost.tsx", error_data);
                 }
                 else if(post_data){
-                    console.log("POST DATA :", post_data);
                     //Create the post attachment.
                     let post_attachements: { post_id: any; type: any; url: any; size: any; filename: any; mimetype: any; }[] = [];
                     for(let filename of filenames) {
-                        console.log("filename isolated :",filename);
                         post_attachements.push(
                             {
                                 post_id: post_data[0].id,
@@ -116,9 +101,6 @@ const CreatePost = () => {
                     const {data: post_attach_data, error: post_attach_error } = await supabase.from('post_attachments').insert(post_attachements).select();
                     if(post_attach_error){
                         console.error("Error when inserting post_attachments in postPost function in profile/createPost.tsx", post_attach_error);
-                    }
-                    else{
-                        console.log("Data post attach data :", post_attach_data);
                     }
                 }
                 
@@ -146,7 +128,7 @@ const CreatePost = () => {
                 <TouchableOpacity
                 style={{ padding:7, backgroundColor:"blue", borderRadius:10, boxShadow:"0px 1px 8px rgba(0,0,0,0.7)" }}
                 onPress={() => {
-                    console.log("CREATE POST ", legend); postPost();
+                    postPost();
                 }}>
                     <Ionicons name="send-outline" size={36} color={"white"}/>
                 </TouchableOpacity>

@@ -25,14 +25,9 @@ const PostsList = (props: { height: any; user_id: string; folder_url: string }) 
 
 
     useEffect(() => {
-        console.log("PROPS :", props);
         getFirstPosts();
     }, []);
     
-    useEffect(() => {
-        console.log("Post list changed !!! :", postsList);
-    }, [postsList]);
-
     const getFirstPosts = async () => {
         try{
             const { data, error } = await supabase.from('posts').select('*').eq('user_id', props.user_id);
@@ -40,7 +35,6 @@ const PostsList = (props: { height: any; user_id: string; folder_url: string }) 
                 console.error("Error when fetching posts in getFirstPosts function in components/profile/postsList.tsx", error);
             }
             if(data){
-                console.log("DATA POSTS for user", profile.user_id, "data : ", data);
                 setPostsList(data);
             }
         }catch(error){

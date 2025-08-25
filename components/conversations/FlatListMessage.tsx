@@ -51,24 +51,22 @@ const FlatListMessage = (props: any) => {
             const { data: data_soft_delete_msg, error: error_soft_delete_msg } = await supabase.from('messages').update({deleted_at:new Date().toISOString()}).eq('id',item.id);
             //DELETE ALL THE ASSOCIATED ATTACHMENTS
             const { data: deleted_attachments, error: error_deleted_attachment } = await supabase.from('attachments').delete().eq('message_id',item.id).select();
-            console.log("DELETED ATTACHMENTS :", deleted_attachments);
             //DELETE ASSOCIATED ATTACHMENTS IN STORAGE
             if(deleted_attachments?.length !== 0 && deleted_attachments !== null){
                 const urls: string[] = deleted_attachments.map(item => item.url);
-                console.log("URLS TO DELETE : ",urls);
                 const { data: data_delete_attachment, error: error_delete_attachment } = await supabase.storage.from('Conversations').remove(urls);
                 if(error_delete_attachment){
-                    console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file (1):", error_delete_attachment);
+                    console.error("Error in deleteMessage function when deleting attachment in components/attachment.tsx file (1):", error_delete_attachment);
                 }
             }
             if(error_soft_delete_msg){
-                console.log("Error in deleteMessage function when soft deleting msg in components/attachment.tsx file :", error_soft_delete_msg);
+                console.error("Error in deleteMessage function when soft deleting msg in components/attachment.tsx file :", error_soft_delete_msg);
             }
             if(error_deleted_attachment){
-                console.log("Error in deleteMessage function when deleting attachment in components/attachment.tsx file (2):", error_deleted_attachment);
+                console.error("Error in deleteMessage function when deleting attachment in components/attachment.tsx file (2):", error_deleted_attachment);
             }
         }catch(error: unknown){
-            console.log("Error in deleteMessage function in components/attachment.tsx file :", error);
+            console.error("Error in deleteMessage function in components/attachment.tsx file :", error);
         }finally{
             setShowActionSheet(false);
         }
@@ -78,11 +76,6 @@ const FlatListMessage = (props: any) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         openModalIconFunction()
     }, [openModalIconFunction]);
-
-    // useEffect(() => {
-    //     console.log("MODAL ICON POSITION :", modalIconPosition);
-    // },[modalIconPosition]);
-
 
     const renderMessageContent = () => {
         switch(item.type) {
@@ -121,12 +114,11 @@ const FlatListMessage = (props: any) => {
     const actionSheetTable: { [key: string]: { icon: string; onPress: () => void; } } = {
         "info": {
             icon: "information-circle-outline",
-            onPress: () => {console.log("Info Pressed, id :", item.id); onCloseModalIcon();},
+            onPress: () => {onCloseModalIcon();},
         },
         "answer": {
             icon: "return-up-back-outline",
             onPress: () => {
-                console.log("Answer Pressed"); 
                 props.setReplyTo(item.id); 
                 props.setReplyToType(item.type);
                 props.setReplyToContent(item.content);
@@ -136,13 +128,13 @@ const FlatListMessage = (props: any) => {
     if(item.sender_id == user.id){
         actionSheetTable["delete"] = {
             icon: "trash-outline",
-            onPress: () => {console.log("Delete msg Pressed"); deleteMessage();},
+            onPress: () => {deleteMessage();},
         }
     }
     if(item.type=='attachment'){
         actionSheetTable["download"] = {
             icon: "save-outline",
-            onPress: () => {console.log("download all attach msg Pressed");},
+            onPress: () => {console.info("*** --- TODO --- ***");},
         }
     }
     // if(item.type == 'attachment'){
@@ -183,15 +175,8 @@ const FlatListMessage = (props: any) => {
 
 
     const calculatePositionToDisplay = (messageId: any) => {
-        console.log("CALCULATE POSITION");
         if(boxRef.current){
             boxRef.current.measure((x: any, y: any, width: any, height: any, pageX: any, pageY: any)=> {
-                console.log("==================================== MSG POS ====================================")
-                console.log("Info x :", x," - y :", y);
-                console.log("Info width :", width," - height :", height);
-                console.log("Info pageX :", pageX," - pageY :", pageY);
-                console.log(pageY+props.scrollY,">",2*Dimensions.get('window').height/3);
-                console.log("==================================== MSG POS ====================================")
                 //If the message is at the bottom of the screen, the modal will be displayed at the top of the message
                 let pageYScroll;
                 if( pageY+props.scrollY > Dimensions.get('window').height || pageY+props.scrollY <0)
@@ -201,11 +186,9 @@ const FlatListMessage = (props: any) => {
                     pageYScroll = pageY+props.scrollY;
                 }
                     if(pageYScroll > Dimensions.get('window').height/2){
-                        console.log('bottom message so modal top');
                         setModalIconPosition(pageYScroll);
                         //Else if the message is at the top of the screen, the modal will be displayed at the bottom of the message
                     }else{
-                        console.log('top message so modal bottom');
                         setModalIconPosition(pageYScroll+height);
                     }
             });
@@ -213,16 +196,15 @@ const FlatListMessage = (props: any) => {
     }
 
     const addMessageReaction = async(reaction: string) => {
-        console.log("REACTION :", reaction, props.convId);
         try{
             const { data: data_reaction, error: error_reaction } = await supabase.from('message_reactions').upsert(
                 {message_id:item.id, reaction:reaction, user_id:user.id, conversation_id:props.convId[0]}, { onConflict: "message_id,user_id" }
             ).select();
             if(error_reaction){
-                console.log("Error in addMessageReaction function when adding reaction in components/flatListMessage.tsx file :", error_reaction);
+                console.error("Error in addMessageReaction function when adding reaction in components/flatListMessage.tsx file :", error_reaction);
             }
         }catch(error: unknown){
-            console.log("Error in addMessageReaction function in components/flatListMessage.tsx file :", error);
+            console.error("Error in addMessageReaction function in components/flatListMessage.tsx file :", error);
         }finally{
             setModalIcon(false);
 
@@ -230,7 +212,6 @@ const FlatListMessage = (props: any) => {
     }
 
     const deleteMessageReaction = async() => {
-        console.log("DELETE REACTION");
         try{
             const { data: data_reaction, error: error_reaction } = await supabase
                 .from('message_reactions')
@@ -239,17 +220,16 @@ const FlatListMessage = (props: any) => {
                 .eq('user_id',user.id)
                 .select();
             if(error_reaction){
-                console.log("Error in deleteMessageReaction function when deleting reaction in components/flatListMessage.tsx file :", error_reaction);
+                console.error("Error in deleteMessageReaction function when deleting reaction in components/flatListMessage.tsx file :", error_reaction);
             }
         }catch(error: unknown){
-            console.log("Error in deleteMessageReaction function in components/flatListMessage.tsx file :", error);
+            console.error("Error in deleteMessageReaction function in components/flatListMessage.tsx file :", error);
         }finally{
             onCloseReactionActionSheet();
         }
     }
 
     const reactions = item.reactions || [];
-    // console.log("ITEM :", item);
     return (
         <>
             <VStack>
@@ -318,7 +298,7 @@ const FlatListMessage = (props: any) => {
                             </Box>
                     </HStack>
                     {item.reactions.length != 0 ? 
-                        <TouchableOpacity onPress={() => {console.log("PRESS REACTIONS "); setShowReactionActionSheet(true);}} >
+                        <TouchableOpacity onPress={() => {setShowReactionActionSheet(true);}} >
                             <Box style={{position:'absolute',
                                 right:item.sender_id == user.id ? 6 : undefined,
                                 left:item.sender_id != user.id ? 6 : undefined,

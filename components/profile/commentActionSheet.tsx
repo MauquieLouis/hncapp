@@ -21,12 +21,6 @@ const ActionSheetForm = (props: {
     const [text, setText] = useState('');
     const [ loading, setLoading ] = useState(false); 
 
-    // const { profile } = useUserContext();
-
-    // useEffect(() => {
-    //     console.log("PROFILE :", profile);
-    // }, []);
-
     const theme = props.theme;
 
     const postComment = async () => {
@@ -40,7 +34,6 @@ const ActionSheetForm = (props: {
                 text: text,
             }).select();
 
-            console.log("DATA : data", data);
             if (data && Array.isArray(data) && data.length > 0) {
                 props.setCommentsFunction(prevComments => [ data[0], ...prevComments ]);
             }
@@ -70,7 +63,6 @@ const ActionSheetForm = (props: {
             if(error){
                 console.error("Error when sending comment notification in sendCommentNotification function in components/profile/postElemInPostsList.tsx", error);
             }else{
-                console.log("Comment notification sent successfully:", data);
                 await sendPhoneNotification(props.token ? [props.token] : [], text, "New comment on your post");
             }
 
@@ -114,7 +106,6 @@ const ActionSheetForm = (props: {
                 onPress={() => {
                     // Handle comment submission
                     postComment();
-                    console.log('Comment submitted:', text);
                     setText(''); // Clear input after submission
                 }}
                 style={styles.touchableBTN}>
@@ -139,12 +130,10 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
     const fetchComments = async () => {
         try{
             setLoading(true);
-            console.log("==============Fetching comments for post id: ", props.item.id);
             const { data, error } = await supabase.from('comments').select('*').eq('post_id', props.item.id);
             if (error) {
                 console.error("Error fetching comments in fetchComments function in components/profile/postElemInPostsList.tsx", error);
             } else {
-                console.log("Fetched comments: ", data);
                 setComments(data);
                 props.setCommentNumber(data.length);
             }

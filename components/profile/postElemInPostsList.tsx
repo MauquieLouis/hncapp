@@ -63,10 +63,6 @@ const PostElemInPostsList = (props: any) => {
     let { profile, theme } = useUserContext();
 
     useEffect(()=> {
-        console.log("===========================================")
-        console.log("=========================================== PROFILE :", profile);
-        console.log("=========================================== PROPS :", props);
-        console.log("ITEM postElemenInPostsList :",item);
         if(profile == undefined || profile == null){
             profile = props.profile;
         }
@@ -74,10 +70,6 @@ const PostElemInPostsList = (props: any) => {
         getLikeAndDislikeCounts();
         getNotificationToken();
     }, []);
-
-    useEffect(() => {
-        console.log("Text changed:", text);
-    }, [text]);
 
     const getNotificationToken = async () => {
         try{
@@ -89,7 +81,6 @@ const PostElemInPostsList = (props: any) => {
             if(error){
                 console.error("Error when fetching notification token in getNotificationToken function in components/profile/postElemInPostsList.tsx", error);
             }else{
-                console.log("Notification token data: ", data);
                 setNotificationToken(data?.device_token);
             }
         }catch(error: unknown){
@@ -106,7 +97,6 @@ const PostElemInPostsList = (props: any) => {
             if(data && Array.isArray(data)){
                 const likeCount = data.filter(like => like.like === true).length;
                 const dislikeCount = data.filter(like => like.like === false).length;
-                console.log("Like count: ", likeCount, "Dislike count: ", dislikeCount);
                 setLikeNumber(likeCount);
                 setDislikeNumber(dislikeCount);
                 const didILike = data.find(like => like.user_id === profile?.user_id);
@@ -133,23 +123,18 @@ const PostElemInPostsList = (props: any) => {
                 console.error("Error when getting post_attachments from post in getSignedUrlForFiles function in components/profile/postElemInPostsList.tsx",post_attachments_error);
             }
             else{
-                console.log("Post_attach data : ", post_attachments);
                 const urls: string[] = [];
                 for(let post_attachment of post_attachments){
                     if(post_attachment.url){
                         urls.push(`${folder_url}/${post_attachment.url}`);
                     }
-                    // console.log("POST ATTACH :", post_attachment);
                 }
-                console.log("URLs :", urls);
                 const { data, error } = await supabase.storage.from(bucket).createSignedUrls(urls, 1200);
                 if(error){
                     console.error("Error when creating signedUrls in getSignedUrlForFiles function in components/profile/postElemInPostsList.tsx", error);
                 }else{
-                    // console.log("DATA URLS :", data);
                     const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
                     setUrls(signedUrls);
-                    console.log("Signed URLs: ", signedUrls);
                 }
                 if(item.file_url){
                     const {data : audio_data, error: audio_error} = await supabase.storage.from(bucket).createSignedUrl(item.file_url,1200);
@@ -233,8 +218,6 @@ const PostElemInPostsList = (props: any) => {
         });
         if( notificationError ){
             console.error("Error when inserting/updating notification in togglePostReaction function in components/profile/postElemInPostsList.tsx", notificationError);
-        }else{
-            console.log("Notification data: ", notificationData);
         }
 
         return { data, state: action };

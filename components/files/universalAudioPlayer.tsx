@@ -60,7 +60,6 @@ const UniversarlAudioPlayer = (props: any) => {
     //         try{
     //             setLoadingUrl(true);
 
-    //             // console.log("ITEM ATTACHMENT AUDIO :", item)
     //             let signedUrl;
     //             if(item.attachments[0]?.local_path){
     //                 //OFFLINE AUDIO
@@ -72,7 +71,7 @@ const UniversarlAudioPlayer = (props: any) => {
     //                 const url = item.attachments[0].url;
     //                 const { data, error } = await supabase.storage.from('Conversations').createSignedUrls(url, 5400);
     //                 if(error){
-    //                     console.log("Error in AudioPlayer when creatingSignedUrls function in components/audipPlayer.tsx file :", error);
+    //                     console.error("Error in AudioPlayer when creatingSignedUrls function in components/audipPlayer.tsx file :", error);
     //                 }
     //                 if(data){
     //                     signedUrl = data.map((signedURL) => signedURL.signedUrl)
@@ -84,7 +83,7 @@ const UniversarlAudioPlayer = (props: any) => {
     //             // const isPlayingGlobal = currentUrl === signedUrls[0];
 
     //         }catch(error: unknown){
-    //             console.log("Error in AudioPlayer function in components/AudioPlayer.tsx file :", error);
+    //             console.error("Error in AudioPlayer function in components/AudioPlayer.tsx file :", error);
     //         }finally{
     //             setLoadingUrl(false);
     //         }
@@ -108,7 +107,6 @@ const UniversarlAudioPlayer = (props: any) => {
         setDuration(status.durationMillis ?? 0);
         setPosition(status.positionMillis);
         if (status.didJustFinish) {
-            console.log("sound supposed to finish")
             setIsPlaying(false); // Reset when finished
             setSound(null);
         }

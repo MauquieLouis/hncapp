@@ -1,4 +1,4 @@
-import React, { FlatList, Touchable, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { useUserContext } from '../../contexts/userContext';
@@ -10,8 +10,6 @@ import FlatListMessage from '@/components/conversations/FlatListMessage';
 import ConversationCommands from '@/components/conversations/conversationCommands';
 import { Center } from '@/components/ui/center';
 import { Spinner } from '@/components/ui/spinner';
-import { MMKV, Mode } from 'react-native-mmkv';
-import * as FileSystem from 'expo-file-system';
 import { HStack } from '@/components/ui/hstack';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -25,7 +23,6 @@ const debounce = (func: { (): Promise<void>; apply?: any; }, delay: number | und
         debounceTimer = setTimeout(() => func.apply(context, args), delay);
     }
 }
-
 
 const ConversationScreen = () => {
     
@@ -60,13 +57,7 @@ const ConversationScreen = () => {
 
     const flatListRef = useRef(null);
 
-    // let storage: MMKV;
-    // storage = new MMKV({
-    //     id: `user-${user.id}-storage`,
-    //     encryptionKey: 'hunter2',
-    // });
     useEffect(() => {
-        console.log("CONVERSATION ID :", convId[0]);
         const initConversationStorage = async () => {
             await ConversationStorageDatabase.initDatabase();
             await checkForDeleteMessage();
@@ -82,7 +73,6 @@ const ConversationScreen = () => {
                 if(conv_error){
                     console.error('Conv_Error :', conv_error);
                 }
-                // console.log("conv_data :", conv_data.messages);
                 // setMessages(conv_data.messages);
                 setParticipants(conv_data.participants);
                 setDeviceTokens(conv_data.device_tokens);
@@ -99,10 +89,6 @@ const ConversationScreen = () => {
         subscrbeToMessagesStatus();
     }, []);
 
-    useEffect(() => {
-        console.log("DEVICE TOKENS :", devicesTokens);
-    }, [devicesTokens])
-
     const checkForDeleteMessage = async() => {
         try{
             setLoading(true);
@@ -117,21 +103,18 @@ const ConversationScreen = () => {
                 .limit(1)
                 .single();
             if(deleted_error){
-                console.log("Error when fetching last deleted message in checkForDeleteMessage function in [...convId].tsx", deleted_error);
+                console.error("Error when fetching last deleted message in checkForDeleteMessage function in [...convId].tsx", deleted_error);
             }
-            console.log("DELETED MESSAGE :", deleted_message);
             if(deleted_message == null || deleted_message == undefined){
-                console.log("NO DELETED MESSAGE FOUND IN SUPABASE");
+                console.error("NO DELETED MESSAGE FOUND IN SUPABASE");
                 return;
             }
             const local_deleted_message = await ConversationStorageDatabase.getMostRecentDeletedMessage(convId[0]);
-            console.log("LOCAL DELETED MESSAGE :", local_deleted_message);
             if(!local_deleted_message) return;
             //If the date are the same thats OK, if not we need to get all deleted message between theses two dates and update local message database
             if(deleted_message.deleted_at == local_deleted_message.deleted_at){
                 return;
             }else{
-                console.log("DELETED MESSAGE FOUND IN LOCAL DB");
                 //Get all the deleted message between these two dates
                 const { data: deleted_messages, error: deleted_messages_error } = await supabase.rpc('get_deleted_messages_between',
                     {
@@ -140,11 +123,9 @@ const ConversationScreen = () => {
                     'p_after': local_deleted_message.deleted_at, 
                     'p_before': deleted_message.deleted_at}
                 );
-                console.log("PARMAS ----> ", convId[0], user.id, local_deleted_message.deleted_at, deleted_message.deleted_at);
                 if(deleted_messages_error){
-                    console.log("Error when fetching deleted messages in checkForDeleteMessage function in [...convId].tsx", deleted_messages_error);
+                    console.error("Error when fetching deleted messages in checkForDeleteMessage function in [...convId].tsx", deleted_messages_error);
                 }
-                console.log("DELETED MESSAGES :", deleted_messages);
                 await ConversationStorageDatabase.updateDeletedMessages(deleted_messages, convId[0], user.id);
             }
         }catch(error: unknown){
@@ -159,7 +140,6 @@ const ConversationScreen = () => {
 
         const localConversation = await ConversationStorageDatabase.getConversationById(convId[0]);
         if(localConversation == null || localConversation == undefined || localConversation.length == 0){
-            // console.log("NO CONVERSATION FOUND IN LOCAL DB, FETCHING FROM SUPABASE...");
             const messages = await ConversationStorageDatabase.newConversationUpload(convId[0], user.id);
             //Here loadLocalMessages instead of settings message with messages (to avoid much request with images)
             //Like that :
@@ -167,14 +147,9 @@ const ConversationScreen = () => {
             return local_messages;
         }else{
             //There is already a conversation !
-            console.log("CHECK FOR MESSAGE DIFF");
             await checkMessageDiff();
-            console.log("MESSAGE DIFF HAVE BEEN PROCESS")
             const local_messages = await ConversationStorageDatabase.loadLocalMessages(convId[0], user.id, 1, PAGE_SIZE);
             const local_count = await ConversationStorageDatabase.countMessagesConversation(convId[0]);
-            console.log(" === LOCAL MESSAGES.length", local_messages.length);
-            console.log("LOCAL COUNT REQUEST :", local_count);
-            console.log("OLDEST DATE MESSAGES :", local_messages[local_messages.length-1].created_at, local_messages[local_messages.length-1].content);
             setOldestLocalMessage(local_messages[local_messages.length-1].created_at);
             setLocalCount(local_count);
             return local_messages;
@@ -202,13 +177,13 @@ const ConversationScreen = () => {
                     {'p_conversation_id': convId[0], 'p_user_id': user.id, 'p_after': last_local_message_timestamp}
                 );
                 if(messageDiffError){
-                    console.log("Error when fetching message diff in checkMessageDiff function in [...convId].tsx", error);
+                    console.error("Error when fetching message diff in checkMessageDiff function in [...convId].tsx", error);
                 }
                 //Store the new messages in local Db : 
                 await ConversationStorageDatabase.uploadNewMessages(messagesDiff.messages, convId[0], user.id);
             }
         }catch(error: unknown){
-            console.log("Error in checkMessageDiff function in [...convId].tsx", error);
+            console.error("Error in checkMessageDiff function in [...convId].tsx", error);
             
         }finally{
             setLoadingNewMessages(false);
@@ -219,18 +194,17 @@ const ConversationScreen = () => {
         try{
             const { data: attach_data, error: attach_error } = await supabase.from('attachments').select('*').eq('message_id', msg_id);
             if(attach_error){
-                console.log('Error in fetchAttachments function when fetching attachements in [...convId].tsx', attach_error);
+                console.error('Error in fetchAttachments function when fetching attachements in [...convId].tsx', attach_error);
             }
             return attach_data;
         }catch(error: unknown){
-            console.log('Error in fetchAttachments function in [...convId].tsx', error);
+            console.error('Error in fetchAttachments function in [...convId].tsx', error);
         }finally{
 
         }
     }
 
     useEffect(() => {
-        // console.log("is at bottom CHANGE : ", isAtBottom);
         if(isAtBottom) markMessageAsRead();
         /** ---------------------------------------------------------------
          *  ==== ====  S U B S C R I B E   T O   M E S S A G E S  ==== ====
@@ -241,16 +215,13 @@ const ConversationScreen = () => {
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table:'message_reactions', filter:'conversation_id=eq.'+convId[0]}, handleNewReactionReceived)
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table:'message_reactions'}, handleDeleteReaction)
         .subscribe();
-        // console.log("|+| SUBSCRIBE SUPABASE CHANNELS");
 
         return() => {
-            // console.log("|-| UNSUBSCRIBE SUPABASE CHANNELS");
             insertAndDeleteChannels.unsubscribe();
         };
     }, [isAtBottom, messages])
 
     const handleDeletedMessage = (payload: any) => {
-        console.log("NEW DELETED OR UPDATED MESSAGE DETECTED :", payload.old.id);
         if(messages){
             const exists = messages.find(msg => msg.id === payload.old.id) !== undefined;
             if(!exists) return;
@@ -262,19 +233,16 @@ const ConversationScreen = () => {
     const handleReceivedMessage = async (payload: any) => {
         setIsSeen(false);
         // CREATE A WAITING TIME WHEN UPLOADING NEW IMAGE OR AUDIO, TO DISPLAY IT IN THE CONVERSATION
-        console.log("new message type :", payload.new.type);
         if(payload.new.type == 'attachment' || payload.new.type == 'audio'){
             setLoadingNewImage(true);
-            console.log("NEW ATTACHMENT MESSAGE DETECTED :", payload);
             payload.new.attachments = [];
             let attempts = 0;
             let maxAttempts = 13;
             const delay= 900;
             let result;
             while(attempts < maxAttempts){
-                console.log("attemps :", attempts);
                 attempts++;
-                console.log(`Waiting for file upload... Attempt ${attempts + 1}`);
+                console.info(`Waiting for file upload... Attempt ${attempts + 1}`);
                 await new Promise((resolve) => setTimeout(resolve, delay));
                 result = await fetchAttachments(payload.new.id);
                 if(result){
@@ -289,13 +257,9 @@ const ConversationScreen = () => {
             payload.new.reply_type = msg_response?.reply_type;
         }
         payload.new.reactions = [];         //Add this to avoid style issue with the marginBottom 
-        console.log("PAYLOAD :",payload);
         setMessages((prev) => [ payload.new, ...prev]);
         setOffset((prevOffset) => prevOffset + 1);
-        // console.log("IS AT BOTTOM :", isAtBottom);
         if(payload.new.user_id != user.id && isAtBottom){
-            console.log("NOT SUPPOSED TO SCROLL TO BOTTOM !!!!");
-            console.log("OFFSET :", offset);
             markMessageAsRead();
         }
         setLoadingNewImage(false);
@@ -307,19 +271,17 @@ const ConversationScreen = () => {
             //If not, fetch it from the database.
             let message = null;
             message = messages.find(msg => msg.id === replied_id);
-            console.log("MEssage after local find : ", message);
             if(message == null || message == undefined ){
                 const { data: message_data, error: message_error } = await supabase.from('messages').select('content, type').eq('id', replied_id).single();
                 if(message_error){
-                    console.log('Error in getOrFetchResponse function when fetching replied message in [...convId].tsx', message_error);
+                    console.error('Error in getOrFetchResponse function when fetching replied message in [...convId].tsx', message_error);
                 }
                 message = message_data;
-                console.log("NO local message, fetch it :", message);
             }
             return { "reply_content": message.content, "reply_type": message.type };
             
         }catch(error: unknown){
-            console.log("Error in getOrFetchResponse function in [...convId].tsx", error);
+            console.error("Error in getOrFetchResponse function in [...convId].tsx", error);
         }finally{
 
         }
@@ -327,7 +289,6 @@ const ConversationScreen = () => {
 
     const handleNewReactionReceived = async(payload: any) => {
         //Edit main message state variable
-        console.log("PAYLOAD : ", payload.new)
         setMessages(prevMessages =>
             prevMessages.map(message =>
               message.id === payload.new.message_id
@@ -338,7 +299,7 @@ const ConversationScreen = () => {
     }
 
     const handleDeleteReaction = async(payload: any) => {
-        console.log("DELETE REACTION NEED TO BE HANDLED HERE :", payload);
+        console.error("DELETE REACTION NEED TO BE HANDLED HERE (handleDeleteReaction in ConversationScreen in [...convId].tsx):", payload);
         setMessages(prevMessages =>
             prevMessages.map(message => ({
                 ...message,
@@ -352,7 +313,6 @@ const ConversationScreen = () => {
      * @returns message_id id of the freshly created conversation.
      */
     const sendTextMessage = async(has_attachement: boolean, type: string) => {
-        console.log("TEXT TRIM :", text.trim(), 'HAS ATTACH :',has_attachement, 'TYPE :', type);
         if (text.trim() === '' && has_attachement == false) return;
         let message_id;
         try{
@@ -365,15 +325,13 @@ const ConversationScreen = () => {
                 has_attachment: has_attachement,
                 replied_to_id:replyTo
             }).select("id");
-            console.log("SEND DATA :", send_data);
             if(send_error){
-                console.log('Error in sendTextMessage when inserting text message function in [...convId].tsx', send_error);
+                console.error('Error in sendTextMessage when inserting text message function in [...convId].tsx', send_error);
             }else {
-                console.log("SEND DATA:", send_data);
                 message_id = send_data[0].id; // Extract the ID properly
             }
         }catch(error: unknown){
-            console.log('Error in sendTextMessage function in [...convId].tsx', error);
+            console.error('Error in sendTextMessage function in [...convId].tsx', error);
         }finally{
             sendPushNotification(devicesTokens);
             setIsSeen(false);
@@ -394,7 +352,6 @@ const ConversationScreen = () => {
             if(token.startsWith('ExponentPushToken[')){
                 let body_notif = text;
                 if(text.trim() === '') body_notif='-Send-Attachment-';
-                console.log("SEND PUSH NOTIFICATION TO TOKEN :", token);
                 const notif = {
                     to: token,
                     sound: 'default',
@@ -427,98 +384,51 @@ const ConversationScreen = () => {
       try{
             setCanTriggerLoadMore(false);
             setLoadingMoreMessages(true);
-            // const { data: messages_data, error: messages_error } = await supabase.from('messages')
-            // .select('id, content, created_at, sender_id, type, has_attachment')
-            // .eq('conversation_id', convId[0])
-            // .is('deleted_at', null)
-            // .order('created_at', { ascending: false})
-            // .range(offset,offset+PAGE_SIZE-1);
-            // if(messages_error){
-            //       console.log('Error in fetchMessages  when fetching messages in [...convId].tsx', messages_error);
-            //     }
             const { data: messages_data, error: conv_error } = await supabase.rpc(
                 'load_more_messages', 
                 {'p_conversation_id': convId[0], 'p_user_id':user.id, p_page:page+1});
             if(conv_error){
-                console.log('Conv_Error :', conv_error);
+                console.error('Conv_Error :', conv_error);
             }else{
                 setPage(page+1)
             }
-            // console.log("MORE MESSAGES :", messages_data);
             if(messages_data?.length != 0){
                 const newMessageArray: any = messages_data.messages;
                 setMessages((prev) => {const data = [...prev, ...newMessageArray]; const uniqueData = Array.from(new Set(data)); return uniqueData});
-                // setMessages((prev) => {const data = [...prev, ...newMessageArray]; const uniqueData = Array.from(new Set(data)); return uniqueData});
-                // if(newMessageArray){
-                //     for(let message of newMessageArray){
-                //         if(message.type == 'attachment' || message.type == 'audio'){
-                //             const result = await fetchAttachments(message.id);
-                //             message.attachments = result;
-                //         }
-                //     }
-                //     setMessages((prev) => {const data = [...prev, ...newMessageArray]; const uniqueData = Array.from(new Set(data)); return uniqueData});
-                //     setOffset(offset+PAGE_SIZE);
-                // }
             }else{
-                console.log("END REACHED NO MORE MESSAGES WILL BE LOADED...");
                 //Here put some infos about users in conv (carroussel with profiles)
                 setEndReached(true);
             }
         }catch(error: unknown){
-          console.log('Error in loadMoreMessages function in [...convId].tsx', error);
+          console.error('Error in loadMoreMessages function in [...convId].tsx', error);
         }finally{
           setLoadingMoreMessages(false);
           setCanTriggerLoadMore(true);
       }
     }, [loadingMoreMessages, offset]);
 
-    // useEffect(() => {
-    //     console.log(" !!! OLDEST LOCAL MESSAGE CHANGED !!", oldestLocalMessage);
-    // }, [oldestLocalMessage])
-
     const loadMoreMessagesV2 = useCallback(async() => {
-        console.log("INSIDE LOAD MORE MESSAGES : (canTriggerLoadMore , loadingMoreMessages) = (", canTriggerLoadMore,(','), loadingMoreMessages,").");
         if (!canTriggerLoadMore || loadingMoreMessages || endReached ) return;
 
         try{
             setCanTriggerLoadMore(false);
             setLoadingMoreMessages(true);
-            // |- 1 -| : Try to load 50 more message from local DB
-            // |- 2 -| : Check if there is 50 message : if not, count how much there is, andl oad the 50 more from supabase (and store them locally)
-            // |- 3 -| : If there is no more message in local db fetch from supabase
-            // |- 4 -| : load them in state and upload them in local db
-            // |- 5 -|
-            // |- 6 -|
             
             //Get lasts messages.
             //Check if length < PAGE_SIZE if that's the case that means there is no more local messages 
             //Also check if length = 0 but that is already made by the check page_size
             // if last date is the same as oldestLocalMessage
             let next_messages;
-            console.log("message.length <= localCount :", messages.length, "<=", localCount);
             if(oldestLocalMessage == null) throw new Error("Can't load oldest message because 'oldestLocalMessage' state variable is null ... in loadMoreMessagesV2 in [...convId].tsx")
-            console.log(" *-*-*-*-*-*- oldestLocalMessage : ", oldestLocalMessage,
-                " ---- ",
-                oldestLocalMessage.toString(), 
-                " ---- ", 
-                new Date(oldestLocalMessage),
-            " ----- ",
-            Math.floor(oldestLocalMessage/1000),
-            " ----- ",
-            oldestLocalMessage/1000
-            );
             if(messages.length < localCount){
                 //FETCH LOCAL DATABASE
-                console.log("FETCH LOCAL DATABASE");
                 let number_of_messages_to_fetch = localCount - messages.length
                 if(number_of_messages_to_fetch > PAGE_SIZE){
                     number_of_messages_to_fetch = PAGE_SIZE;
                 }
-                console.log("NUMBER OF MESSAGES TO FETCH :", number_of_messages_to_fetch);
                 next_messages = await ConversationStorageDatabase.getMessagesAfterDate(convId[0], oldestLocalMessage.toString(), number_of_messages_to_fetch);
             }else{
                 //FETCH SUPABASE
-                console.log("FETCH SUPABASE before", (oldestLocalMessage));
                 const { data, error } = await supabase.rpc('load_more_messages_cursor',
                     {
                         'p_conversation_id': convId[0],
@@ -526,7 +436,6 @@ const ConversationScreen = () => {
                         'p_before': new Date(oldestLocalMessage),
                         'p_limit': PAGE_SIZE
                 });
-                console.log("UPLOAD NEW MESSAGES DONE ! ---*****")
                 if(error){
                     console.error("Error in when loading more message in loadMoreMessageV2 function in [...convId].tsx", error);
                 }
@@ -534,19 +443,16 @@ const ConversationScreen = () => {
                 await ConversationStorageDatabase.uploadNewMessages(next_messages, convId[0], user.id);
 
             }
-            // console.log("->->->->->Next_messages", next_messages)
             //Set new oldestLocalMessage
-            console.log("New oldest date :", next_messages[next_messages.length-1].created_at);
             setOldestLocalMessage(next_messages[next_messages.length-1].created_at);
             
             next_messages = await ConversationStorageDatabase.getMessagesAfterDate(convId[0], oldestLocalMessage.toString(), PAGE_SIZE);
-            console.log("DOWNLOAD NEW MESSAGES DONE ! ---*****")
             setMessages((prev) => {const data = [...prev, ...next_messages]; const uniqueData = Array.from(new Set(data)); return uniqueData});
             
             // const local_messages = await ConversationStorageDatabase.loadLocalMessages(convId[0], user.id, page+1, PAGE_SIZE);
         
         }catch(error: unknown){
-            console.log('Error in loadMoreMessageV2 function in [...convId].tsx', error);
+            console.error('Error in loadMoreMessageV2 function in [...convId].tsx', error);
         }
         finally{
             setLoadingMoreMessages(false);
@@ -563,7 +469,6 @@ const ConversationScreen = () => {
         //Set here the loading icon message
          */
         if(messages.length < PAGE_SIZE) return;
-        console.log("++++++ handle Load More Messages ++++++");
         debouncedFetchData2();
     }
 
@@ -585,7 +490,6 @@ const ConversationScreen = () => {
      *  ==== ====  S C R O L L   T O   B O T T O M  ==== ====
      */
     const scrollToBottom = () => {
-        console.log("NEW MESSAGE RECEIVED");
         flatListRef.current?.scrollToOffset({ animated: true, offset: 0 });
     };
 
@@ -599,17 +503,8 @@ const ConversationScreen = () => {
         // const atBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 20;
         // Check if the user is at the top (small threshold to allow minor scrolling)
         const atTop = contentOffset.y <= 10; // Adjust threshold if needed
-        // console.log("contentOffset", contentOffset.y);
         setScrollY(contentOffset.y);
         setIsAtBottom(atTop); //It's call bottom here because flatlist is inverted.
-
-        // const offsetY = event.nativeEvent.contentOffset.y;
-        // console.log("OFFSET Y :", contentOffset.y);
-        // if (contentOffset.y < 50) {
-        //     handleLoadMoreMessage();
-        // }
-
-        
     };
 
     /** -------------------------------------------------------------------------
@@ -652,10 +547,10 @@ const ConversationScreen = () => {
         try{
             const { data, error: rpc_error } = await supabase.rpc('mark_messages_as_read', {'p_user_id': user.id, 'p_conversation_id': convId[0]});
             if(rpc_error){
-                console.log('Error in markMessageAsRead when trying to mark message as read function in [...convId].tsx', rpc_error);
+                console.error('Error in markMessageAsRead when trying to mark message as read function in [...convId].tsx', rpc_error);
             }
         }catch(error:unknown){
-            console.log('Error in markMessageAsRead function in [...convId].tsx', error);
+            console.error('Error in markMessageAsRead function in [...convId].tsx', error);
         }
     }
     
@@ -665,17 +560,15 @@ const ConversationScreen = () => {
      */
     const readLastMessageStatus = async(message_id: any) => {
         try{
-            console.log("READ LAST MESSAGE STATUS MESSAGE ID :", message_id);
             const { data: last_status, error: error_status } = await supabase.from('message_status').select('*').eq('message_id',message_id).neq('user_id',user.id);
             if(error_status){
-                console.log('Error in readLastMessageStatus when trying to read last message_status function in [...convId].tsx', error_status);
+                console.error('Error in readLastMessageStatus when trying to read last message_status function in [...convId].tsx', error_status);
             }
             if(last_status?.length != 0){
-                console.log("LAST_READ_MESSAGE : ", last_status);
                 setIsSeen(true);
             }
         }catch(error:unknown){
-            console.log('Error in readLastMessageStatus function in [...convId].tsx', error);
+            console.error('Error in readLastMessageStatus function in [...convId].tsx', error);
         }finally{
 
         }
@@ -704,7 +597,6 @@ const ConversationScreen = () => {
                 <Text>LOADING !!!</Text>
             :
                 <>
-                    {/* <Text>CONVERSATION ID : {convId[0]}</Text> */}
                     <FlatList
                         ref={flatListRef}
                         data={messages}

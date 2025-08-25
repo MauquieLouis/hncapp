@@ -36,16 +36,13 @@ const ChangeAvatar = (props: any) => {
         try{
             const ext = (file.fileName ?? '').split('.').pop();
             const fileName = uuidv6()+"."+ext;
-            console.log("Filename :", fileName);
             const resizedfile = await compressImage(file.uri);
-            console.log("FILE RESIZED :", resizedfile?.uri);
             const fileContent = await FileSystem.readAsStringAsync(resizedfile?.uri, {encoding: FileSystem.EncodingType.Base64});
             const { data, error } = await supabase.storage.from('avatars')
                 .upload(props.userId+'/'+fileName, decode(fileContent as string), {cacheControl: '3600', upsert: false, contentType: file.mimeType});
             if(error){
                 console.error("Error when uploading avatar in uploadAvatar function in components/profile/changeAvatar.tsx", error);
             }else{
-                console.log("Avatar uploaded successfully:", data);
                 // Update the profile with the new avatar URL
                 // const { data: publicURL } = supabase.storage.from('avatars').getPublicUrl(data.path);
                 const { data: updt, error: updt_error } = await supabase.from('avatars').update({is_current: false})
@@ -71,7 +68,6 @@ const ChangeAvatar = (props: any) => {
     return(
 <       TouchableOpacity 
         onPress={() => {
-            console.log("EDIT PROFILE PICTURE");
             pickImage();
         }}
         style={{position:"absolute",

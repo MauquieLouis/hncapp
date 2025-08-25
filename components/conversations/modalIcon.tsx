@@ -9,7 +9,7 @@ import iconSet from "@expo/vector-icons/build/Fontisto";
 
 const ModalIcon = (props: any) => {
 
-    items = props.items
+    const items = props.items
     const styles = StyleSheet.create({
         modalContentStyle:{
             // padding:2,

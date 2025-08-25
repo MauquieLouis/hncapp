@@ -58,14 +58,12 @@ export default function ProfileId() {
         setLoading(true);
         const { data: profiles, error: profiles_error } = await supabase.from("profiles").select("*").eq("user_id", profileId);
         if(profiles_error){
-          console.log("Error whent fetching profiles in getAllProfiles Function in profileList.tsx :", profiles_error);
+          console.error("Error whent fetching profiles in getAllProfiles Function in profileList.tsx :", profiles_error);
         }else{
-          console.log("Profiles: ", profiles);
           setProfileDisplayed(profiles[0]);
-
         }
       }catch(e){
-        console.log("Error fetching profiles in profileList.tsx :", e);
+        console.error("Error fetching profiles in profileList.tsx :", e);
       }finally{
         setLoading(false);
       }
@@ -82,21 +80,18 @@ export default function ProfileId() {
           .or(`user_id_1.eq.${profileId},user_id_2.eq.${profileId}`)
           .eq('status', 'accepted');
         if(friends_error){
-          console.log("Error whent fetching friends in getFriendsAndFollowerNumber Function in profileList.tsx :", friends_error);
+          console.error("Error whent fetching friends in getFriendsAndFollowerNumber Function in profileList.tsx :", friends_error);
         }else{
-          console.log("Friends: ", friends);
           setFriendsNumber(friends.length);
         }
-        console.log("Profile ID: ", profileId);
         const { data: followers, error: followers_error } = await supabase.from("followers").select("*").eq("following_id", profileId);
         if(followers_error){
-          console.log("Error whent fetching followers in getFriendsAndFollowerNumber Function in profileList.tsx :", followers_error);
+          console.error("Error whent fetching followers in getFriendsAndFollowerNumber Function in profileList.tsx :", followers_error);
         }else{
-          console.log("Followers: ", followers);
           setFollowersNumber(followers.length);
         }
       }catch(e){
-        console.log("Error fetching friends and followers in getFriendsAndFollowerNumber function in profileList.tsx :", e);
+        console.error("Error fetching friends and followers in getFriendsAndFollowerNumber function in profileList.tsx :", e);
       }
       finally{
         setLoading(false);
@@ -113,7 +108,6 @@ export default function ProfileId() {
           .or(`and(user_id_1.eq.${profile.user_id},user_id_2.eq.${profile_to_check}),and(user_id_1.eq.${profile_to_check},user_id_2.eq.${profile.user_id})`)
           // .eq('status', 'pending')
           .maybeSingle(); // or .maybeSingle() if it might not exist | originally .single()
-          console.log("Check friendship data: ", data);
         if(error){
           console.error("Error checking friendship in checkFriendship function in profileId.tsx", error);
         }
@@ -139,7 +133,6 @@ export default function ProfileId() {
 
   const sendOrUnsedFriendRequest = async () => {
     try{
-      console.log("canRequestFriendship: ", canRequestFriendship);
       if(!canRequestFriendship){
         //Unsend the friend request
         const { data, error } = await supabase
@@ -147,11 +140,8 @@ export default function ProfileId() {
           .delete()
           .eq('user_id_1', profile.user_id)
           .eq('user_id_2', profileDisplayed.user_id).select();
-          // .eq('status', 'pending');
         if (error) {
-          console.error('Error unsending friend request:', error);
-        } else {
-          console.log('Friend request unsent:', data);
+          console.error('Error when unsending friend request in sendOrUnsendFriendRequest function in app/profile/[...profieId].tsx :', error);
         }
         //unsend notification
         const { data: unsend_data, error: unsend_error} = await unsendNotification({
@@ -167,22 +157,20 @@ export default function ProfileId() {
         .insert([
           { user_id_1: profile.user_id, user_id_2: profileDisplayed.user_id, status: 'pending' },
         ]).select();
-        if (error) {
-          console.error('Error sending friend request:', error);
-        } else {
-          console.log('Friend request sent:', data);
+      if (error) {
+        console.error('Error when sending friend request in sendOrUnsendFriendRequest function in app/profile/[...profieId].tsx :', error);
+      }
+      if(data){
+        const { data: notif_data, error: notif_error } = await insertNotification({
+          recipient_id: profileDisplayed.user_id, 
+          actor_id: profile.user_id, 
+          type: 'friend_request', 
+          object_id: data![0].id
+        });
+        if(notif_error){
+          console.error("Error when inserting notification in sendOrUnsedFriendRequest function in profileId.tsx", notif_error);
         }
-        if(data){
-          const { data: notif_data, error: notif_error } = await insertNotification({
-            recipient_id: profileDisplayed.user_id, 
-            actor_id: profile.user_id, 
-            type: 'friend_request', 
-            object_id: data![0].id
-          });
-          if(notif_error){
-            console.error("Error when inserting notification in sendOrUnsedFriendRequest function in profileId.tsx", notif_error);
-          }
-        }
+      }
       setCanRequestFriendship(false);
     }catch(error: unknown){
       console.error("Error in sendFriendRequest function in profileId.tsx", error);
@@ -211,16 +199,13 @@ export default function ProfileId() {
         return null;
       }
       
-      console.log("Conversations: ", data);
       // Filter to only include conversations with exactly 2 distinct, active participants
       const filteredConversations = data.filter(convo => {
         if(convo.conversation_participants.length == 2){
-          console.log("Conversation ID: ", convo.id);
           setConversationId(convo.id);
         }
 
         // const participantIds = convo.conversation_participants.map(p => p.user_id);
-        // console.log("Participant IDs: ", participantIds);
         // const uniqueParticipants = [...new Set(participantIds)];
         // return uniqueParticipants.length === 2 &&
         // uniqueParticipants.includes(userId1) &&
@@ -301,7 +286,6 @@ export default function ProfileId() {
               {isMyProfile ? 
                 <TouchableOpacity 
                 onPress={() => {
-                  console.log("OPEN PARAM MODAL");
                   setSettingModal(true);
                 }}
                 style={styles.settingsStyle}>
@@ -346,7 +330,6 @@ export default function ProfileId() {
                     <TouchableOpacity 
                       style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}} 
                       onPress={() => {
-                        console.log("Push Conv",conversationId);
                         router.push(`/conversations/${conversationId}`)
                       }}>
                       <HStack>
@@ -359,7 +342,6 @@ export default function ProfileId() {
                     <TouchableOpacity 
                       style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}} 
                       onPress={() => {
-                        console.log("Create a Post for",profileId);
                         router.push({pathname: "/profile/createPost", params: { poster_id: profile.user_id, user_id: profileId }});
                       }}>
                       <HStack>
@@ -457,7 +439,7 @@ export default function ProfileId() {
                 <Text>Follower list</Text>  
               </HStack>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => console.log("ttes")} style={{}}>
+            <TouchableOpacity onPress={() => console.info(" ***--- TODO ---***")} style={{}}>
               <HStack style={{alignItems:"center"}}>
                 <Ionicons name="trash-outline" size={ICON_SIZE} color="white" />
                 <Text>Delete Account</Text>  

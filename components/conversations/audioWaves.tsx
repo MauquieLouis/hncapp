@@ -129,7 +129,6 @@ const AudioWaves = (props: any) => {
         <Svg width={SVG_WIDTH} height={SVG_HEIGHT} style={{borderWidth:1, borderColor:"cyan"}}>
           {waveform.map((item, index) => {
             const space= (SVG_WIDTH / waveform.length)- RECT_WIDTH
-            // console.log("SPACE : space", space);
             return <AnimatedRect
             key={index}
             animatedProps={animatedProps[index]}    

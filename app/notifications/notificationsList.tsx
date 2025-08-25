@@ -32,16 +32,13 @@ export default function NotificationsList() {
   }
 
   useEffect(() => {
-      // console.log("Notifs List: ", profile);
       getAllNotifications();
   }, []);
 
-  useEffect(() => { console.log(" displayNotif ", displayNotif)}, [ displayNotif]);
 
   const getAllNotifications = async () => {
     try{
         setLoading(true);
-        console.log(profile.user_id);
         const { data: notifications, error: notifications_error } = await supabase
           .rpc('get_notifications_with_actor_info', {
             p_recipient_id: "0ea25b59-40fb-448a-ab5d-b9b72c419130",
@@ -51,7 +48,6 @@ export default function NotificationsList() {
           console.error("Error whent fetching notifications in getAllNotifications Function in notificationsList.tsx :", notifications_error);
         }
         if(notifications){
-          console.log("Notifications: ", notifications);
           setNotificationsList(notifications);
         }
     }catch(error: unknown){

@@ -222,14 +222,12 @@ class ConversationStorageDatabase {
             if (!dirInfo.exists) {
                 await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
             }
-            console.log(" ******** TYPE :",type)
             if(type.startsWith('audio')){
                 const { data, error } = await supabase.storage.from('Conversations').createSignedUrl(url, 60*60);
                 if(error) throw error;
                 const remoteUrl = data?.signedUrl;
                 if(!remoteUrl) throw new Error('No signed URL returned.');
                 const downloadRes = await FileSystem.downloadAsync(remoteUrl, fileUri);
-                console.log("Uploaded to :", downloadRes.uri);
             }else{
                 const { data, error } = await supabase.storage.from("Conversations").download(url);
                 if (error) {
@@ -240,7 +238,6 @@ class ConversationStorageDatabase {
                     return null;
                 }
                 base64Data = await this.blobToBase64(data);
-                // console.log("Base64 data: ", base64Data);
                 await FileSystem.writeAsStringAsync(fileUri, base64Data, {
                     encoding: FileSystem.EncodingType.Base64,
                 });
@@ -325,7 +322,6 @@ class ConversationStorageDatabase {
                                     );
                                 });
                             });
-                            console.log("LOAD MORE MESSAGES LOCALLY :", msg, attachments, reactions);
                             return { ...msg, attachments, reactions };
                         })).then(messagesWithDetails => {
                             resolve({ messages: messagesWithDetails });
@@ -353,7 +349,7 @@ class ConversationStorageDatabase {
             .eq('id', conversationId)
             .single();
             if(conversation_error){
-                console.log('Conversation_Error when fetching conversation in conversationStorage.tsx :', conversation_error);
+                console.error('Conversation_Error when fetching conversation in conversationStorage.tsx :', conversation_error);
             }
             this.insertConversation(conversation);
             
@@ -364,7 +360,7 @@ class ConversationStorageDatabase {
             const { data: conv_data, error: conv_error } = await supabase.rpc('get_conversation_messages2', 
             {'p_conversation_id': conversationId, 'p_user_id':userId, 'p_page_size':10});
             if(conv_error){
-                console.log('Conv_Error :', conv_error);
+                console.error('Conv_Error :', conv_error);
             }
             // | - 1 - | Insert participants in the database
             conv_data.participants.forEach((participant: any) => {
@@ -394,21 +390,6 @@ class ConversationStorageDatabase {
             }
             await this.insertMessage(message, conversationId);
         }
-        // messages.forEach(async (message: any) => {
-        //     console.log("CHECK ATTACHMENTS----")
-        //     if(message.attachments) {
-        //         await message.attachments.forEach(async (attachment: any) => {
-        //             await this.insertNewAttachement(attachment, message.id);
-        //         });
-        //     }
-        //     console.log("CHECK REACTIONS----")
-        //     if(message.reactions) {
-        //         await message.reactions.forEach(async (reaction: any) => {
-        //             await this.insertReaction(reaction, message.id, conversationId);
-        //         });
-        //     }
-            // console.log("☻ ♥ INSERT MESSAGE----")
-        // });
         console.log("✅ Upload should have succeed");
     }
 
@@ -640,7 +621,6 @@ class ConversationStorageDatabase {
         try {
             //Go through all the messages and update their deleted_at field
             for(let message of messages) {
-                console.log("UPDATE DELETED MESSAGE :", message);
                 if(message.deleted_at) {
                     await this.db.runAsync(`
                         UPDATE messages SET deleted_at = datetime(?) WHERE id = ?

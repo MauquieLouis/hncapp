@@ -46,7 +46,7 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
     }
 
     function changeTheme(profileUpdated: { [x: string]: any; }){
-        console.log("CHANGE THEME :", profileUpdated);
+        // console.log("CHANGE THEME :", profileUpdated);
         setTheme(BlackStyle);
         // switch(profileUpdated["theme"]){
         //     case 'light':

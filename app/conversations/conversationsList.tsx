@@ -31,11 +31,11 @@ const ConversationsListScreen = () => {
                 // eslint-disable-next-line @typescript-eslint/no-shadow
                 const { data : conv_data, error: conv_error } = await supabase.rpc('get_user_conversations2',{'p_user_id':user.id});
                 if(conv_error){
-                    console.log('Conv error :', conv_error);
+                    console.error('Conv error :', conv_error);
                 }
                 setConvData(conv_data);
             }catch(error: unknown){
-                console.log('Error in fetchConversation function in Messagings.tsx', error);
+                console.error('Error in fetchConversation function in Messagings.tsx', error);
             }finally{
                 setLoading(false);
             }
@@ -54,9 +54,9 @@ const ConversationsListScreen = () => {
                 
                 // CREATE A WAITING TIME WHEN UPLOADING NEW IMAGE OR AUDIO, TO DISPLAY IT IN THE CONVERSATION
                 if(payload.new.type == 'attachment' || payload.new.type == 'audio'){
-                    console.log("New message received in list screen -> Attachment");
+                    console.info("New message received in list screen -> Attachment");
                 }
-                console.log("New message received in list screen");
+                console.info("New message received in list screen");
             }
         ).subscribe();
 
@@ -72,15 +72,14 @@ const ConversationsListScreen = () => {
             .select("conversation_id")
             .eq("user_id", user.id)
             .is("deleted_at", null);
-            // console.log("DATA CONV LIST :", data);
             if(error){
-                console.log("Error in getMyConversationIdList function when fetching conversations particpant table in conversationsList.tsx", error);
+                console.error("Error in getMyConversationIdList function when fetching conversations particpant table in conversationsList.tsx", error);
             }
             if(data){
                 setMyConversationsId(data.map((item: { conversation_id: string }) => item.conversation_id));
             }
         }catch(error: unknown){
-            console.log("Error in getMyConversationIdList function in conversationsList.tsx", error);
+            console.error("Error in getMyConversationIdList function in conversationsList.tsx", error);
         }finally{
 
         }

@@ -35,7 +35,6 @@ const LikeOrDislikeActionSheet = (props: { post_id: any; like: any; isOpen: bool
                 console.error("Error when fetching likes or dislikes in fetchLikeOrDislikeProfiles in LikeOrDislikeActionSheet.tsx", error);
             }
             setProfiles(data || []);
-            console.log("Data fetched in fetchLikeOrDislikeProfiles: ", data);
         }catch(error: unknown){
             console.error("Error likes or dislikes in LikeOrDislikeActionSheet.tsx", error);
         }finally{

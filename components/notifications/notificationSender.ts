@@ -89,7 +89,6 @@ export async function sendPhoneNotification(expoPushToken: string[], body: strin
             if(token.startsWith('ExponentPushToken[')){
                 let body_notif = body;
                 if(body_notif.trim() === '') body_notif='-Send-Attachment-';
-                console.log("SEND PUSH NOTIFICATION TO TOKEN :", token);
                 const notif = {
                     to: token,
                     sound: 'default',

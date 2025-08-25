@@ -45,14 +45,10 @@ const AudioRecorder = (props: any) =>{
       });
     }
   }
-  useEffect(() => {
-    // console.log("RECORDING DETECTED ", recording);
-  }, [recording]);
 
   const record = async () => {
     try {
       if (permissionResponse?.status !== 'granted') {
-        console.log('Requesting permission..');
         await requestPermission();
       }
       await Audio.setAudioModeAsync({
@@ -60,23 +56,19 @@ const AudioRecorder = (props: any) =>{
         playsInSilentModeIOS: true,
       });
 
-      console.log('Starting recording..');
       const { recording } = await Audio.Recording.createAsync( Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       setRecording(recording);
       recordingRef.current = recording;
-      console.log('Recording started');
     } catch (err) {
       console.error('Failed to start recording', err);
     }
   };
   
   const stopRecording = async (isValid: boolean) => {
-    console.log('Stopping recording..');
     if (recordingRef.current) {
       await recordingRef.current.stopAndUnloadAsync();
       if(!isValid) return;
-      console.log("SOUND SAVING !")
       await Audio.setAudioModeAsync(
         {
           allowsRecordingIOS: false,
@@ -88,7 +80,6 @@ const AudioRecorder = (props: any) =>{
         const { sound } = await Audio.Sound.createAsync({uri});
         const status = await sound.getStatusAsync();
         if(status.isLoaded){
-          console.log("DURATION :", status.durationMillis);
           const durationMillis = status.durationMillis || 0; // Get duration in milliseconds
           const durationSeconds = durationMillis / 1000; // Convert to seconds
           if (durationSeconds < 1.5) {
@@ -111,7 +102,7 @@ const AudioRecorder = (props: any) =>{
             return null; // Don't upload if less than 2 sec
           }
           //Send message here
-          console.log('Recording stopped and stored at', uri);
+          // console.info('Recording stopped and stored at', uri);
           const audio_name = `${props.convId}/Audio/${uuidv4()}.m4a`;
           await uploadAudio(uri, audio_name);
         }
@@ -123,7 +114,7 @@ const AudioRecorder = (props: any) =>{
         return;
       }
     }else{
-      console.log("RECORDING NOT EXISTING... in stop recording function", recording);
+      console.info("RECORDING NOT EXISTING... in stop recording function", recording);
     }
   };
 
@@ -137,9 +128,8 @@ const AudioRecorder = (props: any) =>{
       const base64audio = await FileSystem.readAsStringAsync(uri, {encoding: FileSystem.EncodingType.Base64});
       const audioBuffer = Uint8Array.from(atob(base64audio), (c) => c.charCodeAt(0)).buffer;
       const { data, error } = await supabase.storage.from('Conversations').upload(fileName, audioBuffer, {contentType: 'audio/m4a',});
-      console.log("DATA :",data);
       if (error){
-        console.log("Error when uploading audio in uploadAudio function in audioRecorder.tsx", error);
+        console.error("Error when uploading audio in uploadAudio function in audioRecorder.tsx", error);
       }
       const message_id = await props.sendMessageFunction(true, "audio");
       const { data: attach_data, error: attach_error } = await supabase.from('attachments').insert({
@@ -149,10 +139,10 @@ const AudioRecorder = (props: any) =>{
           size: blob.size
       });
       if(attach_error){
-        console.log("Error in stopRecording function when inserting new attachement in audioRecorder.tsx :", attach_error);
+        console.error("Error in stopRecording function when inserting new attachement in audioRecorder.tsx :", attach_error);
       }
     }catch(error: unknown){
-      console.log("ERROR : error in uploadAudio function in audioRecorder.tsx", error);
+      console.error("ERROR : error in uploadAudio function in audioRecorder.tsx", error);
     }finally{
       setSendingAudio(false);
     }
@@ -191,7 +181,6 @@ const AudioRecorder = (props: any) =>{
     max_dy_mvt_neg = height_drop_zone-height_mic_container;
     max_dy_mvt_pos = height_mic_container-height_mic_icon;
     if(x < -max_dx_mvt && y > -max_dy_mvt_neg && y < max_dy_mvt_pos ){
-      console.log("drpZ :");
       return true;
     }
     return false;
@@ -203,7 +192,6 @@ const AudioRecorder = (props: any) =>{
   const onStartFunction = () => {
     setIsGestureEnabled(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-    console.log("START");
     changeItemWidth(initialWidth*2);
     setShowDeleteZone(true);
     setIconSize(initialWidth*1.6);
@@ -230,7 +218,6 @@ const AudioRecorder = (props: any) =>{
       commonEndFunction();
     }, 100);
     //Save vocal message here
-    // console.log("Save vocal message");
   }
   
   const onEndDeletionFunction = () => {
@@ -239,7 +226,6 @@ const AudioRecorder = (props: any) =>{
       commonEndFunction();
     }, 75);
     //Do not save the vocal message.
-    // console.log("/!\\ Do NOT save vocal message /!\\")
   }
 
   const changeItemWidth = (w: number) => {
@@ -249,18 +235,15 @@ const AudioRecorder = (props: any) =>{
   const panGesture = Gesture.Pan()
   .enabled(isGestureEnabled)
   .onTouchesUp(() => {
-    console.log("UP");
     runOnJS(onEndFunction)();
   })
   .onTouchesDown(() => {
-    console.log("DOWN");
     runOnJS(onStartFunction)();
   })
   .onUpdate((event) => {
     translateX.value = event.translationX;
     translateY.value = event.translationY;
     if(isInDropZone(translateX.value, translateY.value)){
-      console.log("IN DROP ZONE");
       translateX.value = withSpring(0);
       translateY.value = withSpring(0);
       runOnJS(onEndDeletionFunction)();

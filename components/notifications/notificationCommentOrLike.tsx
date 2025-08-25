@@ -27,7 +27,6 @@ const NotificationCommentOrLike = ({ notification }: { notification: any; }) => 
     }
     
     useEffect(() => {
-      console.log("NotifcationFriendOrFollowRequest: ", notification);
       findPostLinked();
     },[]);
 
@@ -35,24 +34,27 @@ const NotificationCommentOrLike = ({ notification }: { notification: any; }) => 
         try{
             let main_data: any, main_error: any;
             if(notification.type =='post_liked'){
-                console.log("------- POST ID -------- :", notification.object_id);
-                const { data, error } = await supabase.from('post_likes').select('post_id').eq('id', notification.object_id).single();
+                const { data, error } = await supabase.from('post_likes').select('post_id').eq('id', notification.object_id).maybeSingle();
                 main_data = data;
                 main_error = error;
             }else{
-                const { data, error } = await supabase.from('comments').select('post_id').eq('id', notification.object_id).single();
+                const { data, error } = await supabase.from('comments').select('post_id').eq('id', notification.object_id).maybeSingle();
                 main_data = data;
                 main_error = error;
             }
-                
             if(main_error){
-                console.error("Error finding post linked in findPostLinked function in components/notifications/notificationCommentOrLike.tsx", main_error);
+                console.error(" (1) Error finding post linked in findPostLinked function in components/notifications/notificationCommentOrLike.tsx", main_error);
             }else{
-                const { data: postData, error: postError } = await supabase.from('posts').select('*').eq('id', main_data.post_id).single();
-                if(postError){
-                    console.error("Error fetching post in findPostLinked function in components/notifications/notificationCommentOrLike.tsx", postError);   
+                if(main_data == null && main_data == undefined){
+                    return
                 }else{
-                    setPost(postData);
+                    const { data: postData, error: postError } = await supabase.from('posts').select('*').eq('id', main_data.post_id).single();
+                    if(postError){
+                        console.error(" (2) Error fetching post in findPostLinked function in components/notifications/notificationCommentOrLike.tsx", postError);   
+                    }else{
+                        setPost(postData);
+                    }
+
                 }
             }
         }catch(error: unknown){

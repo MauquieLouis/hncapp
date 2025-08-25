@@ -19,7 +19,6 @@ import { compressImage } from "./imageEditor";
 export async function uploadOneFileOnBucket(file: any, bucket: any, folder: any, name?: any) {
 
     try{
-        console.log("THE FILE :",file)
         const ext = (file.fileName ?? '').split('.').pop();
         const fileName = uuidv6()+"."+ext;
          if(file.type == 'video'){
@@ -30,11 +29,8 @@ export async function uploadOneFileOnBucket(file: any, bucket: any, folder: any,
                 if(error){
                     console.error("Error in uploadImage function when uploading new video in components/files/fileUpload.ts :", error);
                 }
-                console.log("DATA UPLOAD:", data);
             }else{
-                console.log("NOT A VIDEO :");
                 const fileResized = await compressImage(file.uri);
-                console.log("FILE RESIZED :", fileResized?.uri);
                 const fileContent = await FileSystem.readAsStringAsync(fileResized?.uri, {encoding: FileSystem.EncodingType.Base64});
                 const {data, error} = await supabase.storage.from(bucket)
                 .upload(folder+'/'+fileName, decode(fileContent as string),
@@ -42,7 +38,6 @@ export async function uploadOneFileOnBucket(file: any, bucket: any, folder: any,
                 if(error){ 
                     console.error("Error in uploadImage function when uploading new image in components/files/fileUpload.ts :", error);
                 }
-                console.log("DATA UPLOAD:", data);
             }
             file.newFileName = fileName;
         return file; //{fileName: fileName, originalFileName: file.fileName};
@@ -86,12 +81,11 @@ export async function uploadAudio(uri: any, audioName: string, bucket: string){
       const base64audio = await FileSystem.readAsStringAsync(uri, {encoding: FileSystem.EncodingType.Base64});
       const audioBuffer = Uint8Array.from(atob(base64audio), (c) => c.charCodeAt(0)).buffer;
       const { data, error } = await supabase.storage.from(bucket).upload(fileName, audioBuffer, {contentType: 'audio/m4a',});
-      console.log(" Audio data DATA :",data);
       if (error){
-        console.log("Error when uploading audio in uploadAudio function in components/files/fileUpload.ts", error);
+        console.error("Error when uploading audio in uploadAudio function in components/files/fileUpload.ts", error);
       }
     }catch(error: unknown){
-      console.log("ERROR : error in uploadAudio function in components/files/fileUpload.ts", error);
+      console.error("ERROR : error in uploadAudio function in components/files/fileUpload.ts", error);
     }finally{
 
     }

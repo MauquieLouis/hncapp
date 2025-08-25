@@ -29,14 +29,12 @@ export default function Avatar(props: { width?: any; height?: any; user_id?: str
                 console.error("Error when fetching avatar URL in getAvatarUrl function in Avatar component in component/profile/avatar.tsx", error);
             }else{
                 //Create a signed URL :
-                // console.log("Avatar URL data: ", avatarData);
                 if(avatarData.length === 0) return;
                 if (avatarData && avatarData[0].image_url) {
                     const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from('avatars').createSignedUrls([avatarData[0].image_url], 5400);
                     if (signedUrlError) {
                         console.error("Error creating signed URL in Avatar component:", signedUrlError);
                     } else {
-                        // console.log("Signed URL data:", signedUrlData);
                         setSignedUrl(signedUrlData[0].signedUrl);
                     }
                 }

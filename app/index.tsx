@@ -54,7 +54,6 @@ export default function Index() {
           ------------------------------------------------------------------ */}
           <TouchableOpacity style={styles.boxStyle}
             onPress={() => {
-              console.log("Profile");
               if (profile) {
                 router.push(`/profile/${profile.user_id}`);
               }
@@ -67,7 +66,6 @@ export default function Index() {
           ------------------------------------------------------------------ */}
           <TouchableOpacity style={styles.boxStyle}
             onPress={() => {
-                // console.log("Discussions");
                 router.push("/conversations/conversationsList");
               }}
           >
@@ -80,7 +78,6 @@ export default function Index() {
           ------------------------------------------------------------------ */}
           <TouchableOpacity style={styles.boxStyle}
             onPress={() => {
-              console.log("Notifications");
               router.push("/notifications/notificationsList");
             }}
           >
@@ -91,7 +88,6 @@ export default function Index() {
             ------------------------------------------------------------------ */}
           <TouchableOpacity style={styles.boxStyle}
             onPress={() => {
-                // console.log("user list");
                 router.push({pathname: "/profile/profileList", params: { type : "all"}});
               }}
           >

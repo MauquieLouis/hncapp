@@ -54,7 +54,6 @@ const ImagePostSelector = (props: { setAssets: any }) => {
         //     multiple: true,
         // }); 
 
-        console.log("RESULT :", result);
         if(!result.canceled){
             setMedia(result.assets);
             props.setAssets(result.assets);
@@ -67,7 +66,7 @@ const ImagePostSelector = (props: { setAssets: any }) => {
     const openCamera = async () => {
         const permissions = await ImagePicker.requestCameraPermissionsAsync();
         if(!permissions.granted) {
-            console.log("Camera permissions not granted");
+            console.warn("Camera permissions not granted");
             return;
         }
 
@@ -75,7 +74,6 @@ const ImagePostSelector = (props: { setAssets: any }) => {
             mediaTypes: ['videos', 'images'],
             quality: 1,
         });
-        console.log("RESULT :", result);
         if(!result.canceled){
             setMedia((prev) => [...prev, ...result.assets]);
             props.setAssets((prev: any) => [...prev, ...result.assets]);
@@ -89,7 +87,7 @@ const ImagePostSelector = (props: { setAssets: any }) => {
     const openVideo = async () => {
         const permissions = await ImagePicker.requestCameraPermissionsAsync();
         if(!permissions.granted) {
-            console.log("Camera permissions not granted");
+            console.warn("Camera permissions not granted");
             return;
         }
 
@@ -98,7 +96,6 @@ const ImagePostSelector = (props: { setAssets: any }) => {
             quality: 1,
             videoMaxDuration: 60,
         });
-        console.log("RESULT :", result);
         if(!result.canceled){
             setMedia((prev) => [...prev, ...result.assets]);
             props.setAssets((prev) => [...prev, ...result.assets]);
@@ -109,79 +106,12 @@ const ImagePostSelector = (props: { setAssets: any }) => {
         }
     }
 
-    // const uploadImage = async (files: ImagePicker.ImagePickerAsset[]) => {
-    //         try{
-    //             //Create the attachement and send Message
-    //             // for(let file in files as ImagePicker.ImagePickerAsset[]){
-    //             //     console.log("FILE :", files[file].fileName);
-    //             // }
-    //             // return;
-    //             // setLoadingSend(true);
-    //             const fileNames = [];
-    //             for(let file of files as ImagePicker.ImagePickerAsset[]){
-    //                 // const filename = uuidv6();
-    //                 const ext = (file.fileName ?? '').split('.').pop();
-    //                 const fileName = uuidv6()+"."+ext;
-    //                 console.log("NEW FILENAME : ", fileName);
-    //                 fileNames.push(fileName);
-    //                 // console.log("FILE simple :", file);
-    //                 if(file.type == 'video'){
-    //                     const fileContent = await FileSystem.readAsStringAsync(file.uri, {encoding: FileSystem.EncodingType.Base64});
-    //                     const {data, error} = await supabase.storage.from('Conversations')
-    //                     .upload(convId+'/'+fileName, decode(fileContent),
-    //                     {cacheControl: '3600', upsert:false, contentType:file.mimeType});
-    //                     if(error){
-    //                         console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
-    //                     }
-    //                     console.log("DATA UPLOAD:", data);
-    //                 }else{
-    //                     console.log("NOT A VIDEO :");
-    //                     const fileResized = await compressImage(file.uri);
-    //                     console.log("FILE RESIZED :", fileResized?.uri);
-    //                     const fileContent = await FileSystem.readAsStringAsync(fileResized?.uri, {encoding: FileSystem.EncodingType.Base64});
-    //                     const {data, error} = await supabase.storage.from('Conversations')
-    //                     .upload(convId+'/'+fileName, decode(fileContent as string),
-    //                     {cacheControl: '3600', upsert:false, contentType:file.mimeType});
-    //                     if(error){ 
-    //                         console.log("Error in uploadImage function when uploading new image in [...convId].tsx :", error);
-    //                     }
-    //                     console.log("DATA UPLOAD:", data);
-    //                 }
-    //                 //Upload the file on supabase
-    //             }
-    //             const message_id = await sendTextMessage(true, 'attachment');
-    //             console.log("message iD :", message_id);
-    //             let index = 0;
-    //             for(let file of files as ImagePicker.ImagePickerAsset[]){
-    //                 const fileName = fileNames[index];
-    //                 index++;
-    //                 console.log("FILE :", file.fileName);
-    //                 const { data: attach_data, error: attach_error } = await supabase.from('attachments').insert({
-    //                     message_id: message_id,
-    //                     url: convId+'/'+fileName,
-    //                     type: file.mimeType,
-    //                     size: file.fileSize
-    //                 });
-    //                 if(attach_error){
-    //                     console.log("Error in uploadImage function when inserting new attachement in [...convId].tsx :", attach_error);
-    
-    //                 }
-    //             }
-                
-    //         }catch(error:unknown){
-    //             console.log("Error in uploadImage function [...convId].tsx :", error);
-    //         }finally{
-    //             setLoadingSend(false);
-    //         }
-    //     }
-
     return(
         <Box style={{ flex:6, height:"100%", padding:"10%"}}>
             {/* IMAGE SELECTION ZONE */}
             <HStack style={{ justifyContent: 'center', alignItems: 'center', height:"15%", padding:1, marginBottom:16, flexDirection:"row"}} space={"md"}>
                 <TouchableOpacity 
                     onPress={() => {
-                        console.log("Open video camera here");
                         openVideo();
                     }}
                     style={{ width:"15%",  height:"100%", borderColor:"grey", borderWidth:5, borderRadius:16, justifyContent:"center", alignItems:"center"}}>
@@ -189,7 +119,6 @@ const ImagePostSelector = (props: { setAssets: any }) => {
                 </TouchableOpacity>
                 <TouchableOpacity 
                     onPress={() => {
-                        console.log("Open photo camera here");
                         openCamera();
                     }}
                     style={{ width:"15%",  height:"100%", borderColor:"grey", borderWidth:5, borderRadius:16, justifyContent:"center", alignItems:"center"}}>
@@ -197,7 +126,6 @@ const ImagePostSelector = (props: { setAssets: any }) => {
                 </TouchableOpacity>
                 <TouchableOpacity 
                     onPress={() => {
-                        console.log("Open image picker or camera here");
                         pickImage();
                     }}
                     style={{ width:"15%",  height:"100%", borderColor:"grey", borderWidth:5, borderRadius:16, justifyContent:"center", alignItems:"center"}}>

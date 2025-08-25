@@ -101,13 +101,12 @@ const ImageDisplay = (props: any) => {
                     //with enabled false.
                     return gesture;
                 }}
-                onSnapToItem={(index) => {console.log("snap Item : ",index); props.setIndexOpenModal(index)}} //use to remember the item of the id when opening modal carousel.
+                onSnapToItem={(index) => {props.setIndexOpenModal(index)}} //use to remember the item of the id when opening modal carousel.
                 />
                 :
                 <>
                     {attachmentsUrls != null && attachmentsUrls.length && attachmentsUrls[0] != 'null' ? 
                         <TouchableOpacity onPress={() => {props.openModal(0)}} activeOpacity={1} onLongPress={() => {
-                            console.log("attch", props.attachment.id);
                             // props.calculPositionFunction(props.attachment.id);
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             // props.openActionSheetFunction(0);
@@ -169,7 +168,6 @@ const Attachment = (props: any) => {
     const onCloseActionSheet = () => setShowActionSheet(false);
 
     const openModalFunction = (_index: any) => {
-        console.log("INDEX :", _index);
         setOpenModal(true); 
         setIndexOpenModal(_index); 
     };
@@ -181,7 +179,6 @@ const Attachment = (props: any) => {
     const item = props.item;
     const { user } = useUserContext();
     const toast = useToast();
-    // console.log("PROPS ATTACH : ", props.item.attachments);
 
     useEffect(() => {
         getAttachmentsUrls();
@@ -222,21 +219,10 @@ const Attachment = (props: any) => {
                 localUrls[remote.index] = signedUrls[i];
             });
             }
-            // console.log("LOCALS URLS :",localUrls);
             setAttachmentsUrls(localUrls);
-            // setLoadingUrls(true);
-            // const urls = item.attachments.map((attachment: { url: any; local_path?: any }) =>
-            //     attachment.local_path ?? attachment.url
-            //   );
-            // const { data, error } = await supabase.storage.from('Conversations').createSignedUrls(urls, 5400);
-            // if(error){
-            //     console.log("Error in Attachment when creatingSignedUrls function in components/attachment.tsx file :", error);
-            // }
-            // const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
-            // setAttachmentsUrls(signedUrls);
 
         }catch(error: unknown){
-            console.log("Error in Attachment function in components/attachment.tsx file :", error);
+            console.error("Error in Attachment function in components/attachment.tsx file :", error);
         }finally{
             setLoadingUrls(false);
         }
@@ -245,19 +231,19 @@ const Attachment = (props: any) => {
     const actionSheetTable: { [key: string]: { icon: string; onPress: () => void; } } = {
         "info": {
             icon: "information-circle-outline",
-            onPress: () => {console.log("Info Pressed")},
+            onPress: () => {console.info("Info Pressed --- TODO ----")},
         },
         "download": {
             icon: "download-outline",
-            onPress: () => {console.log("DL Pressed");
+            onPress: () => {
                 setTimeout(() => {downloadAttachment(attachmentsUrls[indexOpenModal], item.attachments[indexOpenModal].url)}, 1000);
-                console.log("INDEX :",indexOpenModal,", ATTACHMENT URLS INDEX MODAL :", attachmentsUrls[indexOpenModal], ", ITEM :",item.attachments[indexOpenModal]) /*downloadAttachment(attachmentsUrls[indexOpenModal], item.attachments[indexOpenModal].name)*/;},
+                 /*downloadAttachment(attachmentsUrls[indexOpenModal], item.attachments[indexOpenModal].name)*/;},
         }
     }
     if(item.sender_id == user.id){
         actionSheetTable["delete"] = {
             icon: "trash-outline",
-            onPress: () => {console.log("Delete Pressed"); props.deleteFunction();},
+            onPress: () => {props.deleteFunction();},
         }
     }
 
@@ -289,7 +275,7 @@ const Attachment = (props: any) => {
                 },
               });
         }catch(error: unknown){ 
-            console.log("Error in downloadAttachment function in components/attachment.tsx file :", error);
+            console.error("Error in downloadAttachment function in components/attachment.tsx file :", error);
         }finally{
             setLoadingUrls(false);
         }

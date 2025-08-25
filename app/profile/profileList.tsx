@@ -21,16 +21,12 @@ export default function ProfileList() {
   const { type } = useLocalSearchParams();
 
   useEffect(() => {
-      console.log("Profile List: ", profile);
       if(type === "all"){
-        console.log("Fetching all profiles");
         getAllProfiles();
       }else if(type === "follower_id" || type === "following_id"){
-        console.log("Type: ", type);
         getFollowProfiles();
         //Fetch follower or following
       }if(type === "friends"){
-        console.log("Fetching friends list");
         getFriendsList();
       }
   }, []);
@@ -40,13 +36,12 @@ export default function ProfileList() {
       setLoading(true);
       const { data: profiles, error: profiles_error } = await supabase.from("profiles").select("*").not("id", "eq", profile.id);
       if(profiles_error){
-        console.log("Error whent fetching profiles in getAllProfiles Function in profileList.tsx :", profiles_error);
+        console.error("Error whent fetching profiles in getAllProfiles Function in profileList.tsx :", profiles_error);
       }else{
-        console.log("Profiles: ", profiles);
         setProfileList(profiles);
       }
     }catch(e){
-      console.log("Error fetching profiles in profileList.tsx :", e);
+      console.error("Error fetching profiles in profileList.tsx :", e);
     }finally{
       setLoading(false);
     }
@@ -62,7 +57,6 @@ export default function ProfileList() {
       if (error) {
         console.error('Error when fetching followers in getFollowProfiles in profileList.tsx:', error);
       } else {
-        console.log('Followers with profile data:', data);
         setProfileList(data);
       }
     }catch(e){
@@ -82,7 +76,6 @@ export default function ProfileList() {
       if (error){
         console.error('Error when fetching friends in getFriendsList function in profileList.tsx', error);
       }else{
-        console.log("Friends :",data);
         setProfileList(data);
       } 
     }catch(e){
