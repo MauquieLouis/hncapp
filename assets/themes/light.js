@@ -28,7 +28,9 @@ LightStyle={
     sliderColor1:'#6b21a8',
     sliderColor2:'#d8b4fe',
     borderColorLight:'#c084fc',
-    borderColorDark:'#6b21a8'
+    borderColorDark:'#6b21a8',
+    dangerColor:'#ad4586',
+    infoColor:'#4578ad'
 };
 
 export default LightStyle;

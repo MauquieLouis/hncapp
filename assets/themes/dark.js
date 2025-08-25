@@ -28,7 +28,9 @@ DarkStyle={
     sliderColor1:'#a855f7',
     sliderColor2:'#e9d5ff',
     borderColorLight:'#c084fc',
-    borderColorDark:'#6b21a8'
+    borderColorDark:'#6b21a8',
+    dangerColor:'#ad4586',
+    infoColor:'#4578ad'
 };
 
 export default DarkStyle;

@@ -11,7 +11,9 @@ import { Button, ButtonText } from '@/components/ui/button';
 
 const SettingsScreen = () => {
 
-    const [ values, setValues ] = useState("dark")
+    const [ values, setValues ] = useState("dark");
+    const [ email, setEmail ] = useState('');
+    const [ username, setUsername ] = useState('');
 
     const { profile, theme } = useUserContext();
     
@@ -46,6 +48,14 @@ const SettingsScreen = () => {
             color:theme.textColor2,
             fontSize:16,
             marginVertical:10
+        },
+        deleteButton:{
+            marginVertical:10,
+            backgroundColor: theme.dangerColor,
+        },
+        saveButton:{
+            marginBottom:10,
+            backgroundColor: theme.infoColor,
         }
     });
 
@@ -118,10 +128,11 @@ const SettingsScreen = () => {
                 <Text style={styles.sectionTitle}>Edit your data</Text>
                 <Text style={styles.sectionSubTitle}>Email</Text>
                 <Text style={styles.sectionSubTitle}>Username</Text>
-                <Button><ButtonText>SAVE</ButtonText></Button>
+                <Button style={styles.saveButton}><ButtonText>SAVE</ButtonText></Button>
             </Box>
             <Box style={styles.section}>
                 <Text style={styles.sectionTitle}>Delete your account</Text>
+                <Button style={styles.deleteButton}><ButtonText>DELETE ACCOUNT</ButtonText></Button>
             </Box>
         </Box>
     )
