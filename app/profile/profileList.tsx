@@ -10,9 +10,14 @@ import { supabase } from '@/libs/initSupabase';
 import { Spinner } from '@/components/ui/spinner';
 import { Ionicons } from '@expo/vector-icons';
 
+/**
+ * @param type: {all, follower_id, following_id, friends} if all select, it display all profile register on the database,
+ * if follower_id or following_id select, it display the follower or following of the user
+ * if friends select, it display the friends of the user}
+ * @returns 
+ */
 export default function ProfileList() {
 
-  
   const [ profileList, setProfileList ] = useState<any[]>([]);
   const [ loading, setLoading ] = useState<boolean>(false);
 
@@ -76,6 +81,7 @@ export default function ProfileList() {
       if (error){
         console.error('Error when fetching friends in getFriendsList function in profileList.tsx', error);
       }else{
+        console.log("Friends List Data :", data);
         setProfileList(data);
       } 
     }catch(e){
@@ -93,7 +99,7 @@ export default function ProfileList() {
           {loading ? <Spinner/> :
           <FlatList
           data={profileList}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.user_id}
           renderItem={({ item }) => (
             <TouchableOpacity 
               onPress={() => router.push(`/profile/${item.user_id}`)}

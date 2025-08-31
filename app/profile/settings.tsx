@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
@@ -11,12 +11,18 @@ import { Button, ButtonText } from '@/components/ui/button';
 
 const SettingsScreen = () => {
 
-    const [ values, setValues ] = useState("dark");
+    const { profile, theme, changeTheme } = useUserContext();
+
+    const [ values, setValues ] = useState(profile?.theme || 'default');
     const [ email, setEmail ] = useState('');
     const [ username, setUsername ] = useState('');
 
-    const { profile, theme } = useUserContext();
-    
+
+    const onSelectRadio = (value: string) => {
+        setValues(value);
+        changeTheme(value);
+    }
+
     const styles = StyleSheet.create({
         container:{
             backgroundColor:theme.backgroundColor1,
@@ -83,7 +89,7 @@ const SettingsScreen = () => {
         <Box style={styles.container}>
             <Box style={styles.section}>
                 <Text style={styles.sectionTitle}>Select your theme</Text>
-                <RadioGroup value={values} onChange={setValues} style={styles.radioGroup}>
+                <RadioGroup value={values} onChange={onSelectRadio} style={styles.radioGroup}>
                     <HStack space="2xl">
                         <Radio value="light" size="md" isInvalid={false} isDisabled={false}>
                             <RadioIndicator/>
@@ -100,7 +106,7 @@ const SettingsScreen = () => {
                         <Radio value="pink" size="md" isInvalid={false} isDisabled={false}>
                             <RadioIndicator/>
                             <RadioLabel>
-                                <RadionIconColor _color1="#fafaf9" _color2="#6b21a8"/>
+                                <RadionIconColor _color1="#6e1e3a" _color2="#e9b0c8"/>
                             </RadioLabel>
                         </Radio>
                         <Radio value="white" size="md" isInvalid={false} isDisabled={false}>

@@ -644,19 +644,20 @@ const ConversationScreen = () => {
                                 bottom:40, 
                                 left:0
                             }}>
+                                {/** ANSWER TO A MESSAGE, display the message that we answer */}
                                 <HStack>
                                     <Box style={{padding:5, backgroundColor:"rgba(220,220,220,0.4)", borderRadius:10}}>
-                                        <Ionicons name={'return-up-back-outline'} color={'blue'} size={32}/>
+                                        <Ionicons name={'return-up-back-outline'} color={theme.iconColor4} size={32}/>
                                     </Box>
                                     <Box style={{justifyContent:'center', alignItems:'center', paddingLeft:5}}>
                                         <Text numberOfLines={1}>
                                             {replyToContent}
-                                            {replyToType == 'attachment' ? <Ionicons name={'image-outline'} color={'blue'} size={23}/> : null}
-                                            {replyToType == 'audio' ? <Ionicons name={'mic-outline'} color={'blue'} size={23}/> : null}
+                                            {replyToType == 'attachment' ? <Ionicons name={'image-outline'} color={theme.iconColor4} size={23}/> : null}
+                                            {replyToType == 'audio' ? <Ionicons name={'mic-outline'} color={theme.iconColor4} size={23}/> : null}
                                         </Text>
                                     </Box>
                                     <TouchableOpacity onPress={() => {setReplyTo(null); setReplyToContent(null); setReplyToType(null)}} style={{position:'absolute',right:0}}>
-                                        <Ionicons name={'close-circle-outline'} color={'blue'} size={32}/>
+                                        <Ionicons name={'close-circle-outline'} color={theme.iconColor4} size={32}/>
                                     </TouchableOpacity>
                                 </HStack>
                             </Box> 

@@ -303,8 +303,10 @@ export default function ProfileId() {
               }
             </Box>
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
-              <Text style={styles.text}> {followersNumber}</Text>
-              <Text style={styles.text}>FOLLOWERS</Text>
+              <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "follower_id"}});}}>
+                <Text style={styles.text}> {followersNumber}</Text>
+                <Text style={styles.text}>FOLLOWERS</Text>
+              </TouchableOpacity>
             </Box>
           </HStack>
           <Box style={{/*borderColor:"cyan", borderWidth:1*/}}>
@@ -325,29 +327,29 @@ export default function ProfileId() {
                   width:"100%",
                   paddingLeft:"6%",
                   paddingRight:"6%",
-                  backgroundColor:"#25292e",
+                  backgroundColor:theme.backgroundColor,
                 }} >
                   <Box>
                     <TouchableOpacity 
-                      style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}} 
+                      style={{borderColor:theme.profileButton, borderWidth:2, padding:15, borderRadius:10}} 
                       onPress={() => {
                         router.push(`/conversations/${conversationId}`)
                       }}>
                       <HStack>
-                        <Ionicons name="chatbubbles-outline" size={ICON_SIZE-16} color="white" />
-                        <Text style={{color:"white", paddingLeft:6}}>Open Discussion</Text>
+                        <Ionicons name="chatbubbles-outline" size={ICON_SIZE-16} color={theme.textColor1} />
+                        <Text style={{color:theme.textColor1, paddingLeft:6}}>Open Discussion</Text>
                       </HStack>
                     </TouchableOpacity>
                   </Box>
                   <Box>
                     <TouchableOpacity 
-                      style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}} 
+                      style={{borderColor:theme.profileButton, borderWidth:2, padding:15, borderRadius:10}} 
                       onPress={() => {
                         router.push({pathname: "/profile/createPost", params: { poster_id: profile.user_id, user_id: profileId }});
                       }}>
                       <HStack>
-                        <Ionicons name="flask-outline" size={ICON_SIZE-16} color="white" />
-                        <Text style={{color:"white", paddingLeft:6}}>Post For Friend</Text>
+                        <Ionicons name="flask-outline" size={ICON_SIZE-16} color={theme.textColor1} />
+                        <Text style={{color:theme.textColor1, paddingLeft:6}}>Post For Friend</Text>
                       </HStack>
                     </TouchableOpacity>
                   </Box>

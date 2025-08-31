@@ -10,9 +10,12 @@ import 'react-native-get-random-values';
 import { compressImage } from '@/components/files/imageEditor';
 import { supabase } from '@/libs/initSupabase';
 import { decode } from 'base64-arraybuffer';
+import { useUserContext } from '@/contexts/userContext';
 
 
 const ChangeAvatar = (props: any) => {
+
+    const { theme } = useUserContext();
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -73,12 +76,12 @@ const ChangeAvatar = (props: any) => {
         style={{position:"absolute",
         bottom:2, 
         right:2, 
-        borderColor:"white", 
+        borderColor:theme.borderColorDark, 
         borderWidth:2, 
         borderRadius:15, 
         padding:5,
         backgroundColor:"rgba(0,0,0,0.5)"}}>
-                <Ionicons name="camera-reverse-outline" size={ICON_SIZE} color="white" />
+                <Ionicons name="camera-reverse-outline" size={ICON_SIZE} color={theme.iconColor2} />
         </TouchableOpacity>
     );
 }

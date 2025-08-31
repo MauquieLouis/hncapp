@@ -5,7 +5,7 @@ import LightStyle from '../assets/themes/light';
 import DarkStyle from '../assets/themes/dark';
 import WhiteStyle from '../assets/themes/white';
 import BlackStyle from '../assets/themes/black';
-// import PinkStyle from '../assets/themes/pink';
+import PinkStyle from '../assets/themes/pink';
 
 export const UserContext = createContext({
     loading: false,
@@ -13,6 +13,7 @@ export const UserContext = createContext({
     session: null,
     user: null,
     theme: null,
+    changeTheme: function(theme: string){},
 });
 
 export const UserContextProvider = ({ props, children}: {props: any, children: any}) => {
@@ -33,7 +34,7 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
             const { data: profileData, error: errorData } = await supabase.from('profiles').select('*').eq('user_id', userD.id);
             if(profileData){
                 setProfile(profileData[0]);
-                changeTheme(profileData[0]);
+                switchTheme(profileData[0]["theme"]);
             }
             if(errorData){
                 console.error('Error in loadProfile() request in userContext.js', errorData);
@@ -45,22 +46,38 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
         }
     }
 
-    function changeTheme(profileUpdated: { [x: string]: any; }){
-        // console.log("CHANGE THEME :", profileUpdated);
-        setTheme(DarkStyle);
-        // switch(profileUpdated["theme"]){
-        //     case 'light':
-        //         setTheme(LightStyle);
-        //     break;
-        //     case 'dark':
-        //         setTheme(DarkStyle);
-        //     break;
-        //     case 'perso':
-        //         setTheme(LightStyle);
-        //     break;
-        //     default:
-        //         setTheme(DarkStyle);
-        // }
+    const switchTheme = async(theme: string) => {
+        switch(theme){
+            case 'light':
+                setTheme(LightStyle);
+                break;
+            case 'dark':
+                setTheme(DarkStyle);
+                break;
+            case 'black':
+                setTheme(BlackStyle);
+                break;
+            case 'white':
+                setTheme(WhiteStyle);
+                break;
+            case 'pink':
+                setTheme(PinkStyle);
+                break;
+            default:
+                setTheme(WhiteStyle);
+        }
+    }
+
+    const changeTheme = async (theme: string) => {
+        await switchTheme(theme);
+        try{
+            const { data, error } = await supabase.from('profiles').update({ theme: theme }).eq('user_id', user?.id);
+            if(error){
+                console.error('Error when changing theme in changeTheme() request in userContext.js', error);
+            }
+        }catch(error){
+            console.error('ERROR in changeTheme function un userContext.ts', error);
+        }
     }
 
     useEffect(() => {
@@ -96,6 +113,7 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
         user,
         theme,
         signOut,
+        changeTheme,
     };
 
     return(

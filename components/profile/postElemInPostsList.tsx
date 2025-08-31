@@ -269,17 +269,18 @@ const PostElemInPostsList = (props: any) => {
             justifyContent: "center",
             width: "100%",
             height: 300,
+            marginBottom:4
         },
         dotStyle:{
             borderRadius: 16,
-            backgroundColor: theme.borderColorDark,
+            backgroundColor: theme.iconNotFocusedColor,
         },
         activeDotStyle:{
             borderRadius: 4,
             width: 12,
             height: 12,
             overflow: "hidden",
-            backgroundColor: theme.sliderColor2,
+            backgroundColor: theme.iconFocusedColor,
         },
         containerStyle:{
             gap: 5,
@@ -297,9 +298,9 @@ const PostElemInPostsList = (props: any) => {
         }
     });
 
-    const notSelectedIconColor= theme.iconFocusedColor;
-    const selectedHeartIconColor= theme.textYellow;
-    const selectedSkulltIconColor= theme.textYellow;
+    const notSelectedIconColor= theme.iconNotFocusedColor;
+    const selectedHeartIconColor= theme.iconFocusedColor;
+    const selectedSkulltIconColor= theme.iconFocusedColor;
 
     return (
         <>
@@ -350,7 +351,7 @@ const PostElemInPostsList = (props: any) => {
                     }}
                 />
             </Box>
-            <Box style={{width:"80%", marginLeft:"10%", borderBottomColor:"rgba(127,127,127,0.8)", borderBottomWidth:1, marginBottom:25, paddingBottom:10 }}>
+            <Box style={{width:"80%", marginLeft:"10%", borderBottomColor:theme.dividerColor, borderBottomWidth:1, marginBottom:25, paddingBottom:10 }}>
                 <Box>
                     <HStack style={{paddingVertical:15}} space={"sm"}>
                         <TouchableOpacity onPress={async()=> {
@@ -391,7 +392,7 @@ const PostElemInPostsList = (props: any) => {
                         :<></>}
                         <TouchableOpacity onPress={() => {setModalComments(true);}}>
                             {commentNumber > 0 ?
-                                <Box style={{position:"absolute", borderColor:'#8888FF', borderWidth:2, right:-13, top:-7, borderRadius:10, padding:2}}>
+                                <Box style={{position:"absolute", borderColor:theme.borderColorDark, borderWidth:2, right:-13, top:-7, borderRadius:10, padding:2}}>
                                     <Text style={styles.textCommentNumber}>
                                         {commentNumber}
                                     </Text>

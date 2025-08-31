@@ -5,9 +5,11 @@ import { Center } from "@/components/ui/center";
 import { HStack } from "@/components/ui/hstack";
 import { Box } from "@/components/ui/box";
 import { Ionicons } from "@expo/vector-icons";
-import iconSet from "@expo/vector-icons/build/Fontisto";
+import { useUserContext } from "@/contexts/userContext";
 
 const ModalIcon = (props: any) => {
+
+    const { theme } = useUserContext();
 
     const items = props.items
     const styles = StyleSheet.create({
@@ -20,10 +22,12 @@ const ModalIcon = (props: any) => {
             height:85,
             padding:3,
             borderRadius:15,
+            backgroundColor: theme.modalBackground,
+            borderColor:theme.modalBackground
             // borderColor:"green",borderWidth:2
         },
         actionsheetContent: {
-            backgroundColor: 'white',
+            backgroundColor: theme.modalBackground,
         },
         actionSheetHStack: {
             width: "100%",
@@ -36,7 +40,7 @@ const ModalIcon = (props: any) => {
         actionSheetBox: {
             flex: 1,
             padding: 4,
-            backgroundColor: "white",
+            backgroundColor: theme.modalBackground,
             alignItems: "center",
         },
         actionSheetText: {
@@ -81,6 +85,7 @@ const ModalIcon = (props: any) => {
             height: "100%",
             justifyContent: "center",
             alignItems: "center",
+            backgroundColor:theme.modalBackground
         },
     });
 
@@ -110,7 +115,7 @@ const ModalIcon = (props: any) => {
                                 onPress={onPress}
                                 style={styles.actionSheetBox}
                             >
-                                <Ionicons name={icon} size={28} color="black" />
+                                <Ionicons name={icon} size={28} color={theme.iconColor3}/>
                                 {/* <Text style={styles.actionSheetText}>{key}</Text> */}
                             </TouchableOpacity>
                         ))}

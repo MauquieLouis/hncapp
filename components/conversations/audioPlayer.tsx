@@ -23,7 +23,7 @@ const AudioPlayer = (props: any) => {
     const [ loadingUrl, setLoadingUrl ] = useState(false);
 
     // const { playNewSound, currentUrl } = useAudio();
-    const { user } = useUserContext();
+    const { user, theme } = useUserContext();
     const item = props.item;
     const soundRef = useRef(new Audio.Sound());
 
@@ -132,10 +132,10 @@ const AudioPlayer = (props: any) => {
     let backgroundColor,textColor;
     const MESSAGE_HEIGHT = 50;
     if(props.item.sender_id == user.id){
-        backgroundColor = "blue";
+        backgroundColor = theme.discussionBGMe;
         textColor= "white";
     }else{
-        backgroundColor = "#BABABA";
+        backgroundColor = theme.discussionBGOther;
         textColor= "black";
     }
     const styles = StyleSheet.create({

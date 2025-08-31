@@ -80,7 +80,7 @@ const NotificationCommentOrLike = ({ notification }: { notification: any; }) => 
             onPress={() => {setShowNotifModal(true); setDisplayNotif(notification);}}
             style={{ flexDirection:"row", alignItems:"center", justifyContent:"flex-start", padding:10, borderBottomColor:"white", borderBottomWidth:1, width:"90%", marginLeft:"5%"}}>
             {post ? 
-            <Avatar user_id={post.user_id}/>:<></>
+            <Avatar user_id={notification.user_id}/>:<></>
             }
             <VStack style={{flex:1, paddingLeft:10}}>
             <Text style={styles.titleText}>

@@ -25,7 +25,7 @@ const FlatListMessage = (props: any) => {
     const [ modalIcon, setModalIcon ] = useState(false);
     // const [ modalActionPosition, setModalActionPosition ] = useState(0);
 
-    const { user } = useUserContext();
+    const { user, theme } = useUserContext();
     
     const item = props.message;
     const boxRef = useRef(null);
@@ -92,17 +92,17 @@ const FlatListMessage = (props: any) => {
                 <Box style={[styles.commonMessage,
                     item.sender_id == user.id ?
                     //My message
-                    { backgroundColor:'blue'}
+                    { backgroundColor:theme.discussionBGMe}
                     :
                     //Other message
-                    { backgroundColor:'#BABABA'}
+                    { backgroundColor:theme.discussionBGOther}
                 ]}>
                     <Text style={[styles.commonTextMessage, item.sender_id == user.id ? 
                         //My message
-                        {color:'white'} 
+                        {color:theme.discussionTextMe} 
                         : 
                         //Other message
-                        {color:'#1a1a1a'}]}>
+                        {color:theme.discussionTextOther}]}>
                         {item.content}
                     </Text>
                 </Box>
@@ -271,9 +271,9 @@ const FlatListMessage = (props: any) => {
                                 maxWidth:'72%',
                             }}>
                                 <HStack>
-                                    <Ionicons name={'arrow-redo-outline'} size={20} color={'rgba(0, 0, 200, 0.8)'}/>
-                                    {item.reply_type == 'attachment' ? <Ionicons name={'image-outline'} color={'blue'} size={23}/> : null}
-                                    {item.reply_type == 'audio' ? <Ionicons name={'mic-outline'} color={'blue'} size={23}/> : null}
+                                    <Ionicons name={'arrow-redo-outline'} size={20} color={theme.iconColor4}/>
+                                    {item.reply_type == 'attachment' ? <Ionicons name={'image-outline'} color={theme.iconColor4} size={23}/> : null}
+                                    {item.reply_type == 'audio' ? <Ionicons name={'mic-outline'} color={theme.iconColor4} size={23}/> : null}
                                     <Text numberOfLines={1} style={{maxWidth:"94%"}}>{item.reply_content}</Text>
                                 </HStack>
                             </Box>

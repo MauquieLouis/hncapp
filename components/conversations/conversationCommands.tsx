@@ -252,6 +252,7 @@ const ConversationCommands = (props: any) => {
                         onBlur={() => setIsTextFocused(false)}
                         scrollEnabled={inputHeight >= maxHeight}
                         placeholder="Write message here..." 
+                        placeholderTextColor={theme.inputPlaceholderColor}
                         onChangeText={(text) => {setText(text); sendTypingEvent()}} 
                         value={text}
                         multiline={true}
