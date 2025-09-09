@@ -7,11 +7,12 @@ import { useUserContext } from '@/contexts/userContext';
 import { Radio, RadioGroup, RadioIndicator, RadioLabel, RadioIcon} from "@/components/ui/radio"
 import Svg, { Polygon } from 'react-native-svg';
 import { Button, ButtonText } from '@/components/ui/button';
+import { Ionicons } from '@expo/vector-icons';
 
 
 const SettingsScreen = () => {
 
-    const { profile, theme, changeTheme } = useUserContext();
+    const { profile, theme, changeTheme, signOut } = useUserContext();
 
     const [ values, setValues ] = useState(profile?.theme || 'default');
     const [ email, setEmail ] = useState('');
@@ -134,11 +135,23 @@ const SettingsScreen = () => {
                 <Text style={styles.sectionTitle}>Edit your data</Text>
                 <Text style={styles.sectionSubTitle}>Email</Text>
                 <Text style={styles.sectionSubTitle}>Username</Text>
-                <Button style={styles.saveButton}><ButtonText>SAVE</ButtonText></Button>
+                <Button style={styles.saveButton} onPress={() => {console.log("SAVE")}}>
+                    <Ionicons name="save-outline" size={20} color="white"/>
+                    <ButtonText>SAVE</ButtonText>
+                </Button>
+            </Box>
+            <Box style={styles.section}>
+                <Text style={styles.sectionTitle}>Log Out</Text>
+                <Button style={styles.deleteButton} onPress={() => {
+                    signOut();
+                }} >
+                    <Ionicons name="power-outline" size={20} color="white"/>
+                    <ButtonText>Log Out</ButtonText>
+                </Button>
             </Box>
             <Box style={styles.section}>
                 <Text style={styles.sectionTitle}>Delete your account</Text>
-                <Button style={styles.deleteButton}><ButtonText>DELETE ACCOUNT</ButtonText></Button>
+                <Button style={styles.deleteButton}><Ionicons name="trash-outline" size={20} color="white"/><ButtonText>DELETE ACCOUNT</ButtonText></Button>
             </Box>
         </Box>
     )

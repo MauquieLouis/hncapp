@@ -13,6 +13,7 @@ export const UserContext = createContext({
     session: null,
     user: null,
     theme: null,
+    signOut: function(){},
     changeTheme: function(theme: string){},
 });
 
