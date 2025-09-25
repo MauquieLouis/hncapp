@@ -175,10 +175,11 @@ const MainStack = () => {
         <StatusBar animated={true} style={theme.dark ? 'light':'dark'} backgroundColor={theme.backgroundColor1}/>
         <GluestackUIProvider>
           {loading ? 
-            <Text>LOADING !!</Text>: 
+            <Text style={{color:'blue'}}>LOADING !!</Text>: 
             <>
             {session ?
               <>
+                <Text style={{color:'blue'}}>test1</Text>
                 <MainFile/>
               </> 
               :
@@ -189,7 +190,9 @@ const MainStack = () => {
         </GluestackUIProvider>
       </>
     :
-      <></>
+      <>
+        <Auth/>
+      </>
     }
     </>
   );
