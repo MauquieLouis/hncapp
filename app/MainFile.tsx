@@ -10,15 +10,16 @@ const MainFile = () => {
 
     const { theme } = useUserContext();
 
+
     // <ThemeProvider value={DarkTheme}>
     return(
         <>
-            <Stack screenOptions={{headerStyle: {backgroundColor: theme?.backgroundColor1}, headerTintColor: theme?.textColor1, headerTitleStyle: {fontWeight: 'bold'}, headerTitleAlign: 'center', headerShadowVisible: false, headerBackTitleVisible: false, headerBackImage: () => <Ionicons name="chevron-back" size={24} color={theme?.textColor1} />}}>
+            {/* <Stack screenOptions={{headerStyle: {backgroundColor: theme?.backgroundColor1}, headerTintColor: theme?.textColor1, headerTitleStyle: {fontWeight: 'bold'}, headerTitleAlign: 'center', headerShadowVisible: false, headerBackTitleVisible: false, headerBackImage: () => <Ionicons name="chevron-back" size={24} color={theme?.textColor1} />}}> */}
+            <Stack screenOptions={{headerStyle: {backgroundColor: "red"}, headerTintColor: 'yellow', headerTitleStyle: {fontWeight: 'bold'}, headerTitleAlign: 'center', headerShadowVisible: false, headerBackTitleVisible: false, headerBackImage: () => <Ionicons name="chevron-back" size={24} color={"blue"} />}}>
                 <Stack.Screen name="index" options={{headerShown:false}}/>
-                <Stack.Screen name="conversations"/>
+                <Stack.Screen name="(auth)"/>
                 <Stack.Screen name="+not-found" />
-                <Stack.Screen name="profile" />
-                {/* <Stack.Screen name="notifications" /> */}
+                <Stack.Screen name="(notAuth)" options={{headerShown:false}}/>
             </Stack>
         </>
     );

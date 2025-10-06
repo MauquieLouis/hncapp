@@ -1,4 +1,4 @@
-import React, { Text, View, StyleSheet, TouchableOpacity } from "react-native";
+import React, { Text, View, StyleSheet, TouchableOpacity, AppState } from "react-native";
 import { Link, Redirect } from 'expo-router';
 import { useUserContext } from "@/contexts/userContext";
 import { VStack } from "@/components/ui/vstack";
@@ -6,105 +6,84 @@ import { HStack } from "@/components/ui/hstack";
 import { Box } from "@/components/ui/box";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from 'expo-router';
+import { useEffect } from "react";
+import { supabase } from "@/libs/initSupabase";
+import NotAuthStack from "./(notAuth)/_layout";
+import AuthNav from "./(auth)/_layout";
+import { NavigationContainer } from "@react-navigation/native";
+import Main from "./(auth)/main";
+import SignInScreen from "./(notAuth)/SignIn";
 
-
+AppState.addEventListener('change', (state) => {
+  console.log('APP STATE CHANGE:', state);
+    if(state === 'active') {
+      console.log('START AUTO REFRESH');
+        supabase.auth.startAutoRefresh();
+    }else{
+      console.log('STOP AUTO REFRESH');
+        supabase.auth.stopAutoRefresh();
+    }
+});
 export default function Index() {
 
-  const { profile, theme } = useUserContext();
+  const { profile, session, loading } = useUserContext();
   const router = useRouter();
 
-  const iconColor = theme?.textColor1;
-  
-  const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.backgroundColor1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    color: theme.textColor1,
-    paddingTop:45,
-  },
-  button: {
-    fontSize: 20,
-    textDecorationLine: 'underline',
-    color: theme.textColor2,
-  },
-  boxStyle: {
-    borderColor: theme.borderColorLight,
-    borderWidth: 4,
-    width: 120,
-    height: 120,
-    borderRadius:5,
-    padding: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  }
-});
 
-  return (
-    <View
-    style={styles.container}
-    >
-      <VStack space="3xl">
-        <HStack space="3xl">
-          {/* ------------------------------------------------------------------
-                                  P R O F I L E 
-          ------------------------------------------------------------------ */}
-          <TouchableOpacity style={styles.boxStyle}
-            onPress={() => {
-              if (profile) {
-                router.push(`/profile/${profile.user_id}`);
-              }
-            }}
-          >
-            <Ionicons name="person-outline" size={50} color={iconColor} />
-          </TouchableOpacity>
-          {/* ------------------------------------------------------------------
-                                  C O N V E R S A T I O N S 
-          ------------------------------------------------------------------ */}
-          <TouchableOpacity style={styles.boxStyle}
-            onPress={() => {
-                router.push("/conversations/conversationsList");
-              }}
-          >
-            <Ionicons name="chatbubbles-outline" size={50} color={iconColor} />
-          </TouchableOpacity>
-        </HStack>
-        <HStack space="3xl">
-          {/* ------------------------------------------------------------------
-                                  N O T I F I C A T I O N S
-          ------------------------------------------------------------------ */}
-          <TouchableOpacity style={styles.boxStyle}
-            onPress={() => {
-              router.push("/notifications/notificationsList");
-            }}
-          >
-            <Ionicons name="notifications-outline" size={50} color={iconColor} />
-          </TouchableOpacity>
-            {/* ------------------------------------------------------------------
-                                    U S E R S   L I S T
-            ------------------------------------------------------------------ */}
-          <TouchableOpacity style={styles.boxStyle}
-            onPress={() => {
-                router.push({pathname: "/profile/profileList", params: { type : "all"}});
-              }}
-          >
-            <Ionicons name="list-outline" size={50} color={iconColor} />
-          </TouchableOpacity>
-        </HStack>
-      </VStack>
-      {/* ============ This is a way to make as default screen : Redirect ============ */}
-        {/* <Redirect href="/conversations/conversationsList" />  */}
-      {/* ============================================================================ */}
-      <Text style={styles.text} >Home Screen.</Text>
-      <Link href="/about" style={styles.button}>
-        About Us
-      </Link>
-      <View style={{padding:10}}></View>
-    </View>
+  useEffect(() => {
+      console.log('INDEXrr MOUNTED');
+  },[]);
+
+  useEffect(() => {
+    console.log('SESSION CHANGE:', session);
+  }, [session]);
+
+  if(loading) return (
+     <>
+       <Text>Loading...</Text>
+       <Text>Loading...</Text>
+       <Text>Loading...</Text>
+       <Text>Loading...</Text>
+       <Text>Loading...</Text>
+       <Text>Loading...</Text>
+     </>
+   );
+ 
+   return (
+   <>
+    {!session ? <SignInScreen/>: <Main/> }
+   </>
+  //  return (
+  //  <>
+  //   {!session ? <NotAuthStack/>: <AuthNav/> }
+  //  </>
   );
+   return router.replace(session ? '/(auth)/main' : '/(notAuth)/SignIn');
+   return(
+    <>
+      {!session ?
+        // <>
+        // <Text>NO SESSION</Text>
+        // <Text>NO SESSION</Text>
+        // <Text>NO SESSION</Text>
+        // <Text>NO SESSION</Text>
+        // <Text>NO SESSION</Text>
+        // <Text>NO SESSION</Text>
+        // <Text>NO SESSION</Text>
+        // </>
+        // <NotAuthStack/>
+        <Redirect href="/(notAuth)/SignIn"/>
+        :
+        // <AuthNav/>
+        <Redirect href="/(auth)/main"/>
+      }
+    </>
+  )
+  //  if(!session){
+  //    return <Redirect href="/(notAuth)/SignIn"/>;
+  //  }
+ 
+  //  return <Redirect href="/(auth)/main"/>
 }
 
 const styles = StyleSheet.create({

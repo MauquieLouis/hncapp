@@ -88,12 +88,17 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
             setUser(session?.user ?? null);
             loadProfile(session?.user);
         });
-        // eslint-disable-next-line @typescript-eslint/no-shadow
-        supabase.auth.onAuthStateChange((_event, session) => {
+        const {data: listener} = supabase.auth.onAuthStateChange((_event, session) => {
+            console.log("AUTH STATE CHANGE:", _event, "SSSSEEEESSSSIOOOONNNN :", session);
             setSession(session);
             setUser(session?.user ?? null);
+            if(session?.user) loadProfile(session.user);
         });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+        return () => {
+            listener.subscription.unsubscribe();
+        };
+
     }, []);
 
     useEffect(() => {

@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Stack } from "expo-router";
+import { Redirect, Slot, Stack, useRootNavigationState, useRouter } from "expo-router";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { StatusBar } from 'expo-status-bar';
 import { UserContextProvider, useUserContext } from "../contexts/userContext";
-import { Text, Platform, View, Button } from "react-native";
+import { Text, Platform, View, Button, AppState } from "react-native";
 import { supabase } from "@/libs/initSupabase";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AudioProvider } from '@/contexts/audioContext';
@@ -11,13 +11,17 @@ import * as Notifications from 'expo-notifications';
 import * as Constants from 'expo-constants';
 import * as Device from 'expo-device';
 
-import Auth from "./auth/Login";
+import Auth from "./NotAuth/Login";
 import "@/global.css";
 import MainFile from "./MainFile";
 import { MMKV } from "react-native-mmkv";
 import * as FileSystem from 'expo-file-system';
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as NavigationBar from 'expo-navigation-bar';
+import { Ionicons } from "@expo/vector-icons";
+import Login from "./NotAuth/Login";
+import LoginStack from "./(notAuth)/_layout";
+import Main from "./(auth)/main";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -140,62 +144,39 @@ const MainStack = () => {
   const notificationListener = useRef<Notifications.EventSubscription>();
   const responseListener = useRef<Notifications.EventSubscription>();
 
+  const router = useRouter();
+  const rootNavigationState = useRootNavigationState();
 
   useEffect(() => {
-    // if(Platform.OS === 'android'){
-    //   NavigationB
-    // }
-      registerForPushNotificationsAsync().then(token => setExpoPushToken(token ?? ''))
-      .catch((error: any) => setExpoPushToken(`${error}`));
-      
-      notificationListener.current = Notifications.addNotificationReceivedListener(notif => { setNotification(notif);} );
-      responseListener.current = Notifications.addNotificationResponseReceivedListener(response => { console.info("NoTIF ResPonse",response);});
-      
-      return () => {
-        notificationListener.current && Notifications.removeNotificationSubscription(notificationListener.current);
-        responseListener.current && Notifications.removeNotificationSubscription(responseListener.current);
-      }
-    }, []);
+    registerForPushNotificationsAsync().then(token => setExpoPushToken(token ?? ''))
+    .catch((error: any) => setExpoPushToken(`${error}`));
+    
+    notificationListener.current = Notifications.addNotificationReceivedListener(notif => { setNotification(notif);} );
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => { console.info("NoTIF ResPonse",response);});
+    
+    return () => {
+      notificationListener.current && Notifications.removeNotificationSubscription(notificationListener.current);
+      responseListener.current && Notifications.removeNotificationSubscription(responseListener.current);
+    }
+  }, []);
 
-    useEffect(() => {
-      if(session && expoPushToken){
-        updateOrInsertDeviceToken(user.id, expoPushToken);
-        
-      }
-      if(theme){
-        NavigationBar.setBackgroundColorAsync(theme.backgroundColor1);
-      }
-    }, [expoPushToken, session, theme]);
+  useEffect(() => {
+    if(session && expoPushToken){
+      updateOrInsertDeviceToken(user.id, expoPushToken);
+      
+    }
+    if(theme){
+      NavigationBar.setBackgroundColorAsync(theme.backgroundColor1);
+    }
+  }, [expoPushToken, session, theme]);
+
+
 
   return (
-    <>
-    {theme ?
-      // <GluestackUIProvider mode={theme.dark ? 'dark' : 'light'}>
-      <>
-        <StatusBar animated={true} style={theme.dark ? 'light':'dark'} backgroundColor={theme.backgroundColor1}/>
-        <GluestackUIProvider>
-          {loading ? 
-            <Text style={{color:'blue'}}>LOADING !!</Text>: 
-            <>
-            {session ?
-              <>
-                <Text style={{color:'blue'}}>test1</Text>
-                <MainFile/>
-              </> 
-              :
-              <Auth/>
-            }
-            </>
-          }
-        </GluestackUIProvider>
-      </>
-    :
-      <>
-        <Auth/>
-      </>
-    }
-    </>
-  );
+    <MainFile/>
+  )
+  
+
 }
 
 export default function RootLayout() {
@@ -203,9 +184,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-          <UserContextProvider props={undefined}>
+          <UserContextProvider>
             <AudioProvider>
+              <GluestackUIProvider>
                 <MainStack/>
+              </GluestackUIProvider>
             </AudioProvider>
           </UserContextProvider>
       </GestureHandlerRootView>

@@ -1,9 +1,9 @@
 import React, { FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
-import { useUserContext } from '../../contexts/userContext';
+import { useUserContext } from '../../../contexts/userContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { supabase } from '../../libs/initSupabase';
+import { supabase } from '../../../libs/initSupabase';
 import { useLocalSearchParams } from 'expo-router';
 
 import FlatListMessage from '@/components/conversations/FlatListMessage';

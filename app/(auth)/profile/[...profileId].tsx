@@ -287,7 +287,7 @@ export default function ProfileId() {
                 <TouchableOpacity 
                 onPress={() => {
                   // setSettingModal(true);
-                  router.push("/profile/settings");
+                  router.navigate("/profile/settings");
                 }}
                 style={styles.settingsStyle}>
                   <Ionicons name="settings-outline" size={ICON_SIZE} color={settingsIconColor} />

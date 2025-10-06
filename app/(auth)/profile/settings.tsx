@@ -8,6 +8,8 @@ import { Radio, RadioGroup, RadioIndicator, RadioLabel, RadioIcon} from "@/compo
 import Svg, { Polygon } from 'react-native-svg';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { supabase } from '@/libs/initSupabase';
 
 
 const SettingsScreen = () => {
@@ -18,6 +20,7 @@ const SettingsScreen = () => {
     const [ email, setEmail ] = useState('');
     const [ username, setUsername ] = useState('');
 
+    const router = useRouter();
 
     const onSelectRadio = (value: string) => {
         setValues(value);
@@ -142,8 +145,9 @@ const SettingsScreen = () => {
             </Box>
             <Box style={styles.section}>
                 <Text style={styles.sectionTitle}>Log Out</Text>
-                <Button style={styles.deleteButton} onPress={() => {
+                <Button style={styles.deleteButton} onPress={async() => {
                     signOut();
+                    router.dismissTo('/')
                 }} >
                     <Ionicons name="power-outline" size={20} color="white"/>
                     <ButtonText>Log Out</ButtonText>

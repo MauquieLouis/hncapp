@@ -9,8 +9,8 @@ import { Pressable } from '@/components/ui/pressable';
 import { Button } from '@/components/ui/button';
 import { Box } from '@/components/ui/box';
 
-import { useUserContext } from '../../contexts/userContext';
-import { supabase } from '../../libs/initSupabase';
+import { useUserContext } from '../../../contexts/userContext';
+import { supabase } from '../../../libs/initSupabase';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 
