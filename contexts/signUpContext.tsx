@@ -7,8 +7,10 @@ type SignupData = {
   firstName?: string;
   lastName?: string;
   birthDate?: string;
-  gender?: "Male" | "Female";
+  gender?: "male" | "female";
   country?: string;
+  password?: string;
+  password2?: string;
 };
 
 type SignupContextType = {

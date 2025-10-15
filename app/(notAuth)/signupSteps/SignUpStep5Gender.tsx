@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 export default function SignUpStep5Gender() {
   const { setData, data } = useSignup();
-  const [selectedGender, setSelectedGender] = useState<"Male" | "Female" | null>(null);
+  const [selectedGender, setSelectedGender] = useState<"male" | "female" | null>(null);
 
   const router = useRouter();
 
@@ -28,20 +28,20 @@ export default function SignUpStep5Gender() {
         <TouchableOpacity
           style={[
             styles.genderCard,
-            selectedGender === "Male" && styles.genderCardSelected,
+            selectedGender === "male" && styles.genderCardSelected,
           ]}
-          onPress={() => setSelectedGender("Male")}
+          onPress={() => setSelectedGender("male")}
         >
           <Ionicons
             name="male-outline"
             size={48}
-            color={selectedGender === "Male" ? "#4c1d95" : "#888"}
+            color={selectedGender === "male" ? "#4c1d95" : "#888"}
             style={styles.icon}
           />
           <Text
             style={[
               styles.genderText,
-              selectedGender === "Male" && styles.genderTextSelected,
+              selectedGender === "male" && styles.genderTextSelected,
             ]}
           >
             Homme
@@ -52,20 +52,20 @@ export default function SignUpStep5Gender() {
         <TouchableOpacity
           style={[
             styles.genderCard,
-            selectedGender === "Female" && styles.genderCardSelected,
+            selectedGender === "female" && styles.genderCardSelected,
           ]}
-          onPress={() => setSelectedGender("Female")}
+          onPress={() => setSelectedGender("female")}
         >
           <Ionicons
             name="female-outline"
             size={48}
-            color={selectedGender === "Female" ? "#4c1d95" : "#888"}
+            color={selectedGender === "female" ? "#4c1d95" : "#888"}
             style={styles.icon}
           />
           <Text
             style={[
               styles.genderText,
-              selectedGender === "Female" && styles.genderTextSelected,
+              selectedGender === "female" && styles.genderTextSelected,
             ]}
           >
             Femme

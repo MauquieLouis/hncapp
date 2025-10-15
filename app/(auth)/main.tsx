@@ -11,11 +11,15 @@ import { useEffect } from "react";
 
 export default function Main() {
 
-  const { profile, theme } = useUserContext();
+  const { profile, theme, session } = useUserContext();
   const router = useRouter();
 
+  if(!session || !profile){
+    router.replace("/(notAuth)/SignIn");
+    return null;
+  }
+
   const iconColor = theme?.textColor1;
-  
   const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -16,6 +16,7 @@ const NotAuthStack = () => {
         <Stack.Screen name="signupSteps/SignUpStep4Birthday" options={{ headerShown: true, title: 'Birthday' }}/>
         <Stack.Screen name="signupSteps/SignUpStep5Gender" options={{ headerShown: true, title: 'Gender' }}/>
         <Stack.Screen name="signupSteps/SignUpStep6Country" options={{ headerShown: true, title: 'Country' }}/>
+        <Stack.Screen name="signupSteps/SignUpStep7Password" options={{ headerShown: true, title: 'Password' }}/>
         <Stack.Screen name="signupSteps/SignUpSummary" options={{ headerShown: true, title: 'Summary' }}/>
       </Stack>
     </SignupProvider>
