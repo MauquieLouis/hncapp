@@ -17,7 +17,7 @@ import { VStack } from '../ui/vstack';
 import Avatar from './avatar';
 import { Spinner } from '../ui/spinner';
 import { Input, InputField, InputSlot } from '../ui/input';
-import { Image } from '../ui/image';
+import { Image} from 'expo-image';
 import { Actionsheet, ActionsheetBackdrop, ActionsheetContent, ActionsheetDragIndicatorWrapper, ActionsheetDragIndicator } from '../ui/actionsheet';
 import { FormControl, FormControlLabel, FormControlLabelText } from '../ui/form-control';
 import { Button } from '../ui/button';
@@ -25,10 +25,11 @@ import CommentActionSheet from './commentActionSheet';
 import LikeOrDislikeActionSheet from './likeOrDislikeActionSheet';
 
 import {sendPhoneNotification} from '@/components/notifications/notificationSender';
+import { useSignedUrlContexrt } from '@/contexts/SignedUrlContext';
 
 const PostElemInPostsList = (props: any) => {
 
-    const [ urls, setUrls ] = useState([]);
+    const [ urls, setUrls ] = useState<string[]>([]);
     const [ audioUrl, setAudioUrl ] = useState<string | null>(null);
     const [ isLiked, setIsLiked ] = useState<boolean | null >(null);
     const [ text, setText ] = useState("");
@@ -42,6 +43,8 @@ const PostElemInPostsList = (props: any) => {
 
     const [ likeActionSheet, setLikeActionSheet ] = useState<boolean>(false);
     const [ dislikeActionSheet, setDislikeActionSheet ] = useState<boolean>(false);
+
+    const { fetchSignedUrl } = useSignedUrlContexrt();
 
     const onCloseModalComments = () => {
         setModalComments(false);
@@ -68,25 +71,25 @@ const PostElemInPostsList = (props: any) => {
         }
         getSignedUrlForFiles();
         getLikeAndDislikeCounts();
-        getNotificationToken();
+        // getNotificationToken();
     }, []);
 
-    const getNotificationToken = async () => {
-        try{
-            const { data, error } = await supabase
-            .from('device_tokens')
-            .select('device_token')
-            .eq('user_id', item.user_id)
-            .single();
-            if(error){
-                console.error("Error when fetching notification token in getNotificationToken function in components/profile/postElemInPostsList.tsx", error);
-            }else{
-                setNotificationToken(data?.device_token);
-            }
-        }catch(error: unknown){
-            console.error("Error in getNotificationToken function in components/profile/postElemInPostsList.tsx", error);
-        }
-    }
+    // const getNotificationToken = async () => {
+    //     try{
+    //         const { data, error } = await supabase
+    //         .from('device_tokens')
+    //         .select('device_token')
+    //         .eq('user_id', item.user_id)
+    //         .single();
+    //         if(error){
+    //             console.error("Error when fetching notification token in getNotificationToken function in components/profile/postElemInPostsList.tsx", error);
+    //         }else{
+    //             setNotificationToken(data?.device_token);
+    //         }
+    //     }catch(error: unknown){
+    //         console.error("Error in getNotificationToken function in components/profile/postElemInPostsList.tsx", error);
+    //     }
+    // }
 
     const getLikeAndDislikeCounts = async () => {
         try{
@@ -127,15 +130,25 @@ const PostElemInPostsList = (props: any) => {
                 for(let post_attachment of post_attachments){
                     if(post_attachment.url){
                         urls.push(`${folder_url}/${post_attachment.url}`);
+                        fetchSignedUrl(`${folder_url}/${post_attachment.url}`, 'posts').then((signedUrl: string) => {
+                            if (signedUrl) setUrls(prevUrls => [...prevUrls, signedUrl]);
+                        });
+                        
                     }
                 }
-                const { data, error } = await supabase.storage.from(bucket).createSignedUrls(urls, 1200);
-                if(error){
-                    console.error("Error when creating signedUrls in getSignedUrlForFiles function in components/profile/postElemInPostsList.tsx", error);
-                }else{
-                    const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
-                    setUrls(signedUrls);
-                }
+                //Not sure if that the best position, but lets go
+                urls.forEach((u) => {
+                    if(u) Image.prefetch(u);
+                });
+                //Try fetching from mmkv before supabase
+                //Fetch signed URLs from Supabase Storage
+                // const { data, error } = await supabase.storage.from(bucket).createSignedUrls(urls, 1200);
+                // if(error){
+                //     console.error("Error when creating signedUrls in getSignedUrlForFiles function in components/profile/postElemInPostsList.tsx", error);
+                // }else{
+                //     const signedUrls = data?.map((signedURL) => signedURL.signedUrl)
+                //     setUrls(signedUrls);
+                // }
                 if(item.file_url){
                     const {data : audio_data, error: audio_error} = await supabase.storage.from(bucket).createSignedUrl(item.file_url,1200);
                     setAudioUrl(audio_data?.signedUrl ?? null);

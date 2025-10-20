@@ -48,10 +48,6 @@ export default function Main() {
   }
 });
 
-  useEffect(() => {
-      console.log('INDEXrr MOUNTED');
-  },[]);
-
   return (
     <View
     style={styles.container}

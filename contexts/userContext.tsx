@@ -89,7 +89,6 @@ export const UserContextProvider = ({ props, children}: {props: any, children: a
             loadProfile(session?.user);
         });
         const {data: listener} = supabase.auth.onAuthStateChange((_event, session) => {
-            console.log("AUTH STATE CHANGE:", _event, "SSSSEEEESSSSIOOOONNNN :", session);
             setSession(session);
             setUser(session?.user ?? null);
             if(session?.user) loadProfile(session.user);

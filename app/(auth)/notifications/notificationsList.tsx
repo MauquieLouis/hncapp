@@ -101,10 +101,11 @@ export default function NotificationsList() {
         <Box style={{/*borderColor:"green", borderWidth:1,*/ flex:10, width:"100%"}}>
           {loading ? <Spinner/> :
           <FlatList
-          data={notificationsList}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-            />
+            data={notificationsList}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            onEndReached={() => (console.log("END REACHED"))}
+          />
           }
         </Box>
         <Box style={{/*borderColor:"red", borderWidth:1,*/ flex:1, alignItems:"center", justifyContent:"center"}}>

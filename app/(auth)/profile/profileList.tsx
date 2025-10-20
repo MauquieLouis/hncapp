@@ -20,10 +20,11 @@ export default function ProfileList() {
 
   const [ profileList, setProfileList ] = useState<any[]>([]);
   const [ loading, setLoading ] = useState<boolean>(false);
+  const [ profileIdToShowList, setProfileIdToShowList ] = useState<string | null>(null);
 
   const router = useRouter();
   const { profile } = useUserContext();
-  const { type } = useLocalSearchParams();
+  const { type, user_id } = useLocalSearchParams();
 
   useEffect(() => {
       if(type === "all"){
@@ -35,6 +36,10 @@ export default function ProfileList() {
         getFriendsList();
       }
   }, []);
+
+  useEffect(() => {
+    console.log("Profile ID to show list :", profileIdToShowList);
+  },[profileIdToShowList]);
 
   const getAllProfiles = async () => {
     try{
@@ -56,7 +61,7 @@ export default function ProfileList() {
     try{
       setLoading(true);
       const { data, error } = await supabase.rpc('get_follow_profiles', {
-        input_user_id: profile.user_id,
+        input_user_id: user_id,
         follow_type: type // or 'following'
       });
       if (error) {
@@ -75,13 +80,11 @@ export default function ProfileList() {
     try{
       setLoading(true);
       const { data, error } = await supabase.rpc('get_friends_profiles', {
-        input_user_id: profile.user_id,
+        input_user_id: user_id,
       });
-
       if (error){
         console.error('Error when fetching friends in getFriendsList function in profileList.tsx', error);
       }else{
-        console.log("Friends List Data :", data);
         setProfileList(data);
       } 
     }catch(e){

@@ -16,6 +16,7 @@ import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalH
 import { VStack } from '@/components/ui/vstack';
 import ChangeAvatar from '@/components/profile/changeAvatar';
 import PostsList from '@/components/profile/postsList';
+import { useAutoRefreshSignedUrls } from '@/utils/useAutoRefreshSignedUrls';
 
 export default function ProfileId() {
 
@@ -29,10 +30,11 @@ export default function ProfileId() {
     const [ conversationId, setConversationId ] = useState<string | null>(null);
     const [ settingsModal, setSettingModal ] = useState<boolean>(false);
 
-    const { profile, theme } = useUserContext();
+    const { profile, theme, user } = useUserContext();
     const { profileId } = useLocalSearchParams();
     const router = useRouter();
 
+    // useAutoRefreshSignedUrls()
     const ICON_SIZE = 32;
 
     const closeSettingsModal = () => {
@@ -47,7 +49,8 @@ export default function ProfileId() {
       }else{
         getRemoteProfile();
         checkFriendship(profileId);
-        getOneOnOneConversation(profile.user_id, profileId);
+        checkForConversationExistence(profile.user_id, profileId);
+        // getOneOnOneConversation();
         //Fetch the profile from the database
       }
       getFriendsAndFollowerNumber(profileId);
@@ -178,48 +181,48 @@ export default function ProfileId() {
     }
   }
 
-  async function getOneOnOneConversation(userId1: any, userId2:any) {
-    try{
+  // async function getOneOnOneConversation(userId1: any, userId2:any) {
+  //   try{
 
-      const { data, error } = await supabase
-      .from('conversations')
-      .select(`
-        *,
-        conversation_participants!inner(
-          user_id,
-          deleted_at
-          )
-          `)
-      .eq('is_group', false)
-      .in('conversation_participants.user_id', [userId1, userId2])
-      .is('conversation_participants.deleted_at', null);
+  //     const { data, error } = await supabase
+  //     .from('conversations')
+  //     .select(`
+  //       *,
+  //       conversation_participants!inner(
+  //         user_id,
+  //         deleted_at
+  //         )
+  //         `)
+  //     .eq('is_group', false)
+  //     .in('conversation_participants.user_id', [userId1, userId2])
+  //     .is('conversation_participants.deleted_at', null);
       
-      if (error) {
-        console.error('Error fetching conversations:', error);
-        return null;
-      }
+  //     if (error) {
+  //       console.error('Error fetching conversations:', error);
+  //       return null;
+  //     }
       
-      // Filter to only include conversations with exactly 2 distinct, active participants
-      const filteredConversations = data.filter(convo => {
-        if(convo.conversation_participants.length == 2){
-          setConversationId(convo.id);
-        }
+  //     // Filter to only include conversations with exactly 2 distinct, active participants
+  //     const filteredConversations = data.filter(convo => {
+  //       if(convo.conversation_participants.length == 2){
+  //         setConversationId(convo.id);
+  //       }
 
-        // const participantIds = convo.conversation_participants.map(p => p.user_id);
-        // const uniqueParticipants = [...new Set(participantIds)];
-        // return uniqueParticipants.length === 2 &&
-        // uniqueParticipants.includes(userId1) &&
-        // uniqueParticipants.includes(userId2);
-      });
+  //       // const participantIds = convo.conversation_participants.map(p => p.user_id);
+  //       // const uniqueParticipants = [...new Set(participantIds)];
+  //       // return uniqueParticipants.length === 2 &&
+  //       // uniqueParticipants.includes(userId1) &&
+  //       // uniqueParticipants.includes(userId2);
+  //     });
 
 
-    }catch (error: unknown) {
-      console.error('Error in getOneOnOneConversation function in [...profileId].tsx file:', error);
-    }finally{
+  //   }catch (error: unknown) {
+  //     console.error('Error in getOneOnOneConversation function in [...profileId].tsx file:', error);
+  //   }finally{
 
-    }
+  //   }
     // return filteredConversations.length ? filteredConversations[0] : null;
-  }
+  // }
 
   const changeFriendProfilePicture = async () => {
     try{
@@ -268,6 +271,57 @@ export default function ProfileId() {
 
   const settingsIconColor = theme.iconColor2;
 
+  const checkForConversationExistence = async (user_a: string, user_b:string) => {
+    try{
+      console.log("CHECK FOR CONVERSATION EXISTENCE BETWEEN :", user_a, user_b);
+      const { data, error } = await supabase.rpc('check_conversation_exists', {user_a: user_a, user_b: user_b[0]});
+      if(error){
+        console.error("Error when checking for conversation existence in checkForConversationExistence function in profileId.tsx", error);
+      }
+      console.log("DATA FROM RPC check_conversation_exist :", data);
+      if(data && data.length > 0){
+        setConversationId(data[0].id);
+        console.log("FOUND CONVERSATION ID :", data[0].id);
+      }
+    }catch(error: unknown){
+      console.error("Error in checkForConversationExistence function in profileId.tsx", error);
+    }
+  }
+
+  const handleOpenConversation = async () => {
+    try{
+
+      if(conversationId){
+        //Conversation already exists so open it
+        console.log("******PUSH CONV !!")
+        router.push(`/conversations/${conversationId}`);
+      }else{
+        //Create conversation when open it... Maybe try some lock, if in the biggest hasard, two user are creating the same conversation at the same time.
+        console.log("profile id :", profile.user_id);
+        const { data: conv_data, error: conv_error } = await supabase.from('conversations').insert(
+          { is_group: false, created_by: profile.user_id }
+        ).select();
+        if(conv_error){
+          console.error("Error when creating conversation in handleOpenConversation function in profileId.tsx", conv_error);
+        }else{
+          console.log("CREATED CONVERSATION :", conv_data);
+          const { data: conv_part_data, error: conv_part_error } = await supabase.from('conversation_participants').insert([
+            { conversation_id: conv_data![0].id, user_id: profile.user_id },
+            { conversation_id: conv_data![0].id, user_id: profileDisplayed.user_id }
+          ]);
+          if(conv_part_error){
+            console.error("Error when inserting conversation participants in handleOpenConversation function in profileId.tsx", conv_part_error);
+          }else{
+            setConversationId(conv_data![0].id);
+            router.push(`/conversations/${conv_data![0].id}`);
+          }
+        }
+      }
+    }catch(error: unknown){
+      console.error("Error in handleOpenConversation function in profileId.tsx", error);
+    }
+  }
+
   return (
     <>
       {loading ? <Spinner/> :
@@ -276,7 +330,7 @@ export default function ProfileId() {
         <Box style={styles.container2}>
           <HStack >
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
-              <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "friends"}});}}>
+              <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "friends", user_id : profileDisplayed.user_id}});}}>
                 <Text style={styles.text}> {friendsNumber}</Text>
                 <Text style={styles.text}> FRIENDS</Text>
               </TouchableOpacity>
@@ -303,7 +357,7 @@ export default function ProfileId() {
               }
             </Box>
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
-              <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "follower_id"}});}}>
+              <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "follower_id", user_id : profileDisplayed.user_id}});}}>
                 <Text style={styles.text}> {followersNumber}</Text>
                 <Text style={styles.text}>FOLLOWERS</Text>
               </TouchableOpacity>
@@ -333,7 +387,8 @@ export default function ProfileId() {
                     <TouchableOpacity 
                       style={{borderColor:theme.profileButton, borderWidth:2, padding:15, borderRadius:10}} 
                       onPress={() => {
-                        router.push(`/conversations/${conversationId}`)
+                        handleOpenConversation();
+                        // router.push(`/conversations/${conversationId}`);
                       }}>
                       <HStack>
                         <Ionicons name="chatbubbles-outline" size={ICON_SIZE-16} color={theme.textColor1} />

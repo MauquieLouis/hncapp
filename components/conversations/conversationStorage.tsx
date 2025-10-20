@@ -412,53 +412,81 @@ class ConversationStorageDatabase {
     }
 
     async getMessagesAfterDate(conversationId: string, afterDate: string, limit: number = 50){
-        if (!this.db) {
-            console.error("Database not initialized");
+        try{
+            if (!this.db) {
+                console.error("Database not initialized");
+                return [];
+            }
+            const query = `
+                SELECT * FROM messages
+                WHERE conversation_id = ?
+                AND datetime(created_at) < datetime(?)
+                AND (deleted_at IS NULL)
+                ORDER BY datetime(created_at) DESC
+                LIMIT ?
+            ` ;
+            const messages = await this.db.getAllAsync(query, [conversationId, afterDate, limit]);
+            await this.loadAttachmentsAndReactionsForMessages(messages);
+            return messages;
+        } catch (error) {
+            console.error("❌ Error in getMessagesAfterDate method in conversationStorage.tsx :", error);
             return [];
         }
-        const query = `
-            SELECT * FROM messages
-            WHERE conversation_id = ?
-            AND datetime(created_at) < datetime(?)
-            AND (deleted_at IS NULL)
-            ORDER BY datetime(created_at) DESC
-            LIMIT ?
-        ` ;
-
-        const messages = await this.db.getAllAsync(query, [conversationId, afterDate, limit]);
-        await this.loadAttachmentsAndReactionsForMessages(messages);
-        return messages;
     }
 
     async loadAttachmentsAndReactionsForMessages(messages: any){
-        for(const message of messages) {
-            //Check for attachment with this message.id
-            if(message.replied_to_id && message.replied_to_id !== null) {
-                const reply = await this.db.getFirstAsync(`
-                    SELECT id, content, type FROM messages WHERE id = ?
-                `, [message.replied_to_id]);
-                message.reply_type = reply.type;
-                message.reply_content = reply.content;
-            }
-            if(message.has_attachment) {
-                const attachments = await this.db.getAllAsync(`
-                    SELECT id, url, type, size, created_at, local_path FROM attachments WHERE message_id = ?
-                    `, [message.id]);
-                    message.attachments = attachments;
+        try{
+            for(const message of messages) {
+                //Check for attachment with this message.id
+                if(message.replied_to_id && message.replied_to_id !== null) {
+                    let reply = await this.db.getFirstAsync(`
+                        SELECT id, content, type FROM messages WHERE id = ?
+                    `, [message.replied_to_id]);
+                    if(messages.length < 25){
+                        console.log("reply : ", reply);
+                    }
+                    if(!reply){
+                        //If no reply found locally get it from supabase
+                        try{
+                            const { data: reply_data, error: reply_error } = await supabase
+                            .from('messages')
+                            .select('id, content, type')
+                            .eq('id', message.replied_to_id)
+                            .single();
+                            if(reply_error){
+                                console.error("❌ Reply_Error when fetching reply from supabase in loadAttachmentsAndReactionsForMessages method in conversationStorage.tsx :", reply_error);
+                            }else{
+                                reply = reply_data;
+                            }
+                        }catch(error){
+                            console.error("❌ Error fetching reply from supabase in loadAttachmentsAndReactionsForMessages method in conversationStorage.tsx :", error);
+                        }
+                    }
+                    message.reply_type = reply.type;
+                    message.reply_content = reply.content;
+                }
+                if(message.has_attachment) {
+                    const attachments = await this.db.getAllAsync(`
+                        SELECT id, url, type, size, created_at, local_path FROM attachments WHERE message_id = ?
+                        `, [message.id]);
+                        message.attachments = attachments;
+                    }else{
+                    message.attachments = [];
+                }
+                //Check for reactions with this message.id
+                const reactions = await this.db.getAllAsync(`
+                SELECT id, user_id, reaction, created_at FROM message_reactions WHERE message_id = ?
+                `, [message.id]);
+                if(reactions.length > 0){
+                    message.reactions = reactions;
                 }else{
-                message.attachments = [];
+                    message.reactions = [];
+                }
             }
-            //Check for reactions with this message.id
-            const reactions = await this.db.getAllAsync(`
-            SELECT id, user_id, reaction, created_at FROM message_reactions WHERE message_id = ?
-            `, [message.id]);
-            if(reactions.length > 0){
-                message.reactions = reactions;
-            }else{
-                message.reactions = [];
-            }
+            return messages;
+        }catch(error){
+            console.error("❌ Error in loadAttachmentsAndReactionsForMessages method in conversationStorage.tsx :", error);
         }
-        return messages;
     }
 
     async getLastMessageForConversationId(conversationId: any){

@@ -1,13 +1,18 @@
 import React, { useEffect } from "react";
 import { Text } from "react-native";
-import { Image } from "@/components/ui/image";
+// import { Image } from "@/components/ui/image";
 import { Avatar as AvatarGStackUI, AvatarBadge, AvatarImage, AvatarFallbackText } from "@/components/ui/avatar";
 import { supabase } from "@/libs/initSupabase";
+import { useSignedUrlContexrt } from "@/contexts/SignedUrlContext";
+import { Image } from "expo-image";
+
 
 export default function Avatar(props: { width?: any; height?: any; user_id?: string }){
 
     const [ signedUrl, setSignedUrl ] = React.useState<string | null>(null);
     const { width = 50, height = 50 } = props;
+
+    const { fetchSignedUrl } = useSignedUrlContexrt();
 
     useEffect(() => {
         if(props.user_id){
@@ -31,12 +36,17 @@ export default function Avatar(props: { width?: any; height?: any; user_id?: str
                 //Create a signed URL :
                 if(avatarData.length === 0) return;
                 if (avatarData && avatarData[0].image_url) {
-                    const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from('avatars').createSignedUrls([avatarData[0].image_url], 5400);
-                    if (signedUrlError) {
-                        console.error("Error creating signed URL in Avatar component:", signedUrlError);
-                    } else {
-                        setSignedUrl(signedUrlData[0].signedUrl);
-                    }
+                    fetchSignedUrl(`${avatarData[0].image_url}`, 'avatars').then((signedUrl: string) => {
+                        setSignedUrl(signedUrl);
+                    });
+                    console.log("SIGNED URL :", signedUrl);
+                    if(signedUrl) Image.prefetch(signedUrl);
+                    // const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from('avatars').createSignedUrls([avatarData[0].image_url], 5400);
+                    // if (signedUrlError) {
+                    //     console.error("Error creating signed URL in Avatar component:", signedUrlError);
+                    // } else {
+                    //     setSignedUrl(signedUrlData[0].signedUrl);
+                    // }
                 }
             }
         }catch(error: unknown){
@@ -47,11 +57,9 @@ export default function Avatar(props: { width?: any; height?: any; user_id?: str
     return(
         // <AvatarGStackUI size={"2xl"} >
         <AvatarGStackUI style={{width, height}} >
-            {signedUrl ? (
-                <AvatarImage source={{ uri: signedUrl }} />
-            ) : (
+                {/* <Image source={{ uri: signedUrl }} /> */}
                 <AvatarFallbackText>D</AvatarFallbackText>
-            )}
+                <AvatarImage source={{ uri: signedUrl }} />
             {/* <AvatarBadge bg="green.500" /> */}
             {/* <AvatarImage source={{ uri: "https://picsum.photos/200" }} /> */}
             {/* <AvatarImage source={{ uri: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8dXNlcnxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=800&q=60" }} /> */}

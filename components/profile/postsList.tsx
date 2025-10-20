@@ -30,7 +30,7 @@ const PostsList = (props: { height: any; user_id: string; folder_url: string }) 
     
     const getFirstPosts = async () => {
         try{
-            const { data, error } = await supabase.from('posts').select('*').eq('user_id', props.user_id);
+            const { data, error } = await supabase.from('posts').select('*').eq('user_id', props.user_id).order('created_at', {ascending: false});
             if(error){
                 console.error("Error when fetching posts in getFirstPosts function in components/profile/postsList.tsx", error);
             }

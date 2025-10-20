@@ -22,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Login from "./NotAuth/Login";
 import LoginStack from "./(notAuth)/_layout";
 import Main from "./(auth)/main";
+import { SignedUrlProvider } from "@/contexts/SignedUrlContext";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -162,7 +163,7 @@ const MainStack = () => {
 
   useEffect(() => {
     if(session && expoPushToken){
-      updateOrInsertDeviceToken(user.id, expoPushToken);
+      // updateOrInsertDeviceToken(user.id, expoPushToken);
       
     }
     if(theme){
@@ -185,11 +186,13 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
           <UserContextProvider>
-            <AudioProvider>
-              <GluestackUIProvider>
-                <MainStack/>
-              </GluestackUIProvider>
-            </AudioProvider>
+            <SignedUrlProvider>
+              <AudioProvider>
+                <GluestackUIProvider>
+                  <MainStack/>
+                </GluestackUIProvider>
+              </AudioProvider>
+            </SignedUrlProvider>
           </UserContextProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>

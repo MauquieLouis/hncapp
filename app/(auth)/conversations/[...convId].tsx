@@ -26,7 +26,7 @@ const debounce = (func: { (): Promise<void>; apply?: any; }, delay: number | und
 
 const ConversationScreen = () => {
     
-    const PAGE_SIZE = 10; // If changing this, number, be careful of changing it in the rpc function that retrieve first messages at opening, maybe add a parameter for that.
+    const PAGE_SIZE = 25; // If changing this, number, be careful of changing it in the rpc function that retrieve first messages at opening, maybe add a parameter for that.
 
     const [ loading, setLoading ] = useState(false);
     const [ messages, setMessages ] = useState<any[]>([]);
@@ -58,6 +58,7 @@ const ConversationScreen = () => {
     const flatListRef = useRef(null);
 
     useEffect(() => {
+        console.log("CONV ID :", convId[0]);
         const initConversationStorage = async () => {
             await ConversationStorageDatabase.initDatabase();
             await checkForDeleteMessage();
@@ -67,6 +68,7 @@ const ConversationScreen = () => {
         initConversationStorage();
         const fetchConversationData = async () => {
             try{
+                console.log("FETCH CONVERSATION DATA", convId[0], "userId :", user.id);
                 setLoading(true);
                 const { data: conv_data, error: conv_error } = await supabase.rpc('get_participants_and_token_and_lastmessage', 
                     {'p_conversation_id': convId[0], 'p_user_id':user.id});
@@ -76,9 +78,11 @@ const ConversationScreen = () => {
                 // setMessages(conv_data.messages);
                 setParticipants(conv_data.participants);
                 setDeviceTokens(conv_data.device_tokens);
-                readLastMessageStatus(conv_data.messages[0].id);
+                if(conv_data.messages.length > 0){
+                    readLastMessageStatus(conv_data.messages[0].id);
+                }
             }catch(error: unknown){
-                console.error('Error in fetchConversation function in Messagings.tsx', error);
+                console.error('Error in fetchConversation function in [...convId].tsx', error);
             }finally{
                 setLoading(false);
             }
@@ -100,8 +104,7 @@ const ConversationScreen = () => {
                 .eq('conversation_id', convId[0])
                 .order('deleted_at', { ascending: false })
                 .not('deleted_at', 'is', null)
-                .limit(1)
-                .single();
+                .limit(1);
             if(deleted_error){
                 console.error("Error when fetching last deleted message in checkForDeleteMessage function in [...convId].tsx", deleted_error);
             }
@@ -413,7 +416,6 @@ const ConversationScreen = () => {
         try{
             setCanTriggerLoadMore(false);
             setLoadingMoreMessages(true);
-            
             //Get lasts messages.
             //Check if length < PAGE_SIZE if that's the case that means there is no more local messages 
             //Also check if length = 0 but that is already made by the check page_size
@@ -427,6 +429,7 @@ const ConversationScreen = () => {
                     number_of_messages_to_fetch = PAGE_SIZE;
                 }
                 next_messages = await ConversationStorageDatabase.getMessagesAfterDate(convId[0], oldestLocalMessage.toString(), number_of_messages_to_fetch);
+                // console.log("DATA FROM RPC load_more_messages_cursor :", next_messages);
             }else{
                 //FETCH SUPABASE
                 const { data, error } = await supabase.rpc('load_more_messages_cursor',
@@ -439,6 +442,7 @@ const ConversationScreen = () => {
                 if(error){
                     console.error("Error in when loading more message in loadMoreMessageV2 function in [...convId].tsx", error);
                 }
+                console.log("DATA FROM RPC load_more_messages_cursor :", data);
                 next_messages = data.messages;
                 await ConversationStorageDatabase.uploadNewMessages(next_messages, convId[0], user.id);
 
@@ -588,11 +592,12 @@ const ConversationScreen = () => {
     const styles = StyleSheet.create({
         container:{
             backgroundColor: theme.backgroundColor1,
+            flex:1
         }
     });
 
     return(
-        <Box style={styles.container}>
+        <Box style={[styles.container]}>
             { loading ?
                 <Text>LOADING !!!</Text>
             :

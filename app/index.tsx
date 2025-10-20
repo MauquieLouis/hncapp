@@ -15,12 +15,9 @@ import Main from "./(auth)/main";
 import SignInScreen from "./(notAuth)/SignIn";
 
 AppState.addEventListener('change', (state) => {
-  console.log('APP STATE CHANGE:', state);
     if(state === 'active') {
-      console.log('START AUTO REFRESH');
         supabase.auth.startAutoRefresh();
     }else{
-      console.log('STOP AUTO REFRESH');
         supabase.auth.stopAutoRefresh();
     }
 });
@@ -28,15 +25,6 @@ export default function Index() {
 
   const { profile, session, loading } = useUserContext();
   const router = useRouter();
-
-
-  useEffect(() => {
-      console.log('INDEXrr MOUNTED');
-  },[]);
-
-  useEffect(() => {
-    console.log('SESSION CHANGE:', session);
-  }, [session]);
 
   if(loading) return (
      <>

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import type { AnimatedProps } from "react-native-reanimated";
 import Animated from "react-native-reanimated";
+import { Image } from "expo-image";
 
 interface Props extends AnimatedProps<ViewProps> {
   style?: StyleProp<ImageStyle>;
@@ -28,21 +29,17 @@ export const SlideItem: React.FC<Props> = (props) => {
     );
 
     useEffect(() => {
-        // console.log("SOURCES :", source);
+      Image.prefetch(source as string);
     }, []);
 
   return (
     <Animated.View testID={testID} style={{ flex: 1 }} {...animatedViewProps}>
-      <Animated.Image
+      <Image 
         style={[style, styles.container, rounded && { borderRadius: 15 }]}
-        src={source}
-        resizeMode="cover"
-      />
-      {/* <View style={styles.overlay}>
-        <View style={styles.overlayTextContainer}>
-          <Text style={styles.overlayText}>{index}</Text>
-        </View>
-      </View> */}
+        source={source}
+        contentFit="cover"
+        cachePolicy={'memory-disk'}
+        />
     </Animated.View>
   );
 };

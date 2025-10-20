@@ -18,6 +18,7 @@ import VideoPlayer from "./video";
 import VideoThumbNail from "./videoThumbnail";
 import { Actionsheet, ActionsheetContent } from "../ui/actionsheet";
 import MessageActionSheet from "./messageActionSheet";
+import { Image } from "expo-image";
 
 interface Props extends AnimatedProps<ViewProps> {
   style?: StyleProp<ImageStyle>;
@@ -72,11 +73,17 @@ export const SlideItem: React.FC<Props> = (props) => {
           </>
 
           : 
-            <Animated.Image
-            style={[style, styles.container, rounded && { borderRadius: 15 }]}
-            resizeMode={resizeMode}
-            src={source}
-            />
+            // <Animated.Image
+            // style={[style, styles.container, rounded && { borderRadius: 15 }]}
+            // resizeMode={resizeMode}
+            // src={source}
+            // />
+            <Image 
+              style={[style, styles.container, rounded && { borderRadius: 15 }]}
+              source={source}
+              contentFit={resizeMode}
+              cachePolicy={'memory-disk'}
+              />
         }
         <View style={styles.overlay}>
           <View style={styles.overlayTextContainer}>
