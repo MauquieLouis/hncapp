@@ -40,7 +40,7 @@ export default function TopTabLayout(props: any){
                 // transform:[{ translateY: tabsTranslate }],
                 paddingTop: props.headerHeight
             }, props.tabsAnimatedStyle]}>
-            <TopTabs.Navigator style={{ borderColor:'lime', borderWidth:2}}>
+            <TopTabs.Navigator style={{ borderColor:'lime', borderWidth:2, paddingBottom:50}}>
                 <TopTabs.Screen name="tab1">
                     { () => <MosaicList scrollY={props.scrollY}/>}
                 </TopTabs.Screen>

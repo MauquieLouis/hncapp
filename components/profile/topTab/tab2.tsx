@@ -8,7 +8,8 @@ const Tab2 = (props: any) => {
     const onScroll = useAnimatedScrollHandler({
         onScroll: (event: any) => {
             const y = event.contentOffset.y
-            if(y > 0 && props.headerVisible.value === 1){
+            //Le 60 il est complètement arbitraire, à affiner ... TODO
+            if(y > props.headerHeight - 60 && props.headerVisible.value === 1){
                 props.headerVisible.value = 0
             }else if(y <= 0 && props.headerVisible.value === 0 ) {
                 props.headerVisible.value = 1

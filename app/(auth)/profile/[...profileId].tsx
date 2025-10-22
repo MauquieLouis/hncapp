@@ -246,7 +246,7 @@ export default function ProfileId() {
     color: '#fff',
   },
   container2: {
-    flex:3, alignItems:"center", justifyContent:"center"
+    height:"30%", alignItems:"center", justifyContent:"center"
   },
   settingsStyle: {
     position:"absolute",
@@ -323,18 +323,9 @@ export default function ProfileId() {
     }
   }
 
-  const scrollY = 0;
-  // useRef(new Animated.value(0)).current;
-  // const headerTranslate = scrollY.interpolate({
-  //   inputRange: [0,200],
-  //   outputRange: [0,-200],
-  //   extrapolate: 'clamp',
-  // })
-
-  const HEADER_HEIGHT = 150
   const screenHeight = Dimensions.get('window').height;
-  
-  const headerVisible = useSharedValue(1)
+  const HEADER_HEIGHT = screenHeight*0.35
+    const headerVisible = useSharedValue(1)
   const headerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, {duration: 200}) }],
     opacity: withTiming(headerVisible.value, { duration: 200}),
@@ -343,7 +334,7 @@ export default function ProfileId() {
   const tabsAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
       {
-        translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, { duration: 200}),
+        translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT+50, { duration: 200}),
       },
     ],
   }))
@@ -390,7 +381,7 @@ export default function ProfileId() {
             </Box>
           </HStack>
           <Box style={{/*borderColor:"cyan", borderWidth:1*/}}>
-            <Text style={[styles.userNameText]}>{profileDisplayed ? profileDisplayed.username: "..."}</Text>
+            <Text style={[styles.userNameText]}>{profileDisplayed ? "@"+profileDisplayed.username: "..."}</Text>
           </Box>
           <Box style={styles.bottomLine}></Box>
         </Animated.View>
@@ -437,9 +428,9 @@ export default function ProfileId() {
                 </HStack>
               </>
             }
-            <Box style={{width:"100%", height:screenHeight}}>
+            <Box style={{width:"100%", height:screenHeight+screenHeight*0.35}}>
                 {/* <PostsList height={"100%"} user_id={profileDisplayed.user_id as string} folder_url={profileId as string}/> */}
-              <TopTabLayout scrollY={scrollY} headerVisible={headerVisible} headerHeight={HEADER_HEIGHT} tabsAnimatedStyle={tabsAnimatedStyle}/>
+              <TopTabLayout headerVisible={headerVisible} headerHeight={HEADER_HEIGHT} tabsAnimatedStyle={tabsAnimatedStyle}/>
             </Box>
 
           </>:
