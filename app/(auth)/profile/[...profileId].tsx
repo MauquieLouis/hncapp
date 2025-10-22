@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import React, { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { useRef, useState } from 'react';
+import React, { View, StyleSheet, Text, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { useUserContext } from '@/contexts/userContext';
 import { useEffect } from 'react';
@@ -17,6 +17,7 @@ import { VStack } from '@/components/ui/vstack';
 import ChangeAvatar from '@/components/profile/changeAvatar';
 import PostsList from '@/components/profile/postsList';
 import { useAutoRefreshSignedUrls } from '@/utils/useAutoRefreshSignedUrls';
+import TopTabLayout from '@/components/profile/topTab/_layout';
 
 export default function ProfileId() {
 
@@ -28,7 +29,6 @@ export default function ProfileId() {
     const [ canRequestFriendship, setCanRequestFriendship ] = useState<boolean>(true);
     const [ isMyProfile, setIsMyProfile ] = useState<boolean>(false);
     const [ conversationId, setConversationId ] = useState<string | null>(null);
-    const [ settingsModal, setSettingModal ] = useState<boolean>(false);
 
     const { profile, theme, user } = useUserContext();
     const { profileId } = useLocalSearchParams();
@@ -36,10 +36,6 @@ export default function ProfileId() {
 
     // useAutoRefreshSignedUrls()
     const ICON_SIZE = 32;
-
-    const closeSettingsModal = () => {
-      setSettingModal(false);
-    }
 
     useEffect(() => {
       if(profile.user_id == profileId){
@@ -322,12 +318,19 @@ export default function ProfileId() {
     }
   }
 
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerTranslate = scrollY.interpolate({
+    inputRange: [0,200],
+    outputRange: [0,-200],
+    extrapolate: 'clamp',
+  })
+
   return (
     <>
       {loading ? <Spinner/> :
       <Box style={[styles.container, {}]}>
 
-        <Box style={styles.container2}>
+        <Animated.View style={[styles.container2, {transform: [{translateY: headerTranslate}]} ]}>
           <HStack >
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
               <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "friends", user_id : profileDisplayed.user_id}});}}>
@@ -367,7 +370,7 @@ export default function ProfileId() {
             <Text style={[styles.userNameText]}>{profileDisplayed ? profileDisplayed.username: "..."}</Text>
           </Box>
           <Box style={styles.bottomLine}></Box>
-        </Box>
+        </Animated.View>
         <Box style={{/*borderColor:"green", borderWidth:1,*/ flex:7, alignItems:"center", justifyContent:"center", width:"100%"}}>
           {areFriends ? <>
             {isMyProfile ? <></>
@@ -412,8 +415,8 @@ export default function ProfileId() {
               </>
             }
             <Box style={{flex:10, width:"100%"}}>
-              <PostsList height={"100%"} user_id={profileDisplayed.user_id as string} folder_url={profileId as string}/>
-
+              {/* <PostsList height={"100%"} user_id={profileDisplayed.user_id as string} folder_url={profileId as string}/> */}
+              <TopTabLayout scrollY={scrollY}/>
             </Box>
 
           </>:
@@ -470,43 +473,9 @@ export default function ProfileId() {
               </Box>
           </>
           }
-          {/* <Link href="/" style={styles.button}>
-            Go back to index!
-          </Link> */}
-
         </Box>
       </Box>
   }
-    <Modal isOpen={settingsModal} onClose={() => closeSettingsModal()}>
-      <ModalHeader>
-        <ModalCloseButton />
-      </ModalHeader>
-      <ModalBackdrop />
-      <ModalContent style={{backgroundColor:"rgba(170,170,170,0.8)"}}>
-        <VStack style={{padding:10, width:"100%"}} space='2xl'>
-            <TouchableOpacity onPress={() =>{ router.push({pathname: "/profile/profileList", params: { type : "following_id"}}); closeSettingsModal(); }} style={{}}>
-              <HStack style={{alignItems:"center"}}>
-                
-                <Ionicons name="people-circle-outline" size={ICON_SIZE} color="white" />
-                <Text>Following list</Text>  
-              </HStack>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "follower_id"}}); closeSettingsModal(); }} style={{}}>
-              <HStack style={{alignItems:"center"}}>
-                <Ionicons name="people-outline" size={ICON_SIZE} color="white" />
-                <Text>Follower list</Text>  
-              </HStack>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => console.info(" ***--- TODO ---***")} style={{}}>
-              <HStack style={{alignItems:"center"}}>
-                <Ionicons name="trash-outline" size={ICON_SIZE} color="white" />
-                <Text>Delete Account</Text>  
-              </HStack>
-            </TouchableOpacity>
-          
-        </VStack>
-      </ModalContent>
-    </Modal>
     </>
   );
 }
