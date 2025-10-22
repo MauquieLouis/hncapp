@@ -1,16 +1,25 @@
 import React from "react";
 import { Text } from "@/components/ui/text";
-import { ScrollView, Animated } from "react-native";
+import { ScrollView } from "react-native";
+import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 
 const Tab2 = (props: any) => {
+
+    const onScroll = useAnimatedScrollHandler({
+        onScroll: (event: any) => {
+            const y = event.contentOffset.y
+            if(y > 0 && props.headerVisible.value === 1){
+                props.headerVisible.value = 0
+            }else if(y <= 0 && props.headerVisible.value === 0 ) {
+                props.headerVisible.value = 1
+            }
+        },
+    })
 
     return(
         <Animated.ScrollView
             contentContainerStyle={{padding:0}} scrollEventThrottle={16}
-            onScroll={Animated.event(
-                [{ nativeEvent: { contentOffset: { y: props.scrollY } } }],
-                { useNativeDriver: true }
-            )}
+            onScroll={onScroll}
         >
            {Array.from({ length: 150 }).map((_, i) => (
             <Text key={i} style={{color:"blue"}}>

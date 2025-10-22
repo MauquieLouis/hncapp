@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import React, { View, StyleSheet, Text, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import React, { View, StyleSheet, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { useUserContext } from '@/contexts/userContext';
 import { useEffect } from 'react';
@@ -18,6 +18,11 @@ import ChangeAvatar from '@/components/profile/changeAvatar';
 import PostsList from '@/components/profile/postsList';
 import { useAutoRefreshSignedUrls } from '@/utils/useAutoRefreshSignedUrls';
 import TopTabLayout from '@/components/profile/topTab/_layout';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated'
 
 export default function ProfileId() {
 
@@ -318,19 +323,37 @@ export default function ProfileId() {
     }
   }
 
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const headerTranslate = scrollY.interpolate({
-    inputRange: [0,200],
-    outputRange: [0,-200],
-    extrapolate: 'clamp',
-  })
+  const scrollY = 0;
+  // useRef(new Animated.value(0)).current;
+  // const headerTranslate = scrollY.interpolate({
+  //   inputRange: [0,200],
+  //   outputRange: [0,-200],
+  //   extrapolate: 'clamp',
+  // })
+
+  const HEADER_HEIGHT = 150
+  const screenHeight = Dimensions.get('window').height;
+  
+  const headerVisible = useSharedValue(1)
+  const headerAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, {duration: 200}) }],
+    opacity: withTiming(headerVisible.value, { duration: 200}),
+  }));
+
+  const tabsAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, { duration: 200}),
+      },
+    ],
+  }))
 
   return (
     <>
       {loading ? <Spinner/> :
       <Box style={[styles.container, {}]}>
 
-        <Animated.View style={[styles.container2, {transform: [{translateY: headerTranslate}]} ]}>
+        <Animated.View style={[styles.container2, headerAnimatedStyle ]}>
           <HStack >
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
               <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "friends", user_id : profileDisplayed.user_id}});}}>
@@ -414,9 +437,9 @@ export default function ProfileId() {
                 </HStack>
               </>
             }
-            <Box style={{flex:10, width:"100%"}}>
-              {/* <PostsList height={"100%"} user_id={profileDisplayed.user_id as string} folder_url={profileId as string}/> */}
-              <TopTabLayout scrollY={scrollY}/>
+            <Box style={{width:"100%", height:screenHeight}}>
+                {/* <PostsList height={"100%"} user_id={profileDisplayed.user_id as string} folder_url={profileId as string}/> */}
+              <TopTabLayout scrollY={scrollY} headerVisible={headerVisible} headerHeight={HEADER_HEIGHT} tabsAnimatedStyle={tabsAnimatedStyle}/>
             </Box>
 
           </>:
