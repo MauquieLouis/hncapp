@@ -326,6 +326,7 @@ export default function ProfileId() {
   const screenHeight = Dimensions.get('window').height;
   const HEADER_HEIGHT = screenHeight*0.35
     const headerVisible = useSharedValue(1)
+
   const headerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, {duration: 200}) }],
     opacity: withTiming(headerVisible.value, { duration: 200}),
@@ -338,6 +339,12 @@ export default function ProfileId() {
       },
     ],
   }))
+
+   // 👉 on ne translate plus le TabNavigator (pour éviter le bug de focus)
+  // mais on change son marginTop dynamiquement
+  // const tabsAnimatedStyle = useAnimatedStyle(() => ({
+  //   marginTop: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, { duration: 200 }),
+  // }))
 
   return (
     <>
