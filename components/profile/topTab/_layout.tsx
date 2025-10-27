@@ -41,12 +41,17 @@ export default function TopTabLayout(props: any){
                 paddingTop: props.headerHeight
             }, props.tabsAnimatedStyle]}>
             <TopTabs.Navigator style={{ borderColor:'lime', borderWidth:2, paddingBottom:50}}
-                key={props.headerVisible.value ? 'headerShown' : 'headerHidden'}>
+                key={props.headerVisible.value ? 'headerShown' : 'headerHidden'}
+                screenOptions={{
+                    // swipeEnabled: false
+                    // lazy:true
+                }}
+                >
                 <TopTabs.Screen name="tab1">
-                    { () => <MosaicList scrollY={props.scrollY} headerVisible={props.headerVisible} headerHeight={props.headerHeight}/>}
+                    { () => <MosaicList scrollY={props.scrollY} headerVisible={props.headerVisible} headerHeight={props.headerHeight} isScrolling={props.isScrolling}/>}
                 </TopTabs.Screen>
                 <TopTabs.Screen name="tab2">
-                    { () => <Tab2 scrollY={props.scrollY} headerVisible={props.headerVisible} headerHeight={props.headerHeight}/>}
+                    { () => <Tab2 scrollY={props.scrollY} headerVisible={props.headerVisible} headerHeight={props.headerHeight} isScrolling={props.isScrolling}/>}
                 </TopTabs.Screen>
                 {/* <TopTabs.Screen name="tab1" getComponent={() => require("./mosaicList").default} options={{title:"Tab 1"}}/>
                 <TopTabs.Screen name="tab2" getComponent={() => require("./tab2").default} options={{title:"Tab 2"}}/> */}

@@ -8,6 +8,9 @@ import { Svg, Rect, Circle, LinearGradient, Stop, Defs, Filter, G, FeGaussianBlu
 import * as Haptics from "expo-haptics";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import MosaicList from '@/components/profile/topTab/mosaicList';
+import Tab2 from '@/components/profile/topTab/tab2';
 
 const DRAGGABLE_SIZE = 60;
 const DROP_ZONE = { x: 100, y:400, width: 150, height: 150 };
@@ -267,6 +270,43 @@ export default function AboutScreen() {
       transform: [{ rotate: `${rotate.value}deg`}],
     }))
     
+    const TopTabs = createMaterialTopTabNavigator();
+    const screenHeight = Dimensions.get('window').height;
+      const HEADER_HEIGHT = screenHeight*0.35
+      const headerVisible = useSharedValue(1)
+    
+      const headerAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, {duration: 200}) }],
+        opacity: withTiming(headerVisible.value, { duration: 200}),
+      }));
+    
+      const tabsAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [
+          {
+            translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT+50, { duration: 200}),
+          },
+        ],
+      }))
+
+    return (
+        <TopTabs.Navigator style={{}}
+          key={headerVisible.value ? 'headerShown' : 'headerHidden'}
+          screenOptions={{
+              // swipeEnabled: false
+              // lazy:true
+          }}
+          >
+          <TopTabs.Screen name="tab1">
+              { () => <MosaicList  headerVisible={headerVisible} headerHeight={HEADER_HEIGHT}/>}
+          </TopTabs.Screen>
+          <TopTabs.Screen name="tab2">
+              { () => <Tab2  headerVisible={headerVisible} headerHeight={HEADER_HEIGHT}/>}
+          </TopTabs.Screen>
+          {/* <TopTabs.Screen name="tab1" getComponent={() => require("./mosaicList").default} options={{title:"Tab 1"}}/>
+          <TopTabs.Screen name="tab2" getComponent={() => require("./tab2").default} options={{title:"Tab 2"}}/> */}
+        </TopTabs.Navigator>
+    );
+
     return (
       <>
         <Button title={isAnimating ? "Stop Animation" : "Start Animation"} onPress={toggleAnimation} />

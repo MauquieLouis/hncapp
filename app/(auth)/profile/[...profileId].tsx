@@ -325,12 +325,14 @@ export default function ProfileId() {
 
   const screenHeight = Dimensions.get('window').height;
   const HEADER_HEIGHT = screenHeight*0.35
-    const headerVisible = useSharedValue(1)
+  const headerVisible = useSharedValue(1)
+  const isScrolling = useSharedValue(false);
 
   const headerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, {duration: 200}) }],
     opacity: withTiming(headerVisible.value, { duration: 200}),
   }));
+
 
   const tabsAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -339,12 +341,6 @@ export default function ProfileId() {
       },
     ],
   }))
-
-   // 👉 on ne translate plus le TabNavigator (pour éviter le bug de focus)
-  // mais on change son marginTop dynamiquement
-  // const tabsAnimatedStyle = useAnimatedStyle(() => ({
-  //   marginTop: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, { duration: 200 }),
-  // }))
 
   return (
     <>
@@ -437,7 +433,7 @@ export default function ProfileId() {
             }
             <Box style={{width:"100%", height:screenHeight+screenHeight*0.35}}>
                 {/* <PostsList height={"100%"} user_id={profileDisplayed.user_id as string} folder_url={profileId as string}/> */}
-              <TopTabLayout headerVisible={headerVisible} headerHeight={HEADER_HEIGHT} tabsAnimatedStyle={tabsAnimatedStyle}/>
+              <TopTabLayout headerVisible={headerVisible} headerHeight={HEADER_HEIGHT} tabsAnimatedStyle={tabsAnimatedStyle} isScrolling={isScrolling}/>
             </Box>
 
           </>:
