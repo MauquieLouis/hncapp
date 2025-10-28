@@ -22,7 +22,10 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-} from 'react-native-reanimated'
+} from 'react-native-reanimated';
+
+import { useHeaderHeight } from '@react-navigation/elements';
+
 
 export default function ProfileId() {
 
@@ -233,6 +236,13 @@ export default function ProfileId() {
     }
   }
 
+  const windowHeight = Dimensions.get('window').height;
+  const screenHeight = Dimensions.get('screen').height;
+  const HEADER_HEIGHT = screenHeight*0.27
+  const headerVisible = useSharedValue(1)
+  const isScrolling = useSharedValue(false);
+  const navigationHeaderHeight = useHeaderHeight();
+
   const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -246,7 +256,10 @@ export default function ProfileId() {
     color: '#fff',
   },
   container2: {
-    height:"30%", alignItems:"center", justifyContent:"center"
+    height:HEADER_HEIGHT, alignItems:"center", justifyContent:"center",
+    position:"absolute",
+    top:0, left:0,
+    width:"100%"
   },
   settingsStyle: {
     position:"absolute",
@@ -323,10 +336,12 @@ export default function ProfileId() {
     }
   }
 
-  const screenHeight = Dimensions.get('window').height;
-  const HEADER_HEIGHT = screenHeight*0.35
-  const headerVisible = useSharedValue(1)
-  const isScrolling = useSharedValue(false);
+
+
+  console.log("window height :", windowHeight);
+  console.log("screen height :", screenHeight);
+  console.log("navigation header height :", navigationHeaderHeight);
+  console.log("HEADER HEIGHT :", HEADER_HEIGHT);
 
   const headerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, {duration: 200}) }],
@@ -337,7 +352,7 @@ export default function ProfileId() {
   const tabsAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
       {
-        translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT+50, { duration: 200}),
+        translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, { duration: 200}),
       },
     ],
   }))
@@ -345,9 +360,9 @@ export default function ProfileId() {
   return (
     <>
       {loading ? <Spinner/> :
-      <Box style={[styles.container, {}]}>
+      <Box style={[styles.container, {borderColor:"orange", borderWidth:1}]}>
 
-        <Animated.View style={[styles.container2, headerAnimatedStyle ]}>
+        <Animated.View style={[styles.container2, headerAnimatedStyle, {borderColor:"red", borderWidth:3} ]}>
           <HStack >
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
               <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "friends", user_id : profileDisplayed.user_id}});}}>
@@ -388,55 +403,54 @@ export default function ProfileId() {
           </Box>
           <Box style={styles.bottomLine}></Box>
         </Animated.View>
-        <Box style={{/*borderColor:"green", borderWidth:1,*/ flex:7, alignItems:"center", justifyContent:"center", width:"100%"}}>
-          {areFriends ? <>
-            {isMyProfile ? <></>
+
+        {/* <Box style={{ flex:7, alignItems:"center", justifyContent:"center", width:"100%"}}> */}
+          {areFriends ? 
+            <Box style={{width:"100%", height:screenHeight+navigationHeaderHeight, borderColor:"blue", borderWidth:1, marginTop:HEADER_HEIGHT}}>
+              {/* <PostsList height={"100%"} user_id={profileDisplayed.user_id as string} folder_url={profileId as string}/> */}
+              <TopTabLayout headerVisible={headerVisible} headerHeight={HEADER_HEIGHT} tabsAnimatedStyle={tabsAnimatedStyle} isScrolling={isScrolling}/>
+            {/* {isMyProfile ? <></>
               :
               <>
-                <HStack style={{
-                  /*borderColor:"red", borderWidth:1, */
-                  flex:2, 
-                  alignItems:"center", 
-                  justifyContent:"space-between",
-                  width:"100%",
-                  paddingLeft:"6%",
-                  paddingRight:"6%",
-                  backgroundColor:theme.backgroundColor,
+              <HStack style={{
+                flex:2, 
+                alignItems:"center", 
+                justifyContent:"space-between",
+                width:"100%",
+                paddingLeft:"6%",
+                paddingRight:"6%",
+                backgroundColor:theme.backgroundColor,
                 }} >
-                  <Box>
-                    <TouchableOpacity 
-                      style={{borderColor:theme.profileButton, borderWidth:2, padding:15, borderRadius:10}} 
-                      onPress={() => {
-                        handleOpenConversation();
-                        // router.push(`/conversations/${conversationId}`);
-                      }}>
-                      <HStack>
-                        <Ionicons name="chatbubbles-outline" size={ICON_SIZE-16} color={theme.textColor1} />
-                        <Text style={{color:theme.textColor1, paddingLeft:6}}>Open Discussion</Text>
-                      </HStack>
-                    </TouchableOpacity>
+                <Box>
+                <TouchableOpacity 
+                style={{borderColor:theme.profileButton, borderWidth:2, padding:15, borderRadius:10}} 
+                onPress={() => {
+                  handleOpenConversation();
+                  // router.push(`/conversations/${conversationId}`);
+                  }}>
+                  <HStack>
+                  <Ionicons name="chatbubbles-outline" size={ICON_SIZE-16} color={theme.textColor1} />
+                  <Text style={{color:theme.textColor1, paddingLeft:6}}>Open Discussion</Text>
+                  </HStack>
+                  </TouchableOpacity>
                   </Box>
                   <Box>
-                    <TouchableOpacity 
-                      style={{borderColor:theme.profileButton, borderWidth:2, padding:15, borderRadius:10}} 
-                      onPress={() => {
-                        router.push({pathname: "/profile/createPost", params: { poster_id: profile.user_id, user_id: profileId }});
-                      }}>
-                      <HStack>
-                        <Ionicons name="flask-outline" size={ICON_SIZE-16} color={theme.textColor1} />
-                        <Text style={{color:theme.textColor1, paddingLeft:6}}>Post For Friend</Text>
-                      </HStack>
+                  <TouchableOpacity 
+                  style={{borderColor:theme.profileButton, borderWidth:2, padding:15, borderRadius:10}} 
+                  onPress={() => {
+                    router.push({pathname: "/profile/createPost", params: { poster_id: profile.user_id, user_id: profileId }});
+                    }}>
+                    <HStack>
+                    <Ionicons name="flask-outline" size={ICON_SIZE-16} color={theme.textColor1} />
+                    <Text style={{color:theme.textColor1, paddingLeft:6}}>Post For Friend</Text>
+                    </HStack>
                     </TouchableOpacity>
-                  </Box>
-                </HStack>
-              </>
-            }
-            <Box style={{width:"100%", height:screenHeight+screenHeight*0.35}}>
-                {/* <PostsList height={"100%"} user_id={profileDisplayed.user_id as string} folder_url={profileId as string}/> */}
-              <TopTabLayout headerVisible={headerVisible} headerHeight={HEADER_HEIGHT} tabsAnimatedStyle={tabsAnimatedStyle} isScrolling={isScrolling}/>
+                    </Box>
+                    </HStack>
+                    </>
+                    } */}
             </Box>
-
-          </>:
+          :
           <>
             <HStack style={{
               /*borderColor:"red", borderWidth:1, */
@@ -490,7 +504,7 @@ export default function ProfileId() {
               </Box>
           </>
           }
-        </Box>
+        {/* </Box> */}
       </Box>
   }
     </>

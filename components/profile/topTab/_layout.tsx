@@ -40,7 +40,7 @@ export default function TopTabLayout(props: any){
                 // transform:[{ translateY: tabsTranslate }],
                 paddingTop: props.headerHeight
             }, props.tabsAnimatedStyle]}>
-            <TopTabs.Navigator style={{ borderColor:'lime', borderWidth:2, paddingBottom:50}}
+            <TopTabs.Navigator style={{ borderColor:'lime', borderWidth:3}}
                 key={props.headerVisible.value ? 'headerShown' : 'headerHidden'}
                 screenOptions={{
                     // swipeEnabled: false
