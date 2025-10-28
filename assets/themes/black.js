@@ -3,7 +3,7 @@ BlackStyle={
     backgroundColor1:'#18181b',
     backgroundColor2:'#27272a',
     specialBackground1:'#71717a',
-    iconFocusedColor:'#fafafa',
+    iconFocusedColor:'#7b9effff',
     iconNotFocusedColor:'#a1a1aa',
     iconColor:'#94a3b8',
     iconColor2:'#e2e8f0',

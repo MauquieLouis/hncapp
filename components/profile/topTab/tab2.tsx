@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { Text } from "@/components/ui/text";
-import { ScrollView } from "react-native";
 import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
-import { useIsFocused, useFocusEffect, useNavigation } from '@react-navigation/native'
+import { useFocusEffect } from '@react-navigation/native'
 
 const Tab2 = (props: any) => {
 

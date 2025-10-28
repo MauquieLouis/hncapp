@@ -38,7 +38,7 @@ const CreatePost = () => {
     }
     }, []);
 
-    const { poster_id, user_id } = useLocalSearchParams();
+    const { user_id } = useLocalSearchParams();
     const { profile } = useUserContext();
 
     const postPost = async () => {

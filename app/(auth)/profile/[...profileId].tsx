@@ -43,7 +43,7 @@ export default function ProfileId() {
     const router = useRouter();
 
     // useAutoRefreshSignedUrls()
-    const ICON_SIZE = 32;
+    const ICON_SIZE = 28;
 
     useEffect(() => {
       if(profile.user_id == profileId){
@@ -57,6 +57,7 @@ export default function ProfileId() {
         // getOneOnOneConversation();
         //Fetch the profile from the database
       }
+      console.log("profileId param :", profileId);
       getFriendsAndFollowerNumber(profileId);
     }, []);
 
@@ -79,23 +80,15 @@ export default function ProfileId() {
     const getFriendsAndFollowerNumber = async (profileId: any) => {
       try{
         setLoading(true);
-        const { data: friends, error: friends_error } = await supabase
-          .from('friends')
-          .select(`
-            *
-          `)
-          .or(`user_id_1.eq.${profileId},user_id_2.eq.${profileId}`)
-          .eq('status', 'accepted');
+        const { data: friends, error: friends_error } = await supabase.rpc('get_social_counts',
+          { uid: profileId[0] }
+        );
         if(friends_error){
-          console.error("Error whent fetching friends in getFriendsAndFollowerNumber Function in profileList.tsx :", friends_error);
+          console.error("Error when fetching friends in getFriendsAndFollowerNumber Function in profileList.tsx :", friends_error);
         }else{
-          setFriendsNumber(friends.length);
-        }
-        const { data: followers, error: followers_error } = await supabase.from("followers").select("*").eq("following_id", profileId);
-        if(followers_error){
-          console.error("Error whent fetching followers in getFriendsAndFollowerNumber Function in profileList.tsx :", followers_error);
-        }else{
-          setFollowersNumber(followers.length);
+          console.log("FRIENDS DATA FROM RPC :", friends);
+          setFriendsNumber(friends[0].friends_count);
+          setFollowersNumber(friends[0].followers_count);
         }
       }catch(e){
         console.error("Error fetching friends and followers in getFriendsAndFollowerNumber function in profileList.tsx :", e);
@@ -256,10 +249,14 @@ export default function ProfileId() {
     color: '#fff',
   },
   container2: {
-    height:HEADER_HEIGHT, alignItems:"center", justifyContent:"center",
+    height:HEADER_HEIGHT, 
+    alignItems:"center", 
+    justifyContent:"center",
     position:"absolute",
-    top:0, left:0,
-    width:"100%"
+    top:0, 
+    left:0,
+    width:"100%",
+    zIndex:10
   },
   settingsStyle: {
     position:"absolute",
@@ -279,7 +276,22 @@ export default function ProfileId() {
     color: theme.textColor2,
   },
   bottomLine:{
-    borderBottomColor:"white", borderBottomWidth:1, width:"90%",marginLeft:'5%'
+    borderBottomColor:"white", borderBottomWidth:1, width:"90%",marginLeft:'0%'
+  },
+  profileButtons: {
+    padding:5, 
+    borderColor:theme.borderColorLight, 
+    borderWidth:2, 
+    borderRadius:5
+  },
+  profileButtonZone: {
+    marginBottom:30
+  },
+  privateZoneStyle: {
+    width:"100%",
+    backgroundColor:theme.backgroundColor2, 
+    justifyContent:"center", 
+    alignItems:"center"
   }
 });
 
@@ -336,16 +348,9 @@ export default function ProfileId() {
     }
   }
 
-
-
-  console.log("window height :", windowHeight);
-  console.log("screen height :", screenHeight);
-  console.log("navigation header height :", navigationHeaderHeight);
-  console.log("HEADER HEIGHT :", HEADER_HEIGHT);
-
   const headerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{translateY: withTiming(headerVisible.value ? 0 : -HEADER_HEIGHT, {duration: 200}) }],
-    opacity: withTiming(headerVisible.value, { duration: 200}),
+    // opacity: withTiming(headerVisible.value, { duration: 200}),
   }));
 
 
@@ -360,11 +365,35 @@ export default function ProfileId() {
   return (
     <>
       {loading ? <Spinner/> :
-      <Box style={[styles.container, {borderColor:"orange", borderWidth:1}]}>
+      <Box style={[styles.container, {}]}>
 
-        <Animated.View style={[styles.container2, headerAnimatedStyle, {borderColor:"red", borderWidth:3} ]}>
+        <Animated.View 
+          style={[styles.container2, headerAnimatedStyle, {/*borderColor:"red", borderWidth:3*/} ]}
+          pointerEvents="box-none"
+          >
           <HStack >
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
+                { isMyProfile ? 
+                  <></>
+                : 
+                  <Box style={[styles.profileButtonZone]}>
+                    { areFriends ? 
+                      <TouchableOpacity style={[styles.profileButtons]} onPress={() => {
+                        router.push({pathname: "/profile/createPost", params: { user_id: profileId }})
+                        /*router.push({pathname: "/profile/createPost", params: { poster_id: profile.user_id, user_id: profileId }});*/}}>
+                        <Ionicons name={"flask-outline"} size={ICON_SIZE} color={theme.iconColor2}/>
+                      </TouchableOpacity>
+                    :
+                      <TouchableOpacity style={[styles.profileButtons]} onPress={() => {sendOrUnsedFriendRequest()}}>
+                        {canRequestFriendship ? 
+                        <Ionicons name={"person-add-outline"} size={ICON_SIZE} color={theme.iconColor2}/>
+                        :
+                        <Ionicons name="close-circle-outline" size={ICON_SIZE} color={theme.iconColor2} />
+                        }
+                      </TouchableOpacity>
+                    }
+                  </Box>
+                }  
               <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "friends", user_id : profileDisplayed.user_id}});}}>
                 <Text style={styles.text}> {friendsNumber}</Text>
                 <Text style={styles.text}> FRIENDS</Text>
@@ -392,6 +421,21 @@ export default function ProfileId() {
               }
             </Box>
             <Box style={{/*borderColor:"orange", borderWidth:1,*/ justifyContent:"flex-end", flex:3, alignItems:"center"}}>
+              { isMyProfile ? 
+                  <></>
+                : 
+                  <Box style={[styles.profileButtonZone]}>
+                    { areFriends ? 
+                      <TouchableOpacity style={[styles.profileButtons]} onPress={() => {handleOpenConversation();}}>
+                        <Ionicons name={"chatbubbles-outline"} size={ICON_SIZE} color={theme.iconColor2}/>
+                      </TouchableOpacity>
+                    :
+                      <TouchableOpacity style={[styles.profileButtons]} onPress={() => {console.log("PRESSBTN4")}}>
+                        <Ionicons name={"people-outline"} size={ICON_SIZE} color={theme.iconColor2}/>
+                      </TouchableOpacity>
+                    }
+                  </Box>
+                }  
               <TouchableOpacity onPress={() => {router.push({pathname: "/profile/profileList", params: { type : "follower_id", user_id : profileDisplayed.user_id}});}}>
                 <Text style={styles.text}> {followersNumber}</Text>
                 <Text style={styles.text}>FOLLOWERS</Text>
@@ -404,11 +448,16 @@ export default function ProfileId() {
           <Box style={styles.bottomLine}></Box>
         </Animated.View>
 
-        {/* <Box style={{ flex:7, alignItems:"center", justifyContent:"center", width:"100%"}}> */}
           {areFriends ? 
-            <Box style={{width:"100%", height:screenHeight+navigationHeaderHeight, borderColor:"blue", borderWidth:1, marginTop:HEADER_HEIGHT}}>
+            <Box style={{width:"100%", height:screenHeight+navigationHeaderHeight, marginTop:HEADER_HEIGHT}}>
               {/* <PostsList height={"100%"} user_id={profileDisplayed.user_id as string} folder_url={profileId as string}/> */}
-              <TopTabLayout headerVisible={headerVisible} headerHeight={HEADER_HEIGHT} tabsAnimatedStyle={tabsAnimatedStyle} isScrolling={isScrolling}/>
+              <TopTabLayout 
+                headerVisible={headerVisible} 
+                headerHeight={HEADER_HEIGHT} 
+                tabsAnimatedStyle={tabsAnimatedStyle} 
+                isScrolling={isScrolling}
+                profileId={profileId[0]}
+              />
             {/* {isMyProfile ? <></>
               :
               <>
@@ -452,8 +501,7 @@ export default function ProfileId() {
             </Box>
           :
           <>
-            <HStack style={{
-              /*borderColor:"red", borderWidth:1, */
+            {/* <HStack style={{
               flex:2, 
               alignItems:"center", 
               justifyContent:"space-around",
@@ -462,13 +510,12 @@ export default function ProfileId() {
             }}
             space="sm"
             >
-              <Box style={{/*borderColor:"cyan", borderWidth:1*/}}>
+              <Box style={{}}>
                 <TouchableOpacity 
                   style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}} 
                   onPress={() => {
                     sendOrUnsedFriendRequest()
                   }}>
-                  {/* <Text style={{color:"white"}}>Ask Friend</Text> */}
                   {canRequestFriendship ? 
                   <Ionicons name="person-add-outline" size={ICON_SIZE} color="white" />
                   :
@@ -476,32 +523,28 @@ export default function ProfileId() {
                   }
                 </TouchableOpacity>
               </Box>
-              <Box style={{/*borderColor:"cyan", borderWidth:1*/}}>
+              <Box style={{}}>
                 <TouchableOpacity 
                   style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}}
                   onPress={() => {
                   }}>
-                  {/* <Text style={{color:"white"}}>Follow request</Text> */}
                   <Ionicons name="people-outline" size={ICON_SIZE} color="white" />
                 </TouchableOpacity>
               </Box>
-              <Box style={{/*borderColor:"cyan", borderWidth:1*/}}>
+              <Box style={{}}>
                 <TouchableOpacity 
                   style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}}
                   onPress={() => {
                   }}>
                   <Ionicons name="chatbubbles-outline" size={ICON_SIZE} color="white" />
-                  {/* <Text style={{color:"white"}}>3</Text> */}
                 </TouchableOpacity>
               </Box>
             </HStack>
-            <Box style={{/*borderColor:"green", borderWidth:1, */
-              flex:6, 
-              width:"100%",
-              backgroundColor:"#25292e", justifyContent:"center", alignItems:"center"}}>
-                <Ionicons name="lock-closed-outline" size={54} color="white" />
-                <Text style={{color:"white"}}>Private Account</Text>
-              </Box>
+             */}
+            <Box style={[styles.privateZoneStyle]}>
+              <Ionicons name="lock-closed-outline" size={54} color={theme.iconColor2} />
+              <Text style={{color:theme.textColor1}}>Private Account</Text>
+            </Box>
           </>
           }
         {/* </Box> */}

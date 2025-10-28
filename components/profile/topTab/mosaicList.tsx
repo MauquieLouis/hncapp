@@ -25,6 +25,7 @@ const MosaicList = (props: any) => {
         },
         onBeginDrag: () => {
             props.isScrolling.value = true;
+            //When scrollBegin
         },
         onEndDrag: () => {
             props.isScrolling.value = false;
@@ -65,23 +66,26 @@ const MosaicList = (props: any) => {
             //DONT FORGET TO UNCOMMENT 'and pa.position = 1' IN THE SUPABASE RPC FUNCTION otherwise, it migth be a random picture.
             const { data, error } = await supabase
             .rpc('get_user_posts', {
-                user_uuid: '0ea25b59-40fb-448a-ab5d-b9b72c419130',
+                user_uuid: props.profileId,
                 limit_count: pageSize,
                 offset_count: (page - 1) * pageSize
             });
             if (error) {
                 console.error(error);
             } else {
-                // console.log("DATA ;", data);
+                console.log("DATA ;", data);
                 const attachmentUrls = data
                 .map((post: { attachment_url: any; }) => post.attachment_url)
-                .filter((url: null) => url !== null).map((url: string) => `${profile?.user_id}/`+url);
+                .filter((url: null) => url !== null).map((url: string) => `${props.profileId}/`+url);
                 // console.log("Attachment URLs:", attachmentUrls);
                 const { data: signedUrlsData, error: signedUrlsError } = await supabase.storage.from('posts').createSignedUrls(attachmentUrls, 3600);
                 if(signedUrlsError){
                     console.error("Error while creating signed URLs:", signedUrlsError);
                 }else{
-                    // console.log("Signed URLs data:", signedUrlsData);
+                    if(signedUrlsData[0].error){
+                        console.error("Signed URL error for first item:", signedUrlsData[0].error);
+                    }
+                    console.log("Signed URLs data:", signedUrlsData);
                     const signedUrlMap: Record<string, string> = {};
                         signedUrlsData.forEach(entry => {
                             const path = entry.path;
@@ -103,7 +107,7 @@ const MosaicList = (props: any) => {
                     });
                     const groupedByThree = groupByThree(finalDataWithSignedUrls);
                     setMosaicData(groupedByThree);
-                    // console.log("Final Data with signed URLs:", finalDataWithSignedUrls);
+                    console.log("Final Data with signed URLs:", finalDataWithSignedUrls);
                 }
             }
         }catch(error: unknown){
@@ -155,7 +159,7 @@ const MosaicList = (props: any) => {
             data={mosaicData}
             renderItem={renderItem}
             ListFooterComponent={<HStack style={{/*borderColor:'red', borderWidth:1*/}} key={uuidv6()}>
-                <TouchableOpacity onPress={() => {}} style={{width:widthScreen/3,height:widthScreen/2, borderColor:'gray', borderWidth:1}}>
+                <TouchableOpacity onPress={() => {}} style={{width:widthScreen/3,height:widthScreen/2.4, borderColor:'gray', borderWidth:1}}>
                 </TouchableOpacity>
         </HStack>}
         />
