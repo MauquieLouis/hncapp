@@ -335,9 +335,9 @@ const PostElemInPostsList = (props: any) => {
                     }}
                     renderItem={renderItem({ rounded: true, imagesArray: urls})}
                     onConfigurePanGesture={(gesture) => {
-                    gesture.activeOffsetX([-50,50]);
-                    return gesture;
-                }}
+                        gesture.activeOffsetX([-50,50]);
+                        return gesture;
+                    }}
                 />
                 <Pagination.Custom<{ color: string }>
                     progress={progress}

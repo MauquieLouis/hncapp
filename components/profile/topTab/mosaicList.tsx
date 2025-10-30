@@ -10,6 +10,8 @@ import { Image } from "expo-image";
 import { v6 as uuidv6 } from 'uuid';
 import 'react-native-get-random-values';
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { usePostStore } from "@/contexts/store";
 
 const MosaicList = (props: any) => {
 
@@ -73,7 +75,7 @@ const MosaicList = (props: any) => {
             if (error) {
                 console.error(error);
             } else {
-                console.log("DATA ;", data);
+                // console.log("DATA ;", data);
                 const attachmentUrls = data
                 .map((post: { attachment_url: any; }) => post.attachment_url)
                 .filter((url: null) => url !== null).map((url: string) => `${props.profileId}/`+url);
@@ -82,29 +84,51 @@ const MosaicList = (props: any) => {
                 if(signedUrlsError){
                     console.error("Error while creating signed URLs:", signedUrlsError);
                 }else{
-                    if(signedUrlsData[0].error){
-                        console.error("Signed URL error for first item:", signedUrlsData[0].error);
+                    // if (!data) return;
+                    const allAttachmentUrls = data
+                    .flatMap((post: { attachment_urls: string[] }) =>
+                        (post.attachment_urls || [])
+                        .filter(url => url !== null)
+                        .map(url => `${props.profileId}/${url}`)
+                    );
+
+                    // 2️⃣ Créer les signed URLs pour toutes les attachments
+                    const { data: signedUrlsData, error: signedUrlsError } = await supabase
+                    .storage
+                    .from('posts')
+                    .createSignedUrls(allAttachmentUrls, 3600);
+
+                    if (signedUrlsError) {
+                    console.error("Error while creating signed URLs:", signedUrlsError);
+                    return;
                     }
-                    console.log("Signed URLs data:", signedUrlsData);
+
+                    // 3️⃣ Construire une map (clé = chemin complet du fichier → valeur = signed URL)
                     const signedUrlMap: Record<string, string> = {};
-                        signedUrlsData.forEach(entry => {
-                            const path = entry.path;
-                            if (!path) return;
-                            const pathParts = path.split('/');
-                            const fileName = pathParts[pathParts.length - 1];
-                            if (entry.signedUrl) {
-                            Image.prefetch(entry.signedUrl);
-                            signedUrlMap[fileName] = entry.signedUrl;
-                        }
+                    signedUrlsData?.forEach(entry => {
+                    const path = entry.path;
+                    if (!path) return;
+                    if (entry.signedUrl) {
+                        // Préchargement pour fluidifier le rendu
+                        Image.prefetch(entry.signedUrl);
+                        signedUrlMap[path] = entry.signedUrl;
+                    }
                     });
-                    const finalDataWithSignedUrls = data;
-                    finalDataWithSignedUrls.forEach((attachment: { attachment_url: string; signedUrl: string; }) => {
-                        // console.log("attach : ", attachment);
-                        const fileName = attachment.attachment_url;
-                        if (signedUrlMap[fileName]) {
-                            attachment.signedUrl = signedUrlMap[fileName];
-                        }
+
+                    // 4️⃣ Remplacer les URLs normales par les signed URLs dans chaque post
+                    const finalDataWithSignedUrls = data.map((post: { attachment_urls: string[] }) => {
+                    const signedUrls = (post.attachment_urls || []).map(url => {
+                        const fullPath = `${props.profileId}/${url}`;
+                        return signedUrlMap[fullPath] || null;
+                    }).filter(Boolean); // Supprime les éventuels null
+
+                    return {
+                        ...post,
+                        signedUrls, // ✅ tableau de signed URLs
+                    };
                     });
+
+                    // 5️⃣ Grouper par 3 pour ton affichage mosaïque
                     const groupedByThree = groupByThree(finalDataWithSignedUrls);
                     setMosaicData(groupedByThree);
                     console.log("Final Data with signed URLs:", finalDataWithSignedUrls);
@@ -135,8 +159,17 @@ const MosaicList = (props: any) => {
                 // <Text key={subItem.post_id} style={{color:"green", marginRight:10}}>
                 //   {`#${subItem.attachments_count}`}
                 // </Text>
-                <TouchableOpacity key={subItem.post_id} onPress={() => {}}>
-                    <Image source={subItem.signedUrl} style={{width:widthScreen/3,height:widthScreen/2}}/>
+                <TouchableOpacity key={subItem.post_id} onPress={() => {
+                    if (profile) {
+                        //Maybe faire un prefetch ici des images du post ici
+                        // console.log("SubItem clicked:", subItem);
+                        usePostStore.getState().setSelectedPost(subItem);
+                        // console.log("post :", usePostStore.getState().selectedPost);
+                        router.push(`/profile/post/${subItem.post_id}`);
+                    }
+                }}>
+                    <Image source={subItem.signedUrls[0]} style={{width:widthScreen/3,height:widthScreen/2}} 
+                        placeholder={"../../../assets/images/adaptive-icon.png"}/>
                     {subItem.attachments_count > 1 ?
                     <Text style={{position:'absolute', top:5, right:5, color:'white', backgroundColor:'rgba(0,0,0,0.3)', paddingHorizontal:2, borderRadius:6, fontSize:12}}>
                         <Ionicons name={"albums"} color={"#DEDEDE"} size={18}/>
