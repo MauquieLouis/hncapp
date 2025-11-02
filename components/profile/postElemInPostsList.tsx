@@ -21,8 +21,8 @@ import { Image} from 'expo-image';
 import { Actionsheet, ActionsheetBackdrop, ActionsheetContent, ActionsheetDragIndicatorWrapper, ActionsheetDragIndicator } from '../ui/actionsheet';
 import { FormControl, FormControlLabel, FormControlLabelText } from '../ui/form-control';
 import { Button } from '../ui/button';
-import CommentActionSheet from './commentActionSheet';
-import LikeOrDislikeActionSheet from './likeOrDislikeActionSheet';
+import CommentActionSheet from '../posts/commentActionSheet';
+import LikeOrDislikeActionSheet from '../posts/likeOrDislikeActionSheet';
 
 import {sendPhoneNotification} from '@/components/notifications/notificationSender';
 import { useSignedUrlContexrt } from '@/contexts/SignedUrlContext';

@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/libs/initSupabase';
 import { useUserContext } from '@/contexts/userContext';
 import { Spinner } from '../ui/spinner';
-import Avatar from './avatar';
+import Avatar from '../profile/avatar';
 
 import {sendPhoneNotification} from '@/components/notifications/notificationSender';
 
@@ -116,7 +116,7 @@ const ActionSheetForm = (props: {
 }
 
 
-const CommentActionSheet = (props: { modalComments: boolean | undefined; onCloseModalComments: (() => any) | undefined; item: { id: any; }; setCommentNumber: any; token: any}) => {
+const CommentActionSheet = (props: { modalComments: boolean | undefined; onCloseModalComments: (() => any) | undefined; item: { id: any, user_id: any; }; setCommentNumber: any; token: any}) => {
     const [ loading, setLoading ] = useState(false);
     const [comments, setComments] = useState<any[]>([]);
 
@@ -130,7 +130,7 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
     const fetchComments = async () => {
         try{
             setLoading(true);
-            const { data, error } = await supabase.from('comments').select('*').eq('post_id', props.item.id);
+            const { data, error } = await supabase.from('comments').select('*').eq('post_id', props.item.post_id);
             if (error) {
                 console.error("Error fetching comments in fetchComments function in components/profile/postElemInPostsList.tsx", error);
             } else {

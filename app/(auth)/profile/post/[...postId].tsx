@@ -14,11 +14,12 @@ import PostAction from "@/components/posts/postAction";
 export default function ProfileId(){
 
     const { postId } = useLocalSearchParams();
-    const { selectedPost } = usePostStore();
-    // const { currentPost } = usePostStore();
-    // const selectedPost = currentPost();
     const { theme } = useUserContext();
+    
+    // const { selectedPost } = usePostStore();
+    const selectedPost = usePostStore((state) => state.getPost(postId[0] as string));
     const post = selectedPost?.post_id === postId[0] ? selectedPost : null;
+    
 
     console.log("DATASSSS :",postId[0]);
     console.log("selectedPost :", selectedPost);
@@ -83,14 +84,6 @@ export default function ProfileId(){
 
     return(
         <Box style={styles.mainContainer}>
-            <Box>
-                <Text>POST ID: {postId[0]}</Text>
-            </Box>
-            {/* <Image 
-                source={post.signedUrls[0]} 
-                style={{width:"100%",aspectRatio:1}}
-                transition={250}
-            /> */}
             <Carousel
                 ref={ref}
 				loop={false}

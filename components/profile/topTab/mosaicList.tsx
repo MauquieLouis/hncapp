@@ -20,6 +20,7 @@ const MosaicList = (props: any) => {
     const scrollRef = useRef(null);
     const scrollY = useSharedValue(0);
     const { profile } = useUserContext();
+    const{ setPost } = usePostStore.getState();
 
     const onScroll = useAnimatedScrollHandler({
         onScroll: (event) => {
@@ -131,7 +132,7 @@ const MosaicList = (props: any) => {
                     // 5️⃣ Grouper par 3 pour ton affichage mosaïque
                     const groupedByThree = groupByThree(finalDataWithSignedUrls);
                     setMosaicData(groupedByThree);
-                    console.log("Final Data with signed URLs:", finalDataWithSignedUrls);
+                    // console.log("Final Data with signed URLs:", finalDataWithSignedUrls);
                 }
             }
         }catch(error: unknown){
@@ -154,17 +155,12 @@ const MosaicList = (props: any) => {
     const numbers: number[] = Array.from({ length: 150 }, (_, i) => i + 1);
     const widthScreen = Dimensions.get('window').width;
     const renderItem = ({ item }: any) => (
-        <HStack style={{/*borderColor:'red', borderWidth:1*/}} key={uuidv6()}>
+        <HStack key={uuidv6()}>
             {item.map((subItem: any) => (
-                // <Text key={subItem.post_id} style={{color:"green", marginRight:10}}>
-                //   {`#${subItem.attachments_count}`}
-                // </Text>
                 <TouchableOpacity key={subItem.post_id} onPress={() => {
                     if (profile) {
                         //Maybe faire un prefetch ici des images du post ici
-                        // console.log("SubItem clicked:", subItem);
-                        usePostStore.getState().setSelectedPost(subItem);
-                        // console.log("post :", usePostStore.getState().selectedPost);
+                        setPost(subItem);
                         router.push(`/profile/post/${subItem.post_id}`);
                     }
                 }}>
@@ -173,7 +169,6 @@ const MosaicList = (props: any) => {
                     {subItem.attachments_count > 1 ?
                     <Text style={{position:'absolute', top:5, right:5, color:'white', backgroundColor:'rgba(0,0,0,0.3)', paddingHorizontal:2, borderRadius:6, fontSize:12}}>
                         <Ionicons name={"albums"} color={"#DEDEDE"} size={18}/>
-                        {/* {`+${subItem.attachments_count}`} */}
                     </Text>
                     :
                     <></>
@@ -191,7 +186,7 @@ const MosaicList = (props: any) => {
             onScroll={onScroll}
             data={mosaicData}
             renderItem={renderItem}
-            ListFooterComponent={<HStack style={{/*borderColor:'red', borderWidth:1*/}} key={uuidv6()}>
+            ListFooterComponent={<HStack key={uuidv6()}>
                 <TouchableOpacity onPress={() => {}} style={{width:widthScreen/3,height:widthScreen/2.4, borderColor:'gray', borderWidth:1}}>
                 </TouchableOpacity>
         </HStack>}

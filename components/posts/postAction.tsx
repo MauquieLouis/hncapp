@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import { HStack } from "@/components/ui/hstack";
@@ -8,12 +8,15 @@ import { supabase } from "@/libs/initSupabase";
 import { sendPhoneNotification } from "../notifications/notificationSender";
 import { useUserContext } from "@/contexts/userContext";
 import Avatar from "../profile/avatar";
-import { Center } from "../ui/center";
+import { Center } from "@/components/ui/center";
 import { router } from "expo-router";
+import UniversarlAudioPlayer from "@/components/files/universalAudioPlayer";
+import CaptionSection from "./captionText";
+import LikeOrDislikeActionSheet from "./likeOrDislikeActionSheet";
+import CommentActionSheet from "./commentActionSheet";
 
 const PostAction = (props: any) => {
 
-    const [ urls, setUrls ] = useState<string[]>([]);
     const [ audioUrl, setAudioUrl ] = useState<string | null>(null);
     const [ isLiked, setIsLiked ] = useState<boolean | null >(null);
     const [ text, setText ] = useState("");
@@ -30,10 +33,42 @@ const PostAction = (props: any) => {
     const { profile, theme } = useUserContext();
     const { post } = props;
 
+    const onCloseLikeActionSheet = () => {
+        setLikeActionSheet(false);
+    }
+    const onCloseDislikeActionSheet = () => {
+        setDislikeActionSheet(false);
+    }
+    const onCloseModalComments = () => {
+        setModalComments(false);
+    }
 
     useEffect(()=> {
         getLikeAndDislikeCounts();
+        getAudioIfExists();
     }, []);
+
+    const getAudioIfExists = async () => {
+        try{
+            console.log("GET AUDIO !!!")
+            if(post.file_url){
+                const {data : audio_data, error: audio_error} = await supabase.storage.from('posts').createSignedUrl(post.file_url,1200);
+                if(audio_error){
+                    console.error("Error when getting audio url in getAudioIfExists function in components/profile/postElemInPostsList.tsx", audio_error);
+                }else{
+                    setAudioUrl(audio_data?.signedUrl ?? null);
+                }
+            }else{
+                return;
+            }
+        }catch(error){
+            if(error){
+                console.error("Error in getAudioIfExists function in components/profile/postElemInPostsList.tsx", error);
+            }
+        }finally{
+
+        }
+    }
 
     const getLikeAndDislikeCounts = async () => {
             try{
@@ -167,22 +202,35 @@ const PostAction = (props: any) => {
     const styles = StyleSheet.create({
         IconText: {
             fontSize: 12,
-            color: "grey",
-            position: "absolute",
-            bottom: -6,
-            right: -12,
-            // borderColor:"red",
-            // borderWidth:1,
+            color: theme.textColor1,
+        },
+        TouchableIconText:{
+            padding:0, 
+            margin:0, 
+            justifyContent:"center", 
+            alignItems:"center", 
+            width:25
         },
         HStackSection:{
+            paddingLeft:10,
+            paddingTop:6
+        },
+        TopHStackSection:{
             paddingLeft:10,
             paddingBottom:12,
         },
         addedByText:{
             paddingHorizontal:8,
             textAlignVertical:"bottom",
-            color: theme.textColor1
-        }
+            color: theme.textColor1,
+            fontWeight:"800",
+        },
+        captionText:{
+            paddingHorizontal:12,
+            textAlignVertical:"bottom",
+            color: theme.textColor1,
+            fontWeight:"200"
+        },
     });
     const icon_size = 32;
     const notSelectedIconColor= theme.iconNotFocusedColor;
@@ -191,7 +239,7 @@ const PostAction = (props: any) => {
 
     return(
         <Box>
-            <HStack id="icon-action-post" space={"4xl"} style={styles.HStackSection}>
+            <HStack id="icon-action-post" space={"lg"} style={styles.TopHStackSection}>
                 <Box>
                     <HStack id="like-post-action">
                         <TouchableOpacity onPress={async()=> {
@@ -207,7 +255,7 @@ const PostAction = (props: any) => {
                         </TouchableOpacity>
                         {likeNumber > 0 ? 
                             <TouchableOpacity 
-                            style={{padding:0, margin:0, justifyContent:"center", alignItems:"center"}} 
+                            style={styles.TouchableIconText}
                             onPress={() => {setLikeActionSheet(true);}}>
                                 <Text style={styles.IconText}>{likeNumber}</Text>
                             </TouchableOpacity>
@@ -229,7 +277,7 @@ const PostAction = (props: any) => {
                         </TouchableOpacity>
                         {dislikeNumber > 0 ?
                             <TouchableOpacity 
-                            style={{padding:0, margin:0, justifyContent:"center", alignItems:"center"}} 
+                            style={styles.TouchableIconText}
                             onPress={() => {setDislikeActionSheet(true);}}>
                                 <Text style={styles.IconText}>{dislikeNumber}</Text>
                             </TouchableOpacity>
@@ -239,15 +287,18 @@ const PostAction = (props: any) => {
                 <Box>
                     <HStack id="comment-post-action">
                         <TouchableOpacity onPress={() => {
-                            console.log("COMMENT ACTION HERE")
+                            setModalComments(true);
                         }}>
+                            <HStack>
+
                             <Ionicons name="chatbubble-outline" size={32} color="grey" />
+                            {commentNumber > 0 ?
+                                <Box style={styles.TouchableIconText}>
+                                    <Text style={styles.IconText}>{commentNumber}</Text>
+                                </Box>
+                            :<></>}
+                            </HStack>
                         </TouchableOpacity>
-                        {commentNumber > 0 ?
-                            <Box style={{position:"absolute", borderColor:theme.borderColorDark, borderWidth:2, right:-13, top:-7, borderRadius:10, padding:2}}>
-                                <Text style={styles.IconText}>{commentNumber}</Text>
-                            </Box>
-                        :<></>}
                     </HStack>
                 </Box>
             </HStack>
@@ -263,7 +314,24 @@ const PostAction = (props: any) => {
                         <Text style={styles.addedByText}>{post.added_by_name}</Text>
                     </HStack>
                 </TouchableOpacity>
+                <Box id="audio-zone" >
+                    {audioUrl ?
+                        <UniversarlAudioPlayer url={audioUrl}/>
+                        :
+                        <></>
+                    }
+                </Box>
             </HStack>
+             <HStack id="caption-section">
+                <CaptionSection caption={post.caption} />
+            </HStack>
+            <LikeOrDislikeActionSheet isOpen={likeActionSheet} onClose={onCloseLikeActionSheet} post_id={post.post_id} like={true}/>
+            <LikeOrDislikeActionSheet isOpen={dislikeActionSheet} onClose={onCloseDislikeActionSheet} post_id={post.post_id} like={false}/>
+            {/* <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding': undefined}
+            > */}
+                <CommentActionSheet modalComments={modalComments} onCloseModalComments={onCloseModalComments} item={post} setCommentNumber={setCommentNumber} token={notificationToken}/>
+            {/* </KeyboardAvoidingView> */}
         </Box>
     )
 }

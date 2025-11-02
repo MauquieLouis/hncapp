@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/libs/initSupabase';
 import { useUserContext } from '@/contexts/userContext';
 import { Spinner } from '../ui/spinner';
-import Avatar from './avatar';
+import Avatar from '../profile/avatar';
 
 
 const LikeOrDislikeActionSheet = (props: { post_id: any; like: any; isOpen: boolean | undefined; onClose: (() => any) | undefined; }) => {
@@ -62,7 +62,7 @@ const LikeOrDislikeActionSheet = (props: { post_id: any; like: any; isOpen: bool
     });
 
     const renderProfile = ({ item }: { item: any }) => (
-            <Box style={styles.boxStyle}>
+            // <Box style={styles.boxStyle}>
                 <HStack space="sm" style={{ alignItems: "center" }}>
                     <Avatar user_id={item.user_id}/>
                     <VStack>
@@ -70,7 +70,7 @@ const LikeOrDislikeActionSheet = (props: { post_id: any; like: any; isOpen: bool
                     <Text style={styles.commentText}>{item.firstname} {item.lastname}</Text>
                     </VStack>
                 </HStack>
-            </Box>
+            // </Box>
         );
 
     const iconColor=theme.iconColor
@@ -95,7 +95,7 @@ const LikeOrDislikeActionSheet = (props: { post_id: any; like: any; isOpen: bool
                             <HStack space="sm" style={{ alignItems: "center" }}>
                                 <Ionicons name="skull-outline" size={32} color={iconColor} />
                                 <Text style={styles.titleText}>
-                                    Dislike
+                                    SKULL SKULL SKULL
                                 </Text>
                             </HStack>
                         }
