@@ -19,6 +19,7 @@ import AudioAnimRecorder from "@/components/files/AudioAnimRecorder";
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import UniversarlAudioPlayer from "@/components/files/universalAudioPlayer";
+import { generateBlurHashFromUri } from "@/components/files/imageEditor";
 
 
 const CreatePost = () => {
@@ -40,6 +41,41 @@ const CreatePost = () => {
 
     const { user_id } = useLocalSearchParams();
     const { profile } = useUserContext();
+
+    const generateBlurhash = async (url: string, post_attachment_id: string, asset: any) => {
+        try{
+            // console.log("GETTING SIGNED URL FOR :", user_id+"/"+url);
+            const { data: signedUrlData, error: signedUrlError } = await supabase
+                .storage
+                .from('posts')
+                .createSignedUrl(user_id+"/"+url, 3600);
+            if(signedUrlError){
+                console.error("Error when getting signedUrl in generateBlurhash function in createPost.tsx", signedUrlError);
+            }
+
+            console.log("INSIDE BLURHAHS")
+            if(signedUrlData){
+                console.log("ASSET before blur:", asset);
+                const data = await generateBlurHashFromUri(signedUrlData?.signedUrl,asset.width, asset.height, 32,4,4);
+                // const { data, error } = await supabase.functions.invoke('blurHash-Generation', {
+                //     body: {imageUrl: signedUrlData?.signedUrl},
+                // });
+                // if(error) throw error;
+
+                const { data: edited_attachment, error: error_attachment } = await supabase
+                    .from('post_attachments')
+                    .update({'blurhash' : data})
+                    .eq('id',post_attachment_id).select();
+
+                if(error_attachment){
+                    console.error("Error when editing attachments", post_attachment_id," in generateBlurhash function in file /profile/createPost.tsx", error_attachment);
+                }
+                return data;
+            }
+        }catch(error: unknown){
+            console.error("Error in generateBlurhash function in profile/post/createPost.tsx", error);
+        }
+    }
 
     const postPost = async () => {
         try{
@@ -69,7 +105,7 @@ const CreatePost = () => {
                 }else{
                     audio_name = null
                 }
-                //Create the post first (to get the id for post_attachments)
+                // Create the post first (to get the id for post_attachments)
                 const { data: post_data, error: error_data } = await supabase.from('posts').insert([
                     {
                         user_id: user_id,
@@ -84,7 +120,7 @@ const CreatePost = () => {
                     console.error("Error when inserting post in postPost function in profile/createPost.tsx", error_data);
                 }
                 else if(post_data){
-                    //Create the post attachment.
+                    // Create the post attachment.
                     let post_attachements: { post_id: any; type: any; url: any; size: any; filename: any; mimetype: any; }[] = [];
                     for(let filename of filenames) {
                         post_attachements.push(
@@ -98,9 +134,13 @@ const CreatePost = () => {
                             }
                         )
                     }
-                    const {data: post_attach_data, error: post_attach_error } = await supabase.from('post_attachments').insert(post_attachements).select();
+                    const {data: post_attach_data, error: post_attach_error } = await supabase.from('post_attachments')
+                        .insert(post_attachements)
+                        .select();
                     if(post_attach_error){
                         console.error("Error when inserting post_attachments in postPost function in profile/createPost.tsx", post_attach_error);
+                    }else{
+                        await generateBlurhash(post_attach_data[0].url, post_attach_data[0].id, assets[0]);
                     }
                 }
                 
@@ -114,7 +154,6 @@ const CreatePost = () => {
 
         }
     }
-
 
     return (
         <Box style={{flex:1}}>

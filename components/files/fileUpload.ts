@@ -4,7 +4,7 @@ import { v6 as uuidv6 } from 'uuid';
 import 'react-native-get-random-values';
 import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
-import { compressImage } from "./imageEditor";
+import { compressImage, generateBlurHashFromUri } from "./imageEditor";
 
 
 /**
@@ -40,6 +40,8 @@ export async function uploadOneFileOnBucket(file: any, bucket: any, folder: any,
                 }
             }
             file.newFileName = fileName;
+            // const blurhash = await generateBlurHashFromUri(file.uri, 32, 4, 4);
+            // console.log("BLURHASH ----> : ", blurhash);
         return file; //{fileName: fileName, originalFileName: file.fileName};
     }catch(error: unknown){
         console.error("Error in uploadOneFile in components/files/fileUpload.ts", error);

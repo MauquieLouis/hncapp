@@ -29,13 +29,14 @@ const ActionSheetForm = (props: {
             // Peut etre mettre un message d'erreur si le champ est vide
             setLoading(true);
             const { data, error } = await supabase.from('comments').insert({
-                post_id: props.item.id,
+                post_id: props.item.post_id,
                 user_id: props.profile.user_id,
                 text: text,
             }).select();
 
             if (data && Array.isArray(data) && data.length > 0) {
-                props.setCommentsFunction(prevComments => [ data[0], ...prevComments ]);
+                data[0].comment_id = data[0].id; // assuming 'id' is the primary key
+                props.setCommentsFunction(prevComments => [ ...prevComments, data[0] ]);
             }
             if(error){
                 console.error("Error when posting comment in postComment function in components/profile/postElemInPostsList.tsx", error);   
@@ -130,10 +131,16 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
     const fetchComments = async () => {
         try{
             setLoading(true);
-            const { data, error } = await supabase.from('comments').select('*').eq('post_id', props.item.post_id);
+            // const { data, error } = await supabase.from('comments').select('*').eq('post_id', props.item.post_id);
+            const { data, error } = await supabase.rpc("get_post_comments_with_profiles", {
+                post_uuid: props.item.post_id,
+                limit_count: 50,   // optionnel
+                offset_count: 0,   // optionnel
+            });
             if (error) {
                 console.error("Error fetching comments in fetchComments function in components/profile/postElemInPostsList.tsx", error);
             } else {
+                console.log("Data",data);
                 setComments(data);
                 props.setCommentNumber(data.length);
             }
@@ -158,11 +165,12 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
     });
 
     const renderComment = ({ item }: { item: any }) => (
-        <Box style={{ borderBottomWidth:1, borderColor:"rgba(127,127,127,0.8)",  paddingVertical:10 }}>
+        console.log("ITEM COMMENT:", item),
+        <Box style={{ paddingVertical:10 }}>
             <HStack space="sm" style={{ alignItems: "center" }}>
                 <Avatar user_id={item.user_id}/>
                 <VStack>
-                <Text style={styles.nameText}>{item.user_id}</Text>
+                <Text style={styles.nameText}>{item.username}</Text>
                 <Text style={styles.commentText}>{item.text}</Text>
                 </VStack>
             </HStack>
@@ -170,9 +178,9 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
     );
 
     return (
-        <Actionsheet isOpen={props.modalComments} onClose={props.onCloseModalComments}>
+        <Actionsheet isOpen={props.modalComments} onClose={props.onCloseModalComments} useRNModal={true}>
             <ActionsheetBackdrop/>
-            <ActionsheetContent className="" style={styles.actionSheetContent}>
+            <ActionsheetContent className="" style={styles.actionSheetContent} maxHeight={"80%"}>
                 <ActionsheetDragIndicatorWrapper>
                     <ActionsheetDragIndicator/>
                 </ActionsheetDragIndicatorWrapper>
@@ -183,7 +191,8 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
                         <FlatList
                         data={comments}
                         renderItem={renderComment}
-                        keyExtractor={(item) => item.id.toString()}
+                        keyExtractor={(item) => item.comment_id.toString()}
+                        ListFooterComponent={<Box style={{ paddingVertical:40 }}></Box>}
                         />
                     )}
                     <HStack space="md" className="justify-center items-cneter">
@@ -195,7 +204,10 @@ const CommentActionSheet = (props: { modalComments: boolean | undefined; onClose
                             />
                         </Box>
                     </HStack>
-                    <ActionSheetForm item={props.item} profile={profile} setCommentsFunction={setComments} theme={theme} token={token}/>
+                    <Box style={{ position: "absolute", bottom: 0, width: "100%", padding: 10, backgroundColor: theme.backgroundColor2, borderTopWidth: 1, borderTopColor: theme.borderColorLight }}>
+                       <ActionSheetForm item={props.item} profile={profile} setCommentsFunction={setComments} theme={theme} token={token}/>
+
+                    </Box>
                     {/* <Button onPress={() => {submitComment(onSubmit)}} isDisabled={isSubmitting}>
                         <Text color="white">Submit</Text>
                     </Button> */}

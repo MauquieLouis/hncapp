@@ -39,7 +39,7 @@ export default function Avatar(props: { width?: any; height?: any; user_id?: str
                     fetchSignedUrl(`${avatarData[0].image_url}`, 'avatars').then((signedUrl: string) => {
                         setSignedUrl(signedUrl);
                     });
-                    console.log("SIGNED URL :", signedUrl);
+                    // console.log("SIGNED URL :", signedUrl);
                     if(signedUrl) Image.prefetch(signedUrl);
                     // const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from('avatars').createSignedUrls([avatarData[0].image_url], 5400);
                     // if (signedUrlError) {

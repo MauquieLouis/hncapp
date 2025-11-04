@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import React, { View, StyleSheet, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import { Link, Stack, useLocalSearchParams } from 'expo-router';
+import { Link, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useUserContext } from '@/contexts/userContext';
 import { useEffect } from 'react';
 import { Box } from '@/components/ui/box';
@@ -23,9 +23,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-
-import { useHeaderHeight } from '@react-navigation/elements';
-
+import { HeaderTitle, useHeaderHeight } from '@react-navigation/elements';
 
 export default function ProfileId() {
 
@@ -41,15 +39,18 @@ export default function ProfileId() {
     const { profile, theme, user } = useUserContext();
     const { profileId } = useLocalSearchParams();
     const router = useRouter();
+    const navigation = useNavigation();
 
     // useAutoRefreshSignedUrls()
     const ICON_SIZE = 28;
 
     useEffect(() => {
+      console.log("PROFILE ID ", profileId);
       if(profile.user_id == profileId){
         setProfileDisplayed(profile);
         setAreFriends(true);
         setIsMyProfile(true);
+        // router.setParams({user_id: profile})
       }else{
         getRemoteProfile();
         checkFriendship(profileId);
@@ -60,6 +61,20 @@ export default function ProfileId() {
       console.log("profileId param :", profileId);
       getFriendsAndFollowerNumber(profileId);
     }, []);
+
+    useEffect(() => {
+      if(profileDisplayed){
+        // props.setUsername(profileDisplayed.username);
+        navigation.setOptions({
+          headerTitle:`${profileDisplayed.username}`,
+          headerRight: () => {
+            return(
+              <Text>{profileDisplayed.username}</Text>
+            )
+          }
+        })
+      }
+    }, [profileDisplayed])
 
     const getRemoteProfile = async () => {
       try{
@@ -86,7 +101,7 @@ export default function ProfileId() {
         if(friends_error){
           console.error("Error when fetching friends in getFriendsAndFollowerNumber Function in profileList.tsx :", friends_error);
         }else{
-          console.log("FRIENDS DATA FROM RPC :", friends);
+          // console.log("FRIENDS DATA FROM RPC :", friends);
           setFriendsNumber(friends[0].friends_count);
           setFollowersNumber(friends[0].followers_count);
         }
@@ -299,15 +314,15 @@ export default function ProfileId() {
 
   const checkForConversationExistence = async (user_a: string, user_b:string) => {
     try{
-      console.log("CHECK FOR CONVERSATION EXISTENCE BETWEEN :", user_a, user_b);
+      // console.log("CHECK FOR CONVERSATION EXISTENCE BETWEEN :", user_a, user_b);
       const { data, error } = await supabase.rpc('check_conversation_exists', {user_a: user_a, user_b: user_b[0]});
       if(error){
         console.error("Error when checking for conversation existence in checkForConversationExistence function in profileId.tsx", error);
       }
-      console.log("DATA FROM RPC check_conversation_exist :", data);
+      // console.log("DATA FROM RPC check_conversation_exist :", data);
       if(data && data.length > 0){
         setConversationId(data[0].id);
-        console.log("FOUND CONVERSATION ID :", data[0].id);
+        // console.log("FOUND CONVERSATION ID :", data[0].id);
       }
     }catch(error: unknown){
       console.error("Error in checkForConversationExistence function in profileId.tsx", error);

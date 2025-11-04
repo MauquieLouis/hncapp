@@ -106,7 +106,8 @@ export default function ProfileList() {
           renderItem={({ item }) => (
             <TouchableOpacity 
               onPress={() => router.push(`/profile/${item.user_id}`)}
-              style={{/*borderColor:"red", borderWidth:1,*/ flexDirection:"row", alignItems:"center", justifyContent:"flex-start", padding:10, borderBottomColor:"white", borderBottomWidth:1, width:"90%", marginLeft:"5%"}}>
+              // onPress={() => router.push({pathname: '/profile/[...profileId]', params:{profileId: item.user_id, username:item.username}})}
+              style={{ flexDirection:"row", alignItems:"center", justifyContent:"flex-start", padding:10, borderBottomColor:"white", borderBottomWidth:1, width:"90%", marginLeft:"5%"}}>
                 <Avatar user_id={item.user_id}/>
                 <Text style={{color:"white", paddingLeft:15, fontSize:20}}>
                   {item.username} - {item.firstname} {item.lastname}

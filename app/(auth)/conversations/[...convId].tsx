@@ -442,7 +442,7 @@ const ConversationScreen = () => {
                 if(error){
                     console.error("Error in when loading more message in loadMoreMessageV2 function in [...convId].tsx", error);
                 }
-                console.log("DATA FROM RPC load_more_messages_cursor :", data);
+                // console.log("DATA FROM RPC load_more_messages_cursor :", data);
                 next_messages = data.messages;
                 await ConversationStorageDatabase.uploadNewMessages(next_messages, convId[0], user.id);
 

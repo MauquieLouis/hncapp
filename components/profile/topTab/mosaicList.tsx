@@ -12,6 +12,8 @@ import 'react-native-get-random-values';
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { usePostStore } from "@/contexts/store";
+// import { Blurhash } from "react-native-blurhash";
+// import {Blurhash} from "react-native-blurhash";
 
 const MosaicList = (props: any) => {
 
@@ -165,7 +167,10 @@ const MosaicList = (props: any) => {
                     }
                 }}>
                     <Image source={subItem.signedUrls[0]} style={{width:widthScreen/3,height:widthScreen/2}} 
-                        placeholder={"../../../assets/images/adaptive-icon.png"}/>
+                        placeholder={{blurhash:subItem.attachments_blurhash[0]}}
+                        contentFit="cover"
+                        transition={1000}
+                        />
                     {subItem.attachments_count > 1 ?
                     <Text style={{position:'absolute', top:5, right:5, color:'white', backgroundColor:'rgba(0,0,0,0.3)', paddingHorizontal:2, borderRadius:6, fontSize:12}}>
                         <Ionicons name={"albums"} color={"#DEDEDE"} size={18}/>

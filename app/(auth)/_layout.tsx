@@ -13,11 +13,12 @@ const AuthNav = () => {
     // <ThemeProvider value={DarkTheme}>
     return(
         <>
-            <Stack screenOptions={{headerStyle: {backgroundColor: theme?.backgroundColor1}, headerTintColor: theme?.textColor1, headerTitleStyle: {fontWeight: 'bold'}, headerTitleAlign: 'center', headerShadowVisible: false, headerBackTitleVisible: false, headerBackImage: () => <Ionicons name="chevron-back" size={24} color={theme?.textColor1} />}}>
+            {/* <Stack screenOptions={{headerStyle: {backgroundColor: theme?.backgroundColor1}, headerTintColor: theme?.textColor1, headerTitleStyle: {fontWeight: 'bold'}, headerTitleAlign: 'center', headerShadowVisible: false, headerBackTitleVisible: false, headerBackImage: () => <Ionicons name="chevron-back" size={24} color={theme?.textColor1} />}}> */}
+            <Stack>
                 <Stack.Screen name="main" options={{headerShown:false}}/>
-                <Stack.Screen name="conversations"/>
-                <Stack.Screen name="+not-found" />
-                <Stack.Screen name="profile" />
+                <Stack.Screen name="conversations" options={{headerShown:false}}/>
+                <Stack.Screen name="+not-found" options={{headerShown:false}}/>
+                <Stack.Screen name="profile" options={{headerShown: false}}/>
                 {/* <Stack.Screen name="notifications" /> */}
             </Stack>
         </>
