@@ -64,7 +64,6 @@ export default function ProfileId() {
 
     useEffect(() => {
       if(profileDisplayed){
-        // props.setUsername(profileDisplayed.username);
         navigation.setOptions({
           headerTitle:`${profileDisplayed.username}`,
           headerRight: () => {
@@ -74,7 +73,7 @@ export default function ProfileId() {
           }
         })
       }
-    }, [profileDisplayed])
+    }, [profileDisplayed]);
 
     const getRemoteProfile = async () => {
       try{

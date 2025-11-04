@@ -291,7 +291,7 @@ const PostAction = (props: any) => {
                         }}>
                             <HStack>
 
-                            <Ionicons name="chatbubble-outline" size={32} color="grey" />
+                            <Ionicons name="chatbubble-outline" size={32} color={notSelectedIconColor} />
                             {commentNumber > 0 ?
                                 <Box style={styles.TouchableIconText}>
                                     <Text style={styles.IconText}>{commentNumber}</Text>

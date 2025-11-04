@@ -1,30 +1,68 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useNavigation } from "expo-router";
 import { usePostStore } from "@/contexts/store";
 import { Image } from "expo-image";
 import Carousel, { ICarouselInstance, Pagination } from "react-native-reanimated-carousel";
 import { renderItem } from "@/components/posts/render-item";
-import { Dimensions, StyleSheet } from "react-native";
+import { Dimensions, StyleSheet, TouchableOpacity } from "react-native";
 import { Extrapolation, interpolate, useSharedValue } from "react-native-reanimated";
 import { useUserContext } from "@/contexts/userContext";
 import PostAction from "@/components/posts/postAction";
+import { Ionicons } from "@expo/vector-icons";
+import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader } from "@/components/ui/modal";
 
-export default function ProfileId(){
+export default function PostId(){
+
+    const [showModal, setShowModal] = useState(false);
 
     const { postId } = useLocalSearchParams();
-    const { theme } = useUserContext();
+    const { theme, profile } = useUserContext();
     
     // const { selectedPost } = usePostStore();
     const selectedPost = usePostStore((state) => state.getPost(postId[0] as string));
     const post = selectedPost?.post_id === postId[0] ? selectedPost : null;
-    
+    const navigation = useNavigation();
 
-    console.log("DATASSSS :",postId[0]);
-    console.log("selectedPost :", selectedPost);
-    console.log("POST : ",post);
-    
+    useEffect(() => {
+        if(profile){
+            console.log("POST :",post)
+            navigation.setOptions({
+                headerTitle:``,
+                headerRight: () => {
+                return(
+                    <>
+                        <Text 
+                            style={{color:theme.textColor1}}>
+                            Added by 
+                            <Text style={{fontWeight:"300", color:theme.textColor2}}>
+                                {' '}@{post.added_by_name}
+                            </Text>
+                        </Text>
+                        {post.added_by == profile.user_id ? 
+                        <>
+                            <Text style={{color:theme.textColor3}}> (Me)</Text>
+                            <TouchableOpacity style={{paddingLeft:12}}
+                                onPress={() => {
+                                    console.log("SETTING PICTURE");
+                                    setShowModal(true);
+                                }}>
+                                <Ionicons name="settings-outline" size={28} color={theme.iconColor}/>
+                            </TouchableOpacity>
+                        </>
+                        :
+                        <></>}
+                    </>
+                )
+                }
+            });
+        }
+    }, [profile]);
+
+    // console.log("DATASSSS :",postId[0]);
+    // console.log("selectedPost :", selectedPost);
+    // console.log("POST : ",post);
 
     const width = Dimensions.get("window").width;
     const ref = React.useRef<ICarouselInstance>(null);
@@ -123,6 +161,22 @@ export default function ProfileId(){
                 }}
             />
             <PostAction post={post}/>
+            <Modal isOpen={showModal} onClose={() => {setShowModal(false)}} size="md">
+                <ModalBackdrop/>
+                <ModalContent>
+                    <ModalHeader>
+                        <Text>Settings</Text>
+                        <ModalCloseButton>
+                        <Ionicons name="close" size={32} color={theme.iconColor}/>
+                        </ModalCloseButton>
+                    </ModalHeader>
+                    <ModalBody>
+                        <Text size="sm" className="text-typography-500">
+                        Delete the post ?
+                        </Text>
+                    </ModalBody>
+                </ModalContent>
+            </Modal>
         </Box>
     )
 }
