@@ -105,13 +105,14 @@ const MosaicList = (props: any) => {
                 console.error(error);
             } else {
                 // console.log("DATA ;", data);
+                if(data.length == 0) return;
                 const attachmentUrls = data
                 .map((post: { attachment_url: any; }) => post.attachment_url)
                 .filter((url: null) => url !== null).map((url: string) => `${props.profileId}/`+url);
                 // console.log("Attachment URLs:", attachmentUrls);
                 const { data: signedUrlsData, error: signedUrlsError } = await supabase.storage.from('posts').createSignedUrls(attachmentUrls, 3600);
                 if(signedUrlsError){
-                    console.error("Error while creating signed URLs:", signedUrlsError);
+                    console.error("Error while creating signed URLs in getMosaicPost function in mosaicList.tsx :", signedUrlsError);
                 }else{
                     // if (!data) return;
                     const allAttachmentUrls = data
@@ -161,7 +162,7 @@ const MosaicList = (props: any) => {
                     const groupedByThree = groupByThree(finalDataWithSignedUrls);
                     // setPosts(finalDataWithSignedUrls);
                     setMosaicData(groupedByThree);
-                    console.log("Final Data with signed URLs:", groupedByThree);
+                    // console.log("Final Data with signed URLs:", groupedByThree);
                 }
             }
         }catch(error: unknown){

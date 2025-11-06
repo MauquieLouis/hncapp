@@ -138,19 +138,30 @@ export default function PostId(){
         try{
             //First delete the file from bucket and local if it exist,
             const full_path_urls = []
+            console.log("post attach to delete", post);
             for(const file of post.attachment_urls){
                 console.log("file :",file);
                 full_path_urls.push(post.user_id+"/"+file);
             }
+            console.log("FULL PATH TO DELETE", full_path_urls);
+            //Delete the files (array)
             const {data: delete_file_data, error: delete_file_error } = await supabase.storage.from('posts')
                 .remove(full_path_urls);
+            console.log("DELETION EDIT :", delete_file_data, "err :",delete_file_error)
             if(delete_file_error){
                 console.error("Error when deleting files from bucket in handleDeleteFile function in [...postId].tsx", delete_file_error, "\n the file tab : ", full_path_urls);
             }else{
-                //Second delete the attachments
+                //Delete audio if one exists
+                if(post.file_url){
+                    const { data: delete_audio_data, error:delete_audio_error } = await supabase.storage.from('posts')
+                    .remove([post.file_url]);
+                    if(delete_audio_error){
+                        console.error("Error when deleting associated audio in handleDeleteFile function in [...postId].tsx", delete_audio_error);
+                    }
+                }
+                //Second delete the attachments from db, it delete in cascade like, comment, post_attachments.
                 const { data: delete_post_data, error: delete_post_error } = await supabase.from('posts')
                 .delete().eq('id', post.post_id);
-
                 if(delete_post_error){
                     console.error("Error when deleting post in handleDeleteFile function in [...postId].tsx file", delete_file_error);
                 }
