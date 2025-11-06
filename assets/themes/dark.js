@@ -1,5 +1,5 @@
 DarkStyle={
-    dark:true,
+    dark:false,
     backgroundColor1:'#111827',
     backgroundColor2:'#1f2937',
     specialBackground1:'#e9d5ff',

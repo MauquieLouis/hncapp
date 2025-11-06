@@ -1,10 +1,9 @@
 import { useContext, useRef, useState } from 'react';
 import React, { View, StyleSheet, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import { Link, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useUserContext } from '@/contexts/userContext';
 import { useEffect } from 'react';
 import { Box } from '@/components/ui/box';
-import Avatar from '@/components/profile/avatar';
 import { HStack } from '@/components/ui/hstack';
 import { supabase } from '@/libs/initSupabase';
 import { Spinner } from '@/components/ui/spinner';
@@ -12,9 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 import { insertNotification, unsendNotification } from '@/components/notifications/notificationSender';
-import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader } from '@/components/ui/modal';
-import { VStack } from '@/components/ui/vstack';
 import ChangeAvatar from '@/components/profile/changeAvatar';
+import Avatar from '@/components/profile/avatar';
 import PostsList from '@/components/profile/postsList';
 import { useAutoRefreshSignedUrls } from '@/utils/useAutoRefreshSignedUrls';
 import TopTabLayout from '@/components/profile/topTab/_layout';
@@ -23,7 +21,8 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { HeaderTitle, useHeaderHeight } from '@react-navigation/elements';
+import { useHeaderHeight } from '@react-navigation/elements';
+import { usePostStore } from '@/contexts/store';
 
 export default function ProfileId() {
 
@@ -39,41 +38,25 @@ export default function ProfileId() {
     const { profile, theme, user } = useUserContext();
     const { profileId } = useLocalSearchParams();
     const router = useRouter();
-    const navigation = useNavigation();
+    const { username, setUsername } = usePostStore();
 
     // useAutoRefreshSignedUrls()
     const ICON_SIZE = 28;
 
     useEffect(() => {
-      console.log("PROFILE ID ", profileId);
       if(profile.user_id == profileId){
         setProfileDisplayed(profile);
         setAreFriends(true);
         setIsMyProfile(true);
-        // router.setParams({user_id: profile})
+        setUsername(profile.username);
       }else{
         getRemoteProfile();
         checkFriendship(profileId);
         checkForConversationExistence(profile.user_id, profileId);
-        // getOneOnOneConversation();
         //Fetch the profile from the database
       }
-      console.log("profileId param :", profileId);
       getFriendsAndFollowerNumber(profileId);
     }, []);
-
-    useEffect(() => {
-      if(profileDisplayed){
-        navigation.setOptions({
-          headerTitle:`${profileDisplayed.username}`,
-          headerRight: () => {
-            return(
-              <Text>{profileDisplayed.username}</Text>
-            )
-          }
-        })
-      }
-    }, [profileDisplayed]);
 
     const getRemoteProfile = async () => {
       try{
@@ -82,6 +65,7 @@ export default function ProfileId() {
         if(profiles_error){
           console.error("Error whent fetching profiles in getAllProfiles Function in profileList.tsx :", profiles_error);
         }else{
+          setUsername(profiles[0].username);
           setProfileDisplayed(profiles[0]);
         }
       }catch(e){
@@ -100,7 +84,6 @@ export default function ProfileId() {
         if(friends_error){
           console.error("Error when fetching friends in getFriendsAndFollowerNumber Function in profileList.tsx :", friends_error);
         }else{
-          // console.log("FRIENDS DATA FROM RPC :", friends);
           setFriendsNumber(friends[0].friends_count);
           setFollowersNumber(friends[0].followers_count);
         }
@@ -192,49 +175,6 @@ export default function ProfileId() {
     }
   }
 
-  // async function getOneOnOneConversation(userId1: any, userId2:any) {
-  //   try{
-
-  //     const { data, error } = await supabase
-  //     .from('conversations')
-  //     .select(`
-  //       *,
-  //       conversation_participants!inner(
-  //         user_id,
-  //         deleted_at
-  //         )
-  //         `)
-  //     .eq('is_group', false)
-  //     .in('conversation_participants.user_id', [userId1, userId2])
-  //     .is('conversation_participants.deleted_at', null);
-      
-  //     if (error) {
-  //       console.error('Error fetching conversations:', error);
-  //       return null;
-  //     }
-      
-  //     // Filter to only include conversations with exactly 2 distinct, active participants
-  //     const filteredConversations = data.filter(convo => {
-  //       if(convo.conversation_participants.length == 2){
-  //         setConversationId(convo.id);
-  //       }
-
-  //       // const participantIds = convo.conversation_participants.map(p => p.user_id);
-  //       // const uniqueParticipants = [...new Set(participantIds)];
-  //       // return uniqueParticipants.length === 2 &&
-  //       // uniqueParticipants.includes(userId1) &&
-  //       // uniqueParticipants.includes(userId2);
-  //     });
-
-
-  //   }catch (error: unknown) {
-  //     console.error('Error in getOneOnOneConversation function in [...profileId].tsx file:', error);
-  //   }finally{
-
-  //   }
-    // return filteredConversations.length ? filteredConversations[0] : null;
-  // }
-
   const changeFriendProfilePicture = async () => {
     try{
 
@@ -249,6 +189,7 @@ export default function ProfileId() {
   const headerVisible = useSharedValue(1)
   const isScrolling = useSharedValue(false);
   const navigationHeaderHeight = useHeaderHeight();
+  // headerVisible.get();
 
   const styles = StyleSheet.create({
   container: {
@@ -313,15 +254,12 @@ export default function ProfileId() {
 
   const checkForConversationExistence = async (user_a: string, user_b:string) => {
     try{
-      // console.log("CHECK FOR CONVERSATION EXISTENCE BETWEEN :", user_a, user_b);
       const { data, error } = await supabase.rpc('check_conversation_exists', {user_a: user_a, user_b: user_b[0]});
       if(error){
         console.error("Error when checking for conversation existence in checkForConversationExistence function in profileId.tsx", error);
       }
-      // console.log("DATA FROM RPC check_conversation_exist :", data);
       if(data && data.length > 0){
         setConversationId(data[0].id);
-        // console.log("FOUND CONVERSATION ID :", data[0].id);
       }
     }catch(error: unknown){
       console.error("Error in checkForConversationExistence function in profileId.tsx", error);
@@ -333,18 +271,15 @@ export default function ProfileId() {
 
       if(conversationId){
         //Conversation already exists so open it
-        console.log("******PUSH CONV !!")
         router.push(`/conversations/${conversationId}`);
       }else{
         //Create conversation when open it... Maybe try some lock, if in the biggest hasard, two user are creating the same conversation at the same time.
-        console.log("profile id :", profile.user_id);
         const { data: conv_data, error: conv_error } = await supabase.from('conversations').insert(
           { is_group: false, created_by: profile.user_id }
         ).select();
         if(conv_error){
           console.error("Error when creating conversation in handleOpenConversation function in profileId.tsx", conv_error);
         }else{
-          console.log("CREATED CONVERSATION :", conv_data);
           const { data: conv_part_data, error: conv_part_error } = await supabase.from('conversation_participants').insert([
             { conversation_id: conv_data![0].id, user_id: profile.user_id },
             { conversation_id: conv_data![0].id, user_id: profileDisplayed.user_id }
@@ -393,6 +328,7 @@ export default function ProfileId() {
                   <Box style={[styles.profileButtonZone]}>
                     { areFriends ? 
                       <TouchableOpacity style={[styles.profileButtons]} onPress={() => {
+                        setUsername(profileDisplayed.username);
                         router.push({pathname: "/profile/createPost", params: { user_id: profileId }})
                         /*router.push({pathname: "/profile/createPost", params: { poster_id: profile.user_id, user_id: profileId }});*/}}>
                         <Ionicons name={"flask-outline"} size={ICON_SIZE} color={theme.iconColor2}/>
@@ -427,7 +363,11 @@ export default function ProfileId() {
               :
               <>
                 { areFriends ? 
-                  <ChangeAvatar userId={profileDisplayed.user_id} added_by={profile.user_id}/>
+                  // <>
+                  // {profileDisplayed.user_id ? 
+                    <ChangeAvatar userId={profileDisplayed.user_id} added_by={profile.user_id}/>
+                  //   :<></>}
+                  // </>
                 :
                   <></> 
                 }
@@ -472,89 +412,11 @@ export default function ProfileId() {
                 isScrolling={isScrolling}
                 profileId={profileId[0]}
               />
-            {/* {isMyProfile ? <></>
-              :
-              <>
-              <HStack style={{
-                flex:2, 
-                alignItems:"center", 
-                justifyContent:"space-between",
-                width:"100%",
-                paddingLeft:"6%",
-                paddingRight:"6%",
-                backgroundColor:theme.backgroundColor,
-                }} >
-                <Box>
-                <TouchableOpacity 
-                style={{borderColor:theme.profileButton, borderWidth:2, padding:15, borderRadius:10}} 
-                onPress={() => {
-                  handleOpenConversation();
-                  // router.push(`/conversations/${conversationId}`);
-                  }}>
-                  <HStack>
-                  <Ionicons name="chatbubbles-outline" size={ICON_SIZE-16} color={theme.textColor1} />
-                  <Text style={{color:theme.textColor1, paddingLeft:6}}>Open Discussion</Text>
-                  </HStack>
-                  </TouchableOpacity>
-                  </Box>
-                  <Box>
-                  <TouchableOpacity 
-                  style={{borderColor:theme.profileButton, borderWidth:2, padding:15, borderRadius:10}} 
-                  onPress={() => {
-                    router.push({pathname: "/profile/createPost", params: { poster_id: profile.user_id, user_id: profileId }});
-                    }}>
-                    <HStack>
-                    <Ionicons name="flask-outline" size={ICON_SIZE-16} color={theme.textColor1} />
-                    <Text style={{color:theme.textColor1, paddingLeft:6}}>Post For Friend</Text>
-                    </HStack>
-                    </TouchableOpacity>
-                    </Box>
-                    </HStack>
-                    </>
-                    } */}
+            
             </Box>
           :
           <>
-            {/* <HStack style={{
-              flex:2, 
-              alignItems:"center", 
-              justifyContent:"space-around",
-              width:"100%",
-              backgroundColor:"#25292e",
-            }}
-            space="sm"
-            >
-              <Box style={{}}>
-                <TouchableOpacity 
-                  style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}} 
-                  onPress={() => {
-                    sendOrUnsedFriendRequest()
-                  }}>
-                  {canRequestFriendship ? 
-                  <Ionicons name="person-add-outline" size={ICON_SIZE} color="white" />
-                  :
-                  <Ionicons name="close-circle-outline" size={ICON_SIZE} color="white" />
-                  }
-                </TouchableOpacity>
-              </Box>
-              <Box style={{}}>
-                <TouchableOpacity 
-                  style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}}
-                  onPress={() => {
-                  }}>
-                  <Ionicons name="people-outline" size={ICON_SIZE} color="white" />
-                </TouchableOpacity>
-              </Box>
-              <Box style={{}}>
-                <TouchableOpacity 
-                  style={{borderColor:"grey", borderWidth:2, padding:15, borderRadius:10}}
-                  onPress={() => {
-                  }}>
-                  <Ionicons name="chatbubbles-outline" size={ICON_SIZE} color="white" />
-                </TouchableOpacity>
-              </Box>
-            </HStack>
-             */}
+
             <Box style={[styles.privateZoneStyle]}>
               <Ionicons name="lock-closed-outline" size={54} color={theme.iconColor2} />
               <Text style={{color:theme.textColor1}}>Private Account</Text>

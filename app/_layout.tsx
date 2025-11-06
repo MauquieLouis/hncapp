@@ -140,6 +140,7 @@ const MainStack = () => {
   
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
+  const [ barStyle, setBarStyle ] = useState("light");
   const { session, loading, user, theme } = useUserContext();
 
   const notificationListener = useRef<Notifications.EventSubscription>();
@@ -168,13 +169,19 @@ const MainStack = () => {
     }
     if(theme){
       NavigationBar.setBackgroundColorAsync(theme.backgroundColor1);
+      setBarStyle(theme.dark ? "dark" : "light");
     }
   }, [expoPushToken, session, theme]);
 
-
+  
 
   return (
-    <MainFile/>
+    <>
+      {theme ?
+        <StatusBar backgroundColor={theme.backgroundColor2} translucent={true} style={barStyle}/>
+      :<></>}
+      <MainFile/>
+    </>
   )
   
 

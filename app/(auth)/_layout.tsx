@@ -5,7 +5,6 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useUserContext } from '@/contexts/userContext';
 
-
 const AuthNav = () => {
 
     const { theme } = useUserContext();

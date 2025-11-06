@@ -1,5 +1,5 @@
 BlackStyle={
-    dark:true,
+    dark:false,
     backgroundColor1:'#18181b',
     backgroundColor2:'#27272a',
     specialBackground1:'#71717a',

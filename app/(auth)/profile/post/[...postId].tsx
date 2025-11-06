@@ -25,7 +25,6 @@ export default function PostId(){
     const { theme, profile } = useUserContext();
     const router = useRouter();
     
-    // const { selectedPost } = usePostStore();
     const selectedPost = usePostStore((state) => state.getPost(postId[0] as string));
     const { setDeletedItem } = usePostStore();
     const post = selectedPost?.post_id === postId[0] ? selectedPost : null;
@@ -33,9 +32,9 @@ export default function PostId(){
 
     useEffect(() => {
         if(profile){
-            console.log("POST :",post)
             navigation.setOptions({
                 headerTitle:``,
+                //Create right part of the header 
                 headerRight: () => {
                 return(
                     <>
@@ -51,7 +50,6 @@ export default function PostId(){
                             <Text style={{color:theme.textColor3}}> (Me)</Text>
                             <TouchableOpacity style={{paddingLeft:12}}
                                 onPress={() => {
-                                    console.log("SETTING PICTURE");
                                     setShowModal(true);
                                 }}>
                                 <Ionicons name="settings-outline" size={28} color={theme.iconColor}/>
@@ -66,10 +64,6 @@ export default function PostId(){
         }
     }, [profile]);
 
-    // console.log("DATASSSS :",postId[0]);
-    // console.log("selectedPost :", selectedPost);
-    // console.log("POST : ",post);
-
     const width = Dimensions.get("window").width;
     const ref = React.useRef<ICarouselInstance>(null);
     const progress = useSharedValue<number>(0);
@@ -79,13 +73,6 @@ export default function PostId(){
             flex:1,
             backgroundColor: theme.backgroundColor1,
         },
-        // carousel:{
-        //     alignItems: "center",
-        //     justifyContent: "center",
-        //     width: "100%",
-        //     height: 300,
-        //     marginBottom:4
-        // },
         dotStyle:{
             width: 5,
             height: 5,
@@ -125,29 +112,17 @@ export default function PostId(){
         animated: true,
         });
     };
-    if(post === null){
-        console.log("POST NULL");
-        return(
-            <Box>
-                <Text>No Post Found</Text>
-            </Box>
-        )
-    }
 
     const handleDeleteFile = async() => {
         try{
             //First delete the file from bucket and local if it exist,
             const full_path_urls = []
-            console.log("post attach to delete", post);
             for(const file of post.attachment_urls){
-                console.log("file :",file);
                 full_path_urls.push(post.user_id+"/"+file);
             }
-            console.log("FULL PATH TO DELETE", full_path_urls);
             //Delete the files (array)
             const {data: delete_file_data, error: delete_file_error } = await supabase.storage.from('posts')
                 .remove(full_path_urls);
-            console.log("DELETION EDIT :", delete_file_data, "err :",delete_file_error)
             if(delete_file_error){
                 console.error("Error when deleting files from bucket in handleDeleteFile function in [...postId].tsx", delete_file_error, "\n the file tab : ", full_path_urls);
             }else{
@@ -172,6 +147,15 @@ export default function PostId(){
         }
     }
 
+    if(post === null){
+        console.warn("POST NULL, in [...postId].tsx before return, this might be an issue, (maybe post has been deleted while someone was on a profile and didn't disappear from mosaic");
+        return(
+            <Box>
+                <Text>Post doesn't exist anymore (might have been deleted by the owner)</Text>
+            </Box>
+        )
+    }
+
     return(
         <Box style={styles.mainContainer}>
             <Carousel
@@ -184,7 +168,7 @@ export default function PostId(){
 				pagingEnabled={true}
 				data={post.signedUrls}
 				style={{ width: "100%" }}
-				onSnapToItem={(index) => console.log("current index:", index)}
+				// onSnapToItem={(index) => }
 				renderItem={renderItem({ rounded: true, imagesArray: post.signedUrls})}
 			/>
 

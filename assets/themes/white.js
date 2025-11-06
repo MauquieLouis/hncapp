@@ -1,5 +1,5 @@
 WhiteStyle={
-    dark:false,
+    dark:true,
     backgroundColor1:'#fafafa',
     backgroundColor2:'#f5f5f5',
     specialBackground1:'#e4e4e7',

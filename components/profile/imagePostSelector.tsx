@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { TouchableOpacity, View, Image, Text } from "react-native";
+import { TouchableOpacity, View, Image, Text, StyleSheet } from "react-native";
 import { Box } from "@/components/ui/box";
 
 
@@ -18,11 +18,21 @@ import { ScrollView } from "react-native-gesture-handler";
 import { Video } from "expo-av";
 import * as DocumentPicker from 'expo-document-picker';
 import { HStack } from "@/components/ui/hstack";
+import { useUserContext } from "@/contexts/userContext";
+import {
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  useToast,
+} from '@/components/ui/toast';
 
 const ImagePostSelector = (props: { setAssets: any }) => {
 
     const [ media, setMedia ] = useState<ImagePicker.ImagePickerAsset[]>([]);
      
+    const { theme } = useUserContext();
+
+    const toast = useToast();
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -64,6 +74,10 @@ const ImagePostSelector = (props: { setAssets: any }) => {
     }
 
     const openCamera = async () => {
+        if(media.length >= 9 ){
+            showToastMediaLimit();
+            return;
+        }
         const permissions = await ImagePicker.requestCameraPermissionsAsync();
         if(!permissions.granted) {
             console.warn("Camera permissions not granted");
@@ -77,14 +91,14 @@ const ImagePostSelector = (props: { setAssets: any }) => {
         if(!result.canceled){
             setMedia((prev) => [...prev, ...result.assets]);
             props.setAssets((prev: any) => [...prev, ...result.assets]);
-
-            // setImages(result.assets[0].uri);
-            // compressImage(result.assets[0].uri);
-            // uploadImage(result.assets);
         }
     }
 
     const openVideo = async () => {
+        if(media.length >= 9 ){
+            showToastMediaLimit();
+            return;
+        }
         const permissions = await ImagePicker.requestCameraPermissionsAsync();
         if(!permissions.granted) {
             console.warn("Camera permissions not granted");
@@ -99,73 +113,131 @@ const ImagePostSelector = (props: { setAssets: any }) => {
         if(!result.canceled){
             setMedia((prev) => [...prev, ...result.assets]);
             props.setAssets((prev) => [...prev, ...result.assets]);
-
-            // setImages(result.assets[0].uri);
-            // compressImage(result.assets[0].uri);
-            // uploadImage(result.assets);
         }
     }
 
+    const showToastMediaLimit = () => {
+        const newId = Math.random().toString(36).substring(7);
+        toast.show({
+        id: newId,
+        placement: "top",
+        duration: 6000,
+        render: ({id}) => {
+            const uniqueToastId = 'toast-' + id;
+            return(
+            <Toast nativeID={uniqueToastId} action="muted" variant="solid">
+                <ToastTitle>Media Limit !</ToastTitle>
+                <ToastDescription>
+                    You can oly have 9 Media. 
+                </ToastDescription>
+            </Toast>
+            );
+        }
+        })
+    }
+
+    const styles = StyleSheet.create({
+        mainBox:{
+            flex:6, 
+            height:"100%", 
+            padding:"10%"
+        },
+        hstackAction:{
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height:"15%", 
+            padding:1, 
+            marginBottom:16, 
+            flexDirection:"row"
+        },
+        touchableIcon:{
+            width:"15%",  
+            height:50, 
+            borderColor:theme.iconColor, 
+            borderWidth:2, 
+            borderRadius:4, 
+            justifyContent:"center", 
+            alignItems:"center"
+        },
+        deletePictureIcon:{
+            position: 'absolute', 
+            top: 0, 
+            right: 0, 
+            padding: 4, 
+            backgroundColor: 'rgba(0, 0, 0, 0.3)', 
+            borderRadius: 8 
+        },
+        imageStyle:{
+            width: 260, 
+            height: 260, 
+            borderRadius: 8 
+        }
+    });
+
     return(
-        <Box style={{ flex:6, height:"100%", padding:"10%"}}>
+        <Box style={styles.mainBox}>
             {/* IMAGE SELECTION ZONE */}
-            <HStack style={{ justifyContent: 'center', alignItems: 'center', height:"15%", padding:1, marginBottom:16, flexDirection:"row"}} space={"md"}>
+            <HStack style={styles.hstackAction} space={"md"}>
                 <TouchableOpacity 
                     onPress={() => {
                         openVideo();
                     }}
-                    style={{ width:"15%",  height:"100%", borderColor:"grey", borderWidth:5, borderRadius:16, justifyContent:"center", alignItems:"center"}}>
-                    <Ionicons name="videocam-outline" size={24} color="grey"/>
+                    style={styles.touchableIcon}>
+                    <Ionicons name="videocam-outline" size={28} color={theme.iconColor}/>
                 </TouchableOpacity>
                 <TouchableOpacity 
                     onPress={() => {
                         openCamera();
                     }}
-                    style={{ width:"15%",  height:"100%", borderColor:"grey", borderWidth:5, borderRadius:16, justifyContent:"center", alignItems:"center"}}>
-                    <Ionicons name="camera-outline" size={24} color="grey"/>
+                    style={styles.touchableIcon}>
+                    <Ionicons name="camera-outline" size={28} color={theme.iconColor}/>
                 </TouchableOpacity>
                 <TouchableOpacity 
                     onPress={() => {
                         pickImage();
                     }}
-                    style={{ width:"15%",  height:"100%", borderColor:"grey", borderWidth:5, borderRadius:16, justifyContent:"center", alignItems:"center"}}>
-                    <Ionicons name="image-outline" size={24} color="grey"/>
+                    style={styles.touchableIcon}>
+                    <Ionicons name="image-outline" size={28} color={theme.iconColor}/>
                 </TouchableOpacity>
             </HStack>
             <Box>
-                <ScrollView horizontal={true} >
+                <ScrollView horizontal={true} showsHorizontalScrollIndicator={true}>
                     {media.map((item, index) => (
                         <View key={index} style={{ marginRight: 16 }}>
                             {item.mimeType?.startsWith('image') ? (
-                            // {item.type === 'image' ? (
                             <>
                             <Image
                                 source={{ uri: item.uri }}
-                                style={{ width: 220, height: 220, borderRadius: 8 }}
+                                style={styles.imageStyle}
                                 />
-                            <Box style={{ position: 'absolute', top: 0, right: 0, padding: 4, backgroundColor: 'rgba(0, 0, 0, 0.3)', borderRadius: 8 }}>
+                            <Box style={styles.deletePictureIcon}>
                                 <TouchableOpacity onPress={() => {
                                     setMedia(media.filter((_, i) => i !== index));
                                 }}>
-                                    <Ionicons name="close-circle" size={24} color="white" />
+                                    <Ionicons name="close-circle-outline" size={24} color="white" />
                                 </TouchableOpacity>
                             </Box>
                             </>
                             ) : (
-                                // <Text>VIDEO</Text>
-                            <Video
-                                source={{ uri: item.uri }}
-                                rate={1.0}
-                                volume={1.0}
-                                isMuted={true}
-                                // resizeMode="cover"
-                                shouldPlay={false}
-                                style={{ width: 100, height: 100, borderRadius: 8 }}
-                            />
+                            <>
+                                <Video
+                                    source={{ uri: item.uri }}
+                                    rate={1.0}
+                                    volume={1.0}
+                                    isMuted={true}
+                                    // resizeMode="cover"
+                                    shouldPlay={true}
+                                    style={styles.imageStyle}
+                                    />
+                                <Box style={styles.deletePictureIcon}>
+                                    <TouchableOpacity onPress={() => {
+                                        setMedia(media.filter((_, i) => i !== index));
+                                    }}>
+                                        <Ionicons name="close-circle-outline" size={24} color="white" />
+                                    </TouchableOpacity>
+                                </Box>
+                            </>
                             )}
-                            <Text style={{ fontSize: 12, textAlign: 'center', marginTop: 4 }}>
-                            {item.type}
-                            </Text>
                         </View>
                         ))}
                 </ScrollView>

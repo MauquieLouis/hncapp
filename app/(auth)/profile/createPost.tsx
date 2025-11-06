@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { Dimensions, KeyboardAvoidingView, StyleSheet, TouchableOpacity } from "react-native";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Ionicons } from "@expo/vector-icons";
 import { Input, InputField } from "@/components/ui/input";
 import ImagePostSelector from "@/components/profile/imagePostSelector";
@@ -20,31 +20,64 @@ import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import UniversarlAudioPlayer from "@/components/files/universalAudioPlayer";
 import { generateBlurHashFromUri } from "@/components/files/imageEditor";
-
+import Avatar from "@/components/profile/avatar";
+import { usePostStore } from "@/contexts/store";
+import { Center } from "@/components/ui/center";
+import { Spinner } from "@/components/ui/spinner";
+import { useRouter } from "expo-router";
+import {
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  useToast,
+} from '@/components/ui/toast';
 
 const CreatePost = () => {
 
     const [ text, setText ] = useState("");
-    const [ vocal, setVocal ] = useState(null);
+    // const [ vocal, setVocal ] = useState(null);
     const [ legend, setLegend ] = useState<null | "text" | "vocal">(null);
     const [ assets, setAssets ] = useState<ImagePicker.ImagePickerAsset[]>([]);
-    const [ sendingAudio, setSendingAudio ] = useState(false);
+    // const [ sendingAudio, setSendingAudio ] = useState(false);
     const [ audioUrl, setAudioUrl] = useState(null);
+    const [ status, requestPermission ] = MediaLibrary.usePermissions();
+    const [ sending, setSending ] = useState(false);
 
-    const [status, requestPermission] = MediaLibrary.usePermissions();
+    const navigation = useNavigation();
 
+    const { user_id } = useLocalSearchParams();
+    const { profile, theme } = useUserContext();
+
+    const { username, setNewFile } = usePostStore();
+    const router = useRouter();
+    const toast = useToast();
+    
     useEffect(() => {
     if (!status?.granted) {
         requestPermission();
     }
     }, []);
 
-    const { user_id } = useLocalSearchParams();
-    const { profile } = useUserContext();
+
+    useEffect(() => {
+        if(profile){
+            navigation.setOptions({
+                headerTitle:`Create a Post for`,
+                //Create right part of the header 
+                headerRight: () => {
+                return(
+                    <>
+                        <Text style={{paddingRight:5, color:theme.textColor1}}>{username} </Text>
+                        <Avatar user_id={user_id} width={36} height={36}/>
+                    </>
+                )
+                }
+            });
+        }
+    }, [profile]);
 
     const generateBlurhash = async (url: string, post_attachment_id: string, asset: any) => {
         try{
-            // console.log("GETTING SIGNED URL FOR :", user_id+"/"+url);
             const { data: signedUrlData, error: signedUrlError } = await supabase
                 .storage
                 .from('posts')
@@ -57,10 +90,6 @@ const CreatePost = () => {
             if(signedUrlData){
                 console.log("ASSET before blur:", asset);
                 const data = await generateBlurHashFromUri(signedUrlData?.signedUrl,asset.width, asset.height, 32,4,4);
-                // const { data, error } = await supabase.functions.invoke('blurHash-Generation', {
-                //     body: {imageUrl: signedUrlData?.signedUrl},
-                // });
-                // if(error) throw error;
 
                 const { data: edited_attachment, error: error_attachment } = await supabase
                     .from('post_attachments')
@@ -79,6 +108,8 @@ const CreatePost = () => {
 
     const postPost = async () => {
         try{
+            setSending(true);
+            showToastPosting();
             let filenames;
 
             if (assets.length > 1) {
@@ -122,7 +153,9 @@ const CreatePost = () => {
                 else if(post_data){
                     // Create the post attachment.
                     let post_attachements: { post_id: any; type: any; url: any; size: any; filename: any; mimetype: any; }[] = [];
+                    let position = 0;
                     for(let filename of filenames) {
+                        position++;
                         post_attachements.push(
                             {
                                 post_id: post_data[0].id,
@@ -131,6 +164,7 @@ const CreatePost = () => {
                                 size:filename.fileSize,
                                 filename:filename.filename,
                                 mime_type:filename.mimeType,
+                                position:position
                             }
                         )
                     }
@@ -151,52 +185,194 @@ const CreatePost = () => {
         }catch(error: unknown) {
             console.error("Error in postPost function in profile/createPost.tsx: ", error);
         }finally{
-
+            setSending(false);
+            showToastSuccess();
+            setNewFile(true);
+            router.back();
         }
     }
 
+
+    const showToastPosting = () => {
+        const newId = Math.random().toString(36).substring(7);
+        toast.show({
+        id: newId,
+        placement: "top",
+        duration: 6000,
+        render: ({id}) => {
+            const uniqueToastId = 'toast-' + id;
+            return(
+            <Toast nativeID={uniqueToastId} action="muted" variant="solid">
+                <ToastTitle>Posting</ToastTitle>
+                <ToastDescription>
+                    Posting ... ...
+                </ToastDescription>
+            </Toast>
+            );
+        }
+        });
+    }
+    const showToastSuccess = () => {
+        const newId = Math.random().toString(36).substring(7);
+        toast.show({
+        id: newId,
+        placement: "top",
+        duration: 6000,
+        render: ({id}) => {
+            const uniqueToastId = 'toast-' + id;
+            return(
+            <Toast nativeID={uniqueToastId} action="muted" variant="solid">
+                <ToastTitle>Nice job *bitch*</ToastTitle>
+                <ToastDescription>
+                    Post successfully posted !
+                </ToastDescription>
+            </Toast>
+            );
+        }
+        });
+    }
+
+
+    const height = Dimensions.get('window').height;
+    const botH = height*0.28;
+
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: theme.backgroundColor1,
+        },
+
+        button: {
+            fontSize: 20,
+            textDecorationLine: 'underline',
+            color: '#fff',
+        },
+        mainTitletext:{
+            color:theme.textColor1,
+            fontWeight:'600',
+        },
+        mainTitleZone:{
+            // flex:1, 
+            // height:"100%",
+            paddingBottom:5, 
+            justifyContent:"center", 
+            alignItems:"center", 
+            borderBottomWidth:1, 
+            borderColor:"grey", 
+            boxShadow:"0px 6px 12px rgba(0,0,0,0.1)"  
+        },
+        iconStyle:{
+            // color:
+        },
+        descriptionActionBox:{
+            position:"absolute",
+            backgroundColor:theme.backgroundColor1,
+            // flex:4, 
+            bottom:0,
+            left:0,
+            height:botH, 
+            width:"100%",
+            padding:10, 
+            borderTopWidth:1, 
+            borderColor:"grey", 
+            boxShadow:"0px 1px 8px rgba(0,0,0,0.7)"
+        },
+        descIconBoxStyle:{
+            borderColor:theme.iconColor, 
+            borderWidth:3, 
+            padding:22, 
+            borderRadius:10,
+        },
+        sendTopButton:{
+            padding:7, 
+            backgroundColor:"blue", 
+            borderRadius:10, 
+            boxShadow:"0px 1px 8px rgba(0,0,0,0.7)"
+        },
+        sendBottomButton:{
+            padding:7, 
+            backgroundColor:"blue", 
+            borderRadius:10, 
+            boxShadow:"0px 1px 8px rgba(0,0,0,0.7)",
+            flexDirection:"row-reverse",
+        },
+        textSendButton:{
+            justifyContent:"center",
+            alignItems:"center",
+            color:theme.iconColor,
+            fontWeight:"300",
+            fontSize:16,
+        }
+    });
+
     return (
-        <Box style={{flex:1}}>
-            <HStack style={{ flex:1, height:"100%", justifyContent:"center", alignItems:"center", borderBottomWidth:1, borderColor:"grey", boxShadow:"0px 6px 12px rgba(0,0,0,0.1)" }}
+        <Box style={styles.container}>
+            <HStack style={styles.mainTitleZone}
             space="xl">
                 <Text
-                    size="3xl"
-                >
-                    Create a Post
+                    style={styles.mainTitletext}
+                    size="3xl">
+                    Publish post
                 </Text>
-                <TouchableOpacity
-                style={{ padding:7, backgroundColor:"blue", borderRadius:10, boxShadow:"0px 1px 8px rgba(0,0,0,0.7)" }}
-                onPress={() => {
-                    postPost();
-                }}>
-                    <Ionicons name="send-outline" size={36} color={"white"}/>
-                </TouchableOpacity>
+                {!sending ? 
+                    <TouchableOpacity
+                    style={styles.sendTopButton}
+                    onPress={() => {
+                        postPost();
+                    }}>
+                        <Ionicons name="send-outline" size={36} color={"white"}/>
+                    </TouchableOpacity>
+                :
+                    <Spinner style={styles.sendTopButton}/>
+                }
+
             </HStack>
             <ImagePostSelector setAssets={setAssets}/>
-            <Box style={{flex:4, height:"100%", padding:10, borderTopWidth:1, borderColor:"grey", boxShadow:"0px 1px 8px rgba(0,0,0,0.7)"}}> 
+            <Box style={styles.descriptionActionBox}> 
                 {/* TEXT INPUT ZONE */}
                 {legend === "text" ? 
-                <>
+                <KeyboardAvoidingView>
                     <Textarea
-                    size="md"
-                    borderWidth={1}
-                    borderColor="$borderLight"
-                    borderRadius="$lg"
-                    height="$20" // 👈 Ensures 5 lines are visible
-                    p="$3"
-                    >
+                        size="md"
+                        borderWidth={1}
+                        borderColor="$borderLight"
+                        borderRadius="$lg"
+                        height="$20" // 👈 Ensures 5 lines are visible
+                        p="$3"
+                        >
                         <TextareaInput
                             placeholder="Type your message here..."
                             multiline
                             textAlignVertical="top" // 👈 Ensures text starts at top
+                            style={{color:theme.textColor1, borderColor:theme.iconColor, borderWidth:2, fontSize:16}}
+                            onChangeText={(text)=> setText(text)}
                             />
                     </Textarea>
                     <Box style={{justifyContent: 'center', alignItems: 'center'}}>
                         <TouchableOpacity onPress={() => { setLegend(null) }}>
-                            <Ionicons name="close-circle" size={46} color={"black"}/>
+                            <Ionicons name="close-circle" size={46} color={theme.iconColor}/>
                         </TouchableOpacity>
+                        {text && text.trim() ? 
+                            <>
+                            {!sending ? 
+                            <TouchableOpacity
+                                style={styles.sendBottomButton}
+                                onPress={() => {
+                                    postPost();
+                                }}>
+                                    <HStack>
+                                        <Center>
+                                            <Text style={styles.textSendButton}>Publish the Post  </Text>
+                                        </Center>
+                                        <Ionicons name="send-outline" size={32} color={"white"}/>
+                                    </HStack>
+                            </TouchableOpacity>
+                            :
+                            <Spinner style={styles.sendTopButton}/>}
+                            </>
+                        :<></>}
                     </Box>
-                </>
+                </KeyboardAvoidingView>
                 :
                 <>
                     {legend === "vocal" ?
@@ -216,7 +392,7 @@ const CreatePost = () => {
                         <TouchableOpacity onPress={() => {
                             setAudioUrl(null);
                         }}>
-                            <Ionicons name="trash-outline" size={46} color={'black'}/>
+                            <Ionicons name="trash-outline" size={46} color={theme.iconColor}/>
                         </TouchableOpacity>
                         :
                             <>
@@ -228,23 +404,44 @@ const CreatePost = () => {
                     </Box>
                     <Box style={{justifyContent: 'flex-end', alignItems: 'flex-end', paddingTop:25 }}>
                         <TouchableOpacity onPress={() => { setLegend(null) }}>
-                            <Ionicons name="close-circle" size={46} color={"black"}/>
+                            <Ionicons name="close-circle" size={46} color={theme.iconColor}/>
                         </TouchableOpacity>
                     </Box>
+                    {audioUrl ? 
+                    <Center>
+                        {!sending ?
+                        <TouchableOpacity
+                            style={styles.sendBottomButton}
+                            onPress={() => {
+                                postPost();
+                            }}>
+                                <HStack>
+                                    <Center>
+                                        <Text style={styles.textSendButton}>Publish the Post  </Text>
+                                    </Center>
+                                    <Ionicons name="send-outline" size={32} color={"white"}/>
+                                </HStack>
+                        </TouchableOpacity>
+                        :
+                        <Spinner style={styles.sendTopButton}/>
+                        }
+
+                    </Center>
+                    :<></>}   
                     </> 
                     :
                     <Box style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
                         <HStack space={"xl"}>
                             <Box>
-                                <TouchableOpacity style={{ borderColor:'rgba(127,127,127,0.6)', borderWidth:3, padding:22, borderRadius:10 }} 
+                                <TouchableOpacity style={styles.descIconBoxStyle} 
                                 onPress={() => setLegend("text")}>
-                                    <Ionicons name="text-outline" size={70} color="rgba(127,127,127,0.8)" />
+                                    <Ionicons name="text-outline" size={70} color={theme.iconColor} />
                                 </TouchableOpacity>
                             </Box>
                             <Box>
-                                <TouchableOpacity style={{ borderColor:'rgba(127,127,127,0.6)', borderWidth:3, padding:22, borderRadius:10 }}
+                                <TouchableOpacity style={styles.descIconBoxStyle}
                                 onPress={() => setLegend("vocal")}>
-                                    <Ionicons name="mic-outline" size={70} color="rgba(127,127,127,0.8)" />
+                                    <Ionicons name="mic-outline" size={70} color={theme.iconColor} />
                                 </TouchableOpacity>
                             </Box>
                         </HStack>
@@ -256,21 +453,5 @@ const CreatePost = () => {
         </Box>
     )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#25292e',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  button: {
-    fontSize: 20,
-    textDecorationLine: 'underline',
-    color: '#fff',
-  },
-});
-
 
 export default CreatePost;

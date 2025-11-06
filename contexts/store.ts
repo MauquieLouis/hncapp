@@ -25,6 +25,10 @@ interface PostStore {
   getPost: (postId: string) => any | null;
   removePost: (postId: string) => void;
   clearPosts: () => void;
+  username: string | null;
+  setUsername: (id: string | null) => void;
+  newFile: boolean;
+  setNewFile: (bool:boolean) => void;
 }
 
 export const usePostStore = create<PostStore>((set, get) => ({
@@ -55,4 +59,10 @@ export const usePostStore = create<PostStore>((set, get) => ({
 
   // vide le cache
   clearPosts: () => set({ postMap: {} }),
+
+  username:null,
+  setUsername: (id) => set({username: id}),
+
+  newFile:false,
+  setNewFile: (bool) => set({newFile: bool}),
 }));

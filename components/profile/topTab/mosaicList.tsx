@@ -21,7 +21,7 @@ const MosaicList = (props: any) => {
     const scrollY = useSharedValue(0);
     const { profile } = useUserContext();
     const{ setPost } = usePostStore.getState();
-    const { deletedItem, setDeletedItem, removePost } = usePostStore();
+    const { deletedItem, setDeletedItem, removePost, newFile, setNewFile } = usePostStore();
     
     const onScroll = useAnimatedScrollHandler({
         onScroll: (event) => {
@@ -49,24 +49,38 @@ const MosaicList = (props: any) => {
         },
     })
 
-    useFocusEffect(
-        useCallback(() => {
-        if (scrollY.value > 0) {
-            props.headerVisible.value = 0
-        } else {
-            props.headerVisible.value = 1
-        }
-        }, [])
-    );
+    useEffect(() => {
+        getMosaicPosts();
+    }, []);
+
+    // useFocusEffect(
+    //     useCallback(() => {
+    //     if (scrollY.value > 0) {
+    //         props.headerVisible.value = 0
+    //     } else {
+    //         props.headerVisible.value = 1
+    //     }
+    //     }, [])
+    // );
+
     useFocusEffect(
         useCallback(() => {
             if(deletedItem){
-                console.log("🗑️ Élément supprimé détecté :", deletedItem);
                 setMosaicData((prev) => removePostFromGrid(prev, deletedItem));
                 removePost(deletedItem);
                 setDeletedItem(null);
             }
         }, [deletedItem])
+    );
+    useFocusEffect(
+        useCallback(() => {
+            if(newFile){
+                console.log("NEW FILE POSTED !");
+                setMosaicData([]);
+                getMosaicPosts();
+                setNewFile(false);
+            }
+        }, [newFile])
     );
 
     function removePostFromGrid(grid: any[][], postId: string): any[][] {
@@ -104,12 +118,10 @@ const MosaicList = (props: any) => {
             if (error) {
                 console.error(error);
             } else {
-                // console.log("DATA ;", data);
                 if(data.length == 0) return;
                 const attachmentUrls = data
                 .map((post: { attachment_url: any; }) => post.attachment_url)
                 .filter((url: null) => url !== null).map((url: string) => `${props.profileId}/`+url);
-                // console.log("Attachment URLs:", attachmentUrls);
                 const { data: signedUrlsData, error: signedUrlsError } = await supabase.storage.from('posts').createSignedUrls(attachmentUrls, 3600);
                 if(signedUrlsError){
                     console.error("Error while creating signed URLs in getMosaicPost function in mosaicList.tsx :", signedUrlsError);
@@ -157,21 +169,15 @@ const MosaicList = (props: any) => {
                         signedUrls, // ✅ tableau de signed URLs
                     };
                     });
-
                     // 5️⃣ Grouper par 3 pour ton affichage mosaïque
                     const groupedByThree = groupByThree(finalDataWithSignedUrls);
-                    // setPosts(finalDataWithSignedUrls);
                     setMosaicData(groupedByThree);
-                    // console.log("Final Data with signed URLs:", groupedByThree);
                 }
             }
         }catch(error: unknown){
             console.error("Error when getting Mosaic Posts in getMosaicPosts function, in mosaicList.tsx:", error);
         }
     }
-    useEffect(() => {
-        getMosaicPosts();
-    }, []);
 
     const groupByThree = <T,>(inputArray: T[]): T[][] => {
         const result: T[][] = [];

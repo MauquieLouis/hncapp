@@ -93,7 +93,8 @@ export default function Main() {
             ------------------------------------------------------------------ */}
           <TouchableOpacity style={styles.boxStyle}
             onPress={() => {
-                router.push({pathname: "/profile/profileList", params: { type : "all"}});
+                // router.push({pathname: "/profile/profileList", params: { type : "all"}});
+                router.push({pathname: "/profile/searchProfile", params: { type : "all"}});
               }}
           >
             <Ionicons name="list-outline" size={50} color={iconColor} />
