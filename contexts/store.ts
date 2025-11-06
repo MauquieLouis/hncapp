@@ -20,7 +20,10 @@ import { create } from 'zustand';
 interface PostStore {
   postMap: Record<string, any>;
   setPost: (post: any) => void;
+  deletedItem: string | null;
+  setDeletedItem: (id: string | null) => void;
   getPost: (postId: string) => any | null;
+  removePost: (postId: string) => void;
   clearPosts: () => void;
 }
 
@@ -33,11 +36,22 @@ export const usePostStore = create<PostStore>((set, get) => ({
       postMap: { ...state.postMap, [post.post_id]: post },
     })),
 
+  deletedItem:null,
+  setDeletedItem: (id) => set({deletedItem: id}),
+
   // récupère un post via son id
   getPost: (postId) => {
     const map = get().postMap;
     return map[postId] || null;
   },
+
+  // supprime un post du map
+  removePost: (postId) =>
+    set((state) => {
+      const newMap = { ...state.postMap };
+      delete newMap[postId];
+      return { postMap: newMap };
+  }),
 
   // vide le cache
   clearPosts: () => set({ postMap: {} }),

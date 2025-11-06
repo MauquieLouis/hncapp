@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import { usePostStore } from "@/contexts/store";
 import { Image } from "expo-image";
 import Carousel, { ICarouselInstance, Pagination } from "react-native-reanimated-carousel";
@@ -12,16 +12,22 @@ import { useUserContext } from "@/contexts/userContext";
 import PostAction from "@/components/posts/postAction";
 import { Ionicons } from "@expo/vector-icons";
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader } from "@/components/ui/modal";
+import { HStack } from "@/components/ui/hstack";
+import { Center } from "@/components/ui/center";
+import { supabase } from "@/libs/initSupabase";
 
 export default function PostId(){
 
-    const [showModal, setShowModal] = useState(false);
+    const [ showModal, setShowModal ] = useState(false);
+    const [ validateDelete, setValidateDelete ] = useState(false);
 
     const { postId } = useLocalSearchParams();
     const { theme, profile } = useUserContext();
+    const router = useRouter();
     
     // const { selectedPost } = usePostStore();
     const selectedPost = usePostStore((state) => state.getPost(postId[0] as string));
+    const { setDeletedItem } = usePostStore();
     const post = selectedPost?.post_id === postId[0] ? selectedPost : null;
     const navigation = useNavigation();
 
@@ -99,6 +105,14 @@ export default function PostId(){
             alignItems: "center",
             height: 10,
         },
+        modalTextActionStyle:{
+            color:theme.textColor2,
+            fontSize:13,
+            fontWeight:300,
+        },
+        modalBodyStyle:{
+            backgroundColor:theme.backgroundColor2,
+        },
     });
 
     const onPressPagination = (index: number) => {
@@ -106,7 +120,7 @@ export default function PostId(){
         /**
          * Calculate the difference between the current index and the target index
          * to ensure that the carousel scrolls to the nearest index
-         */
+        */
         count: index - progress.value,
         animated: true,
         });
@@ -118,6 +132,33 @@ export default function PostId(){
                 <Text>No Post Found</Text>
             </Box>
         )
+    }
+
+    const handleDeleteFile = async() => {
+        try{
+            //First delete the file from bucket and local if it exist,
+            const full_path_urls = []
+            for(const file of post.attachment_urls){
+                console.log("file :",file);
+                full_path_urls.push(post.user_id+"/"+file);
+            }
+            const {data: delete_file_data, error: delete_file_error } = await supabase.storage.from('posts')
+                .remove(full_path_urls);
+            if(delete_file_error){
+                console.error("Error when deleting files from bucket in handleDeleteFile function in [...postId].tsx", delete_file_error, "\n the file tab : ", full_path_urls);
+            }else{
+                //Second delete the attachments
+                const { data: delete_post_data, error: delete_post_error } = await supabase.from('posts')
+                .delete().eq('id', post.post_id);
+
+                if(delete_post_error){
+                    console.error("Error when deleting post in handleDeleteFile function in [...postId].tsx file", delete_file_error);
+                }
+            }
+            setDeletedItem(post.post_id);
+        }catch(error: unknown){
+            console.error("Error in handleDeleteFile function in [...postId].tsx", error);
+        }
     }
 
     return(
@@ -161,19 +202,47 @@ export default function PostId(){
                 }}
             />
             <PostAction post={post}/>
-            <Modal isOpen={showModal} onClose={() => {setShowModal(false)}} size="md">
+            <Modal isOpen={showModal} onClose={() => {setShowModal(false); setValidateDelete(false);}} size="md">
                 <ModalBackdrop/>
-                <ModalContent>
+                <ModalContent style={styles.modalBodyStyle}>
                     <ModalHeader>
-                        <Text>Settings</Text>
+                        <Text style={styles.modalTextActionStyle}>Settings</Text>
                         <ModalCloseButton>
-                        <Ionicons name="close" size={32} color={theme.iconColor}/>
+                            <Ionicons name="close" size={32} color={theme.iconColor}/>
                         </ModalCloseButton>
                     </ModalHeader>
                     <ModalBody>
                         <Text size="sm" className="text-typography-500">
                         Delete the post ?
                         </Text>
+                        <HStack space="4xl" style={{marginTop:8}}>
+                            <Center style={{paddingRight:15}}>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setValidateDelete(!validateDelete);
+                                    }}>
+                                    <Ionicons name="trash-outline" size={32} color={theme.iconColor}/>
+                                </TouchableOpacity>
+                            </Center>
+                            {validateDelete ? 
+                            <>
+                                <TouchableOpacity onPress={() => {
+                                    handleDeleteFile();
+                                    router.back();
+                                }}>
+                                    <Ionicons name="checkmark" size={32} color={theme.iconColor}/>
+                                    <Text style={styles.modalTextActionStyle}>Delete</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => {
+                                    setValidateDelete(false);
+                                    setShowModal(false);
+                                }}>
+                                    <Ionicons name="close" size={32} color={theme.iconColor}/>
+                                    <Text style={styles.modalTextActionStyle}>Cancel</Text>
+                                </TouchableOpacity>
+                            </>
+                            :<></>}
+                        </HStack>
                     </ModalBody>
                 </ModalContent>
             </Modal>

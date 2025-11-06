@@ -12,18 +12,17 @@ import 'react-native-get-random-values';
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { usePostStore } from "@/contexts/store";
-// import { Blurhash } from "react-native-blurhash";
-// import {Blurhash} from "react-native-blurhash";
 
 const MosaicList = (props: any) => {
 
     const [ mosaicData, setMosaicData ] = React.useState<any[]>([]);
-
+    
     const scrollRef = useRef(null);
     const scrollY = useSharedValue(0);
     const { profile } = useUserContext();
     const{ setPost } = usePostStore.getState();
-
+    const { deletedItem, setDeletedItem, removePost } = usePostStore();
+    
     const onScroll = useAnimatedScrollHandler({
         onScroll: (event) => {
             scrollY.value = event.contentOffset.y
@@ -59,6 +58,33 @@ const MosaicList = (props: any) => {
         }
         }, [])
     );
+    useFocusEffect(
+        useCallback(() => {
+            if(deletedItem){
+                console.log("🗑️ Élément supprimé détecté :", deletedItem);
+                setMosaicData((prev) => removePostFromGrid(prev, deletedItem));
+                removePost(deletedItem);
+                setDeletedItem(null);
+            }
+        }, [deletedItem])
+    );
+
+    function removePostFromGrid(grid: any[][], postId: string): any[][] {
+        // Aplatir le tableau de tableaux
+        const flat = grid.flat();
+
+        // Supprimer l'élément voulu
+        const filtered = flat.filter((post) => post.post_id !== postId);
+
+        // Réorganiser par lignes de 3 éléments
+        let newGrid: any[][] = [];
+        newGrid = groupByThree(filtered);
+        // for (let i = 0; i < filtered.length; i += 3) {
+        //     newGrid.push(filtered.slice(i, i + 3));
+        // }
+
+        return newGrid;
+    }
 
     const page = 1; // page actuelle
     const pageSize = 10; // nombre de posts par page
@@ -133,8 +159,9 @@ const MosaicList = (props: any) => {
 
                     // 5️⃣ Grouper par 3 pour ton affichage mosaïque
                     const groupedByThree = groupByThree(finalDataWithSignedUrls);
+                    // setPosts(finalDataWithSignedUrls);
                     setMosaicData(groupedByThree);
-                    // console.log("Final Data with signed URLs:", finalDataWithSignedUrls);
+                    console.log("Final Data with signed URLs:", groupedByThree);
                 }
             }
         }catch(error: unknown){
