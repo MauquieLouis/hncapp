@@ -363,11 +363,11 @@ export default function ProfileId() {
               :
               <>
                 { areFriends ? 
-                  // <>
-                  // {profileDisplayed.user_id ? 
+                  <>
+                  {profileDisplayed.user_id && profile.user_id ? 
                     <ChangeAvatar userId={profileDisplayed.user_id} added_by={profile.user_id}/>
-                  //   :<></>}
-                  // </>
+                    :<></>}
+                  </>
                 :
                   <></> 
                 }
