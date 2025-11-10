@@ -229,7 +229,7 @@ const ConversationCommands = (props: any) => {
         }
     })
 
-    const iconColor= theme.iconColor2;
+    const iconColor= theme.iconColor3;
 
     const handleContentSizeChange = (event: any) => {
         const contentHeight = event.nativeEvent.contentSize.height;
@@ -252,7 +252,8 @@ const ConversationCommands = (props: any) => {
                         onBlur={() => setIsTextFocused(false)}
                         scrollEnabled={inputHeight >= maxHeight}
                         placeholder="Write message here..." 
-                        placeholderTextColor={theme.inputPlaceholderColor}
+                        // placeholderTextColor='#f0f'
+                        className={'placeholder:text-amber-100'}
                         onChangeText={(text) => {setText(text); sendTypingEvent()}} 
                         value={text}
                         multiline={true}

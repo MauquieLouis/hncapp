@@ -30,7 +30,10 @@ WhiteStyle={
     borderColorLight:'#d4d4d8',
     borderColorDark:'#27272a',
     dangerColor:'#ad4586',
-    infoColor:'#4578ad'
+    infoColor:'#4578ad',
+    messageHourText:"#4d3219ff",
+    messageDate:"#EAE1CB",
+    messageDateText:"#4d3219ff",
 };
 
 export default WhiteStyle;

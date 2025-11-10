@@ -11,13 +11,37 @@ import { VStack } from "../ui/vstack";
 
 const ReactionActionSheet = (props: any) => {
 
-    const { user } = useUserContext();
+    const { user, theme } = useUserContext();
+
+    const styles = StyleSheet.create({
+    actionsheetContent: {
+        backgroundColor: theme.backgroundColor1,
+    },
+    actionSheetHStack: {
+        width: "100%",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: 4,
+        // height: 150,
+    },
+    actionSheetBox: {
+        flex: 1,
+        padding: 4,
+        backgroundColor: "white",
+        alignItems: "center",
+    },
+    actionSheetText: {
+        marginTop: 10,
+        fontSize: 14,
+        color: 'black',
+    },
+  });
     
     return(
         <Actionsheet isOpen={props.showReactionActionSheet} onClose={props.onCloseReactionActionSheet} useRNModal={false}>
             <ActionsheetBackdrop />
             <ActionsheetContent style={styles.actionsheetContent}>
-                <Text>REACTIONS</Text>
+                <Text style={{color:theme.textColor1}}>REACTIONS</Text>
                 <VStack space={'lg'} style={styles.actionSheetHStack}>
                     {Object.entries(props.reactions).map(([key, { reaction, user_id }]) => (
                         <HStack key={key}>
@@ -40,26 +64,3 @@ const ReactionActionSheet = (props: any) => {
 
 export default memo(ReactionActionSheet);
 
-const styles = StyleSheet.create({
-    actionsheetContent: {
-        backgroundColor: 'white',
-    },
-    actionSheetHStack: {
-        width: "100%",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: 4,
-        // height: 150,
-    },
-    actionSheetBox: {
-        flex: 1,
-        padding: 4,
-        backgroundColor: "white",
-        alignItems: "center",
-    },
-    actionSheetText: {
-        marginTop: 10,
-        fontSize: 14,
-        color: 'black',
-    },
-  });

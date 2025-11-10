@@ -30,7 +30,10 @@ LightStyle={
     borderColorLight:'#c084fc',
     borderColorDark:'#6b21a8',
     dangerColor:'#ad4586',
-    infoColor:'#4578ad'
+    infoColor:'#4578ad',
+    messageHourText:"#4d3219ff",
+    messageDate:"#EAE1CB",
+    messageDateText:"#4d3219ff",
 };
 
 export default LightStyle;

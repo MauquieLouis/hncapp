@@ -30,7 +30,10 @@ BlackStyle={
     borderColorLight:'#f1f5f9',
     borderColorDark:'#334155',
     dangerColor:'#ad4586',
-    infoColor:'#4578ad'
+    infoColor:'#4578ad',
+    messageHourText:"#4d3219ff",
+    messageDate:"#EAE1CB",
+    messageDateText:"#4d3219ff",
 };
 
 export default BlackStyle;

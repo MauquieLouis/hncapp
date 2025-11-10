@@ -623,7 +623,7 @@ const ConversationScreen = () => {
                         ListHeaderComponent={<Box style={{height:70}}>
                             {isSeen ? 
                                 <Box style={{height:70}}>
-                                    <Text style={{textAlign:'left'}}>SEEN !</Text>
+                                    <Text style={{textAlign:'left', color:theme.textColor1}}>SEEN !</Text>
                                 </Box>
                             : null}
                             

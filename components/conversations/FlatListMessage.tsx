@@ -237,7 +237,7 @@ const FlatListMessage = (props: any) => {
                     <Box>
                         <Center style={{}}>
                             <Box style={{
-                                backgroundColor:'rgba(210,210,210,1)', 
+                                backgroundColor:theme.messageDate, 
                                 paddingLeft: 15, 
                                 paddingRight:15, 
                                 padding:3, 
@@ -246,7 +246,7 @@ const FlatListMessage = (props: any) => {
                                 elevation:5,
                                 borderRadius:3
                                 }}>
-                                <Text>
+                                <Text style={{color:theme.messageDateText}}>
                                     {sameDate()}
                                 </Text>
                             </Box>
@@ -294,7 +294,7 @@ const FlatListMessage = (props: any) => {
                             {/** PRINT HOUR */}
                             {renderMessageContent()}
                             <Box style={{justifyContent:"center", alignItems:"center", paddingLeft:5, paddingRight:5}}>
-                                <Text style={{color:"rgba(120,120,120,0.7)"}}>{sameHour()}</Text>
+                                <Text style={{color:theme.messageHourText}}>{sameHour()}</Text>
                             </Box>
                     </HStack>
                     {item.reactions.length != 0 ? 

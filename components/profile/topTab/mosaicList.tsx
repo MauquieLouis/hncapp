@@ -21,6 +21,7 @@ const MosaicList = (props: any) => {
     const scrollY = useSharedValue(0);
     const { profile } = useUserContext();
     const{ setPost } = usePostStore.getState();
+    const { theme } = useUserContext();
     const { deletedItem, setDeletedItem, removePost, newFile, setNewFile } = usePostStore();
     
     const onScroll = useAnimatedScrollHandler({
@@ -225,6 +226,7 @@ const MosaicList = (props: any) => {
             onScroll={onScroll}
             data={mosaicData}
             renderItem={renderItem}
+            style={{backgroundColor:theme.backgroundColor1}}
             ListFooterComponent={<HStack key={uuidv6()}>
                 <TouchableOpacity onPress={() => {}} style={{width:widthScreen/3,height:widthScreen/2.4, borderColor:'gray', borderWidth:1}}>
                 </TouchableOpacity>
