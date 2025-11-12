@@ -166,6 +166,42 @@ class ConversationStorageDatabase {
             console.error("❌ Error inserting reaction: ", error); 
         }
     }
+
+    async updateReaction(reaction: any, message_id: any, conversation_id:any){
+        if (!this.db) { 
+            console.error("Database not initialized");
+            return;
+        }
+        const { id, user_id, reaction: reactionText, created_at } = reaction;
+        try {
+            // Vérifie si la réaction existe déjà
+            const existing = await this.db.getFirstAsync(
+                `SELECT id FROM message_reactions WHERE message_id = ? AND user_id = ? AND conversation_id = ?`,
+                message_id,
+                user_id,
+                conversation_id
+            );
+            if (existing) {
+                // Si elle existe → on met à jour
+                const result = await this.db.runAsync(
+                    `UPDATE message_reactions
+                    SET reaction = ?, created_at = ?
+                    WHERE message_id = ? AND user_id = ? AND conversation_id = ?`,
+                    reactionText,
+                    created_at,
+                    message_id,
+                    user_id,
+                    conversation_id
+                );
+                console.log("🔄 Reaction updated:", result);
+            }else{
+                await this.insertReaction(reaction, message_id, conversation_id);
+            }
+        }
+        catch (error) {
+            console.error("❌ Error updating reaction: ", error); 
+        }
+    }
     
     async insertNewAttachement(attachment: any, message_id: any) {
         if (!this.db) { 
@@ -478,6 +514,7 @@ class ConversationStorageDatabase {
                 SELECT id, user_id, reaction, created_at FROM message_reactions WHERE message_id = ?
                 `, [message.id]);
                 if(reactions.length > 0){
+                    console.log("REACTIONS FOUND FOR MESSAGE :", reactions);
                     message.reactions = reactions;
                 }else{
                     message.reactions = [];
@@ -616,8 +653,10 @@ class ConversationStorageDatabase {
                 DELETE FROM message_reactions WHERE id = ?
             `, [reactionId]);
             console.log("✅ Reaction deleted: ", reactionId);
+            return;
         } catch (error) {
             console.error("❌ Error deleting reaction: ", error); 
+            return;
         }
     }
 
@@ -637,6 +676,63 @@ class ConversationStorageDatabase {
             return result;
         } catch (error) {
             console.error("❌ Error fetching most recent deleted message: ", error); 
+            return null;
+        }
+    }
+
+    async getMostRecentReaction(conversationId: string){
+        if(!this.db){
+            console.error("Database not initialized");
+            return null;
+        }
+        try{
+            const result = await this.db.getFirstAsync(`
+                SELECT * FROM message_reactions
+                WHERE conversation_id = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+            `, [conversationId]);
+            return result;
+        } catch(error) {
+            console.error("❌ Error fetching most recent message_reactions: ", error);
+            return null
+        }
+    }
+
+    async getAllReaction(conversationId: string){
+        if(!this.db) {
+            console.error("Database not initialized");
+            return;
+        }
+        try{
+            const result = await this.db.getAllAsync(`
+                SELECT id, reaction, created_at, message_id, user_id
+                FROM message_reactions
+                WHERE conversation_id = ?
+                ORDER BY created_at DESC
+                `, [conversationId]);
+                return result;
+        }catch(error){
+            console.error("❌ Error selecting all messages reaction: ", error); 
+            return null;
+        }
+    }
+
+    async getOldestReactionStored(conversationId: string){
+        if(!this.db) {
+            console.error("Database not initialized");
+            return;
+        }
+        try{
+            const result = await this.db.getAllAsync(`
+                SELECT id, reaction, created_at
+                WHERE conversation_id = ?
+                ORDER BY created_at ASC
+                LIMIT 1
+                `, [conversationId]);
+                return result;
+        }catch(error){
+            console.error("❌ Error getting first messages reaction stored:", error); 
             return null;
         }
     }

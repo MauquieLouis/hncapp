@@ -7,6 +7,7 @@ WhiteStyle={
     iconNotFocusedColor:'#52525b',
     iconColor:'#a1a1aa',
     iconColor2:'#27272a',
+    iconColor3:'#27272a',
     textColor1:'#18181b',
     textColor2:'#52525b',
     textColor3:'#f4f4f5',
@@ -34,6 +35,8 @@ WhiteStyle={
     messageHourText:"#4d3219ff",
     messageDate:"#EAE1CB",
     messageDateText:"#4d3219ff",
+    inputMsgPlaceholderTextColor:"text-amber-100",
+
 };
 
 export default WhiteStyle;

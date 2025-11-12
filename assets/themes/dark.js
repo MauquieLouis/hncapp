@@ -7,6 +7,7 @@ DarkStyle={
     iconNotFocusedColor:'#581c87',
     iconColor:'#a855f7',
     iconColor2:'#d8b4fe',
+    iconColor3:'#d8b4fe',
     textColor1:'#a885f7',
     textColor2:'#d8b4fe',
     textColor3:'#ede9fe',
@@ -34,6 +35,8 @@ DarkStyle={
     messageHourText:"#4d3219ff",
     messageDate:"#EAE1CB",
     messageDateText:"#4d3219ff",
+    inputMsgPlaceholderTextColor:"text-amber-100",
+
 };
 
 export default DarkStyle;

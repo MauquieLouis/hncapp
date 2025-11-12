@@ -37,6 +37,8 @@ PinkStyle={
     messageHourText:"#4d3219ff",
     messageDate:"#EAE1CB",
     messageDateText:"#4d3219ff",
+    inputMsgPlaceholderTextColor:"text-amber-100",
+
 };
 
 export default PinkStyle;

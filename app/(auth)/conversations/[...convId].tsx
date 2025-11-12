@@ -161,6 +161,8 @@ const ConversationScreen = () => {
 
     const checkMessageDiff = async () => {
         try{
+            // checkForNewReactions();
+            checkReactionChangements(convId[0]);
             setLoadingNewMessages(true);
             const last_local_message_timestamp = await ConversationStorageDatabase.getLastMessageForConversationId(convId[0]);
             const { data: last_supabase_message, error } = await supabase
@@ -192,6 +194,151 @@ const ConversationScreen = () => {
             setLoadingNewMessages(false);
         }
     }
+
+    const checkForNewReactions = async() => {
+        try{
+            const last_local_reaction = await ConversationStorageDatabase.getMostRecentReaction(convId[0]);
+            const { data: last_supabase_reaction, error} = await supabase.from('message_reactions')
+                .select('created_at').eq('conversation_id', convId[0]).order('created_at', { ascending: false}).limit(1);
+            if(error){
+                console.error("Error when fetching last reaction from conversation in checkForNewreactions function in [...convId].tsx", error);
+            }else{
+                if(!last_local_reaction){
+                    //If there is no local reaction
+                    //Check for first local message
+                    //Get all reaction after date of local message (included)
+                    const first_local_message = await ConversationStorageDatabase.getOldestMessageStoredInDb(convId[0]);
+                    const { data: new_reactions_data, error: new_reaction_error} = await supabase.from('message_reactions')
+                        .select('*').eq('conversation_id', convId[0]).gte('created_at', first_local_message.created_at);
+                        if(new_reaction_error){
+                            console.error("Error when fetching reactions difference in checkForNewReactions function in [...convId].tsx (1) :", new_reactions_data);
+                        }
+                }else{
+                    //If some local reaction are already found
+                    //fetch between last date found and actual date
+                    console.log("last_local_reactions :", last_local_reaction.created_at);
+                    console.log("last_supabase_reactions :", last_supabase_reaction[0].created_at);
+                    if(last_local_reaction.created_at != last_supabase_reaction[0].created_at){
+                        const { data: new_reactions_data, error: new_reaction_error} = await supabase.from('message_reactions')
+                        .select('*').eq('conversation_id', convId[0]).gt('created_at', last_local_reaction.created_at);
+                        if(new_reaction_error){
+                            console.error("Error when fetching reactions difference in checkForNewReactions function in [...convId].tsx (2) :", new_reactions_data);
+                        }else{
+                            console.log("NEW REACTIONS :", new_reactions_data);
+                            for(const new_reaction of new_reactions_data){
+                                await ConversationStorageDatabase.insertReaction(
+                                    {   
+                                        id: new_reaction.id,
+                                        user_id: new_reaction.user_id,
+                                        reaction: new_reaction.reaction,
+                                        created_at: new_reaction.created_at
+                                    },
+                                    new_reaction.message_id,
+                                    new_reaction.conversation_id
+                                );
+                            }
+                            console.log("NEW REACTIONS UPLOADED LOCALLY");
+                        }
+                    }
+                }
+            }
+        }catch(error: unknown){
+            console.error("Error in checkForNewreactions function in [...convId].tsx", error);
+
+        }
+    }
+
+    // const checkReactionChangment = async() => {
+    //     try{
+    //         const all_local_reaction = await ConversationStorageDatabase.getAllReaction(convId[0]);
+    //         // const first_stored_reaction = await ConversationStorageDatabase.getOldestReactionStored(convId[0]);
+    //         const { data: all_reactions_comparation, error: reactions_error} = await supabase.from('message_reactions')
+    //             .select('*').eq('conversation_id', convId[0]).gt('created_at', all_local_reaction[0].created_at).order('created_at', {ascending: true});
+    //         if(reactions_error){
+    //             console.error("Error when fetching all reaction in checkReactionChangment fnction in [...convId].tsx", reactions_error);
+    //         }
+    //         if(all_local_reaction.length != all_reactions_comparation?.length){
+    //             console.warn("MIGHT BE AN ISSUE here");
+    //         }else{
+
+    //         }
+
+    //     }catch(error: unknown){
+    //         console.error("Error in reactions in checkReactionChangment in [...convId].tsx", error);
+    //     }
+    // }
+
+    async function checkReactionChangements(convId: string) {
+         // 1. Récupération des données
+        const all_local_reaction = await ConversationStorageDatabase.getAllReaction(convId);
+        const { data: all_reactions_comparation, error } = await supabase
+            .from('message_reactions')
+            .select('*')
+            .eq('conversation_id', convId)
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error("Erreur Supabase:", error);
+            return;
+        }
+
+        // 2. Convertir en map pour comparer plus vite
+        const localMap = new Map(all_local_reaction.map(r => [`${r.message_id}_${r.user_id}`, r]));
+        const remoteMap = new Map(all_reactions_comparation.map(r => [`${r.message_id}_${r.user_id}`, r]));
+
+        // 3. Création des tableaux d'actions
+        const toDelete = [];
+        const toAdd = [];
+        const toUpdate = [];
+
+        // 🔸 Supprimer ce qui n'existe plus sur le remote
+        for (const [key, localReaction] of localMap.entries()) {
+            if (!remoteMap.has(key)) {
+            toDelete.push(localReaction);
+            }
+        }
+
+        // 🔸 Ajouter ou mettre à jour les réactions différentes
+        for (const [key, remoteReaction] of remoteMap.entries()) {
+            const localReaction = localMap.get(key);
+            if (!localReaction) {
+            // Pas en local → à ajouter
+            toAdd.push(remoteReaction);
+            } else if (localReaction.reaction !== remoteReaction.reaction) {
+            // Différente → à mettre à jour
+            toUpdate.push(remoteReaction);
+            }
+        }
+
+        // 4. Application des modifications locales
+        for (const r of toDelete) {
+            await ConversationStorageDatabase.deleteReaction(r.id);
+        }
+        for (const r of toAdd) {
+            await ConversationStorageDatabase.insertReaction({
+            id:r.id,
+            user_id:r.user_id,
+            reaction:r.reaction,
+            created_at:r.created_at
+        }, r.message_id, r.conversation_id);
+        }
+        for (const r of toUpdate) {
+            await ConversationStorageDatabase.updateReaction({
+            id:r.id,
+            user_id:r.user_id,
+            reaction:r.reaction,
+            created_at:r.created_at
+        }, r.message_id, r.conversation_id);
+        }
+
+        console.log("Sync terminée ✅", {
+            supprimées: toDelete.length,
+            ajoutées: toAdd.length,
+            misesAJour: toUpdate.length,
+        });
+    }
+    
+    
 
     const fetchAttachments = async(msg_id: string) => {
         try{
@@ -302,13 +449,16 @@ const ConversationScreen = () => {
     }
 
     const handleDeleteReaction = async(payload: any) => {
-        console.error("DELETE REACTION NEED TO BE HANDLED HERE (handleDeleteReaction in ConversationScreen in [...convId].tsx):", payload);
+        console.log("MESSAGES :", messages[0]);
         setMessages(prevMessages =>
             prevMessages.map(message => ({
                 ...message,
                 reactions: message.reactions.filter(reaction => reaction.id !== payload.old.id)
             }))
         );
+        console.log("MESSAGE :")
+        // console.error("DELETE REACTION NEED TO BE HANDLED HERE (handleDeleteReaction in ConversationScreen in [...convId].tsx):", payload);
+        await ConversationStorageDatabase.deleteReaction(reaction.id);
     }
 
     /** -------------------------------------------------------

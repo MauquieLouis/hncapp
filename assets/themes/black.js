@@ -7,6 +7,7 @@ BlackStyle={
     iconNotFocusedColor:'#a1a1aa',
     iconColor:'#94a3b8',
     iconColor2:'#e2e8f0',
+    iconColor3:'#e2e8f0',
     textColor1:'#f8fafc',
     textColor2:'#e2e8f0',
     textColor3:'#334155',
@@ -22,7 +23,7 @@ BlackStyle={
     inputTextColor:'#f8fafc',
     inputPlaceholderColor:'#94a3b8',
     discussionBGMe:'#0f0a94ff',
-    discussionBGOther:'#cbd5e1',
+    discussionBGOther:'#92989fff',
     discussionTextMe:'#f8fafc',
     discussionTextOther:'#1e293b',
     sliderColor1:'#a855f7',
@@ -31,9 +32,11 @@ BlackStyle={
     borderColorDark:'#334155',
     dangerColor:'#ad4586',
     infoColor:'#4578ad',
-    messageHourText:"#4d3219ff",
-    messageDate:"#EAE1CB",
-    messageDateText:"#4d3219ff",
+    messageHourText:"#f1f5f9",
+    messageDate:"#94a3b8",
+    messageDateText:"#334155",
+    inputMsgPlaceholderTextColor:"text-amber-100",
+
 };
 
 export default BlackStyle;
