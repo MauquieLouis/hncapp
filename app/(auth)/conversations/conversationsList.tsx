@@ -1,7 +1,4 @@
 import React, { FlatList, View, StyleSheet } from 'react-native';
-// import { ButtonText, Button } from '@gluestack-ui/themed';
-// import { FlatList, Box, Text, HStack, VStack, Pressable } from 'react-native';
-// import { Box } from '@/src/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { VStack } from '@/components/ui/vstack';
@@ -13,6 +10,8 @@ import { useUserContext } from '../../../contexts/userContext';
 import { supabase } from '../../../libs/initSupabase';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
+import { useRelativeTime } from '@/components/date/format';
+import ConversationListItem from '@/components/conversations/conversationList/conversationListItem';
 
 const ConversationsListScreen = () => {
     const [conv_data, setConvData] = useState(null);
@@ -109,6 +108,7 @@ const ConversationsListScreen = () => {
         }
     });
 
+
     return(
         <Box style={styles.container}>
             {loading ? <>
@@ -119,44 +119,7 @@ const ConversationsListScreen = () => {
             : 
         <Box>
             <FlatList data={conv_data} 
-                renderItem={({ item }) => (
-                    <Box>
-                        <Pressable onPress={() => {
-                          router.push(`/conversations/${item.conversation_id}`)
-                        }} style={styles.boxStyle}>
-                            <HStack space="sm" >
-                                <Box>
-                                    <View
-                                        // eslint-disable-next-line react-native/no-inline-styles
-                                        style={{
-                                            width: 50,
-                                            height: 50,
-                                            borderRadius: 50,
-                                            backgroundColor: 'grey',
-                                        }}
-                                        />
-                                </Box>
-                                <Box>
-                                    <VStack>
-                                        <Box>
-                                            <Text style={styles.nameText}>{item.conversation_name}</Text>
-                                        </Box>
-                                        <Box>
-                                        <HStack space="sm">
-                                                <Box>
-                                                    <Text numberOfLines={1} ellipsizeMode="tail" style={styles.messageText}>{item.last_message.content}</Text>
-                                                </Box>
-                                                <Box>
-                                                    <Text style={styles.dateColor}>{item.last_message.created_at}</Text>
-                                                </Box>
-                                        </HStack>
-                                        </Box>
-                                    </VStack>
-                                </Box>
-                            </HStack>
-                        </Pressable>
-                    </Box>
-                )}
+                renderItem={({ item }) => <ConversationListItem item={item}/>}
                 keyExtractor={(item) => item.conversation_id}
             />
         </Box>

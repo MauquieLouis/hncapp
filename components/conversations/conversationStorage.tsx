@@ -514,7 +514,6 @@ class ConversationStorageDatabase {
                 SELECT id, user_id, reaction, created_at FROM message_reactions WHERE message_id = ?
                 `, [message.id]);
                 if(reactions.length > 0){
-                    console.log("REACTIONS FOUND FOR MESSAGE :", reactions);
                     message.reactions = reactions;
                 }else{
                     message.reactions = [];

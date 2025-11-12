@@ -4,7 +4,7 @@ import { Text } from '@/components/ui/text';
 import { useUserContext } from '../../../contexts/userContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../../libs/initSupabase';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 
 import FlatListMessage from '@/components/conversations/FlatListMessage';
 import ConversationCommands from '@/components/conversations/conversationCommands';
@@ -14,6 +14,7 @@ import { HStack } from '@/components/ui/hstack';
 import { Ionicons } from '@expo/vector-icons';
 
 import ConversationStorageDatabase from '@/components/conversations/conversationStorage';
+import Avatar from '@/components/profile/avatar';
 
 const debounce = (func: { (): Promise<void>; apply?: any; }, delay: number | undefined) => {
     let debounceTimer: string | number | NodeJS.Timeout | undefined;
@@ -31,7 +32,7 @@ const ConversationScreen = () => {
     const [ loading, setLoading ] = useState(false);
     const [ messages, setMessages ] = useState<any[]>([]);
     const [ text, setText ] = useState('');
-    const [ participants, setParticipants ] = useState(null);
+    const [ participants, setParticipants ] = useState([]);
     const [ devicesTokens, setDeviceTokens ] = useState<string[]>([]);
     const [ loadingSend, setLoadingSend ] = useState(false);
     const [ typingUsers, setTypingUsers ] = useState({});
@@ -51,11 +52,14 @@ const ConversationScreen = () => {
     const [ loadingNewMessages, setLoadingNewMessages ] = useState(false);
     const [ oldestLocalMessage, setOldestLocalMessage ] = useState(null);
     const [ localCount, setLocalCount ] = useState(0);
+    const [ otherUser, setOtherUser ] = useState(null);
 
     const { convId } = useLocalSearchParams();
     const { user, theme } = useUserContext();
 
     const flatListRef = useRef(null);
+    const navigation = useNavigation();
+    const router = useRouter();
 
     useEffect(() => {
         console.log("CONV ID :", convId[0]);
@@ -68,7 +72,7 @@ const ConversationScreen = () => {
         initConversationStorage();
         const fetchConversationData = async () => {
             try{
-                console.log("FETCH CONVERSATION DATA", convId[0], "userId :", user.id);
+                // console.log("FETCH CONVERSATION DATA", convId[0], "userId :", user.id);
                 setLoading(true);
                 const { data: conv_data, error: conv_error } = await supabase.rpc('get_participants_and_token_and_lastmessage', 
                     {'p_conversation_id': convId[0], 'p_user_id':user.id});
@@ -92,6 +96,43 @@ const ConversationScreen = () => {
         subscribeToTypingStatus();
         subscrbeToMessagesStatus();
     }, []);
+
+    useEffect(() => {
+        if(user){
+            console.log('Participants ? :', participants);
+            if(participants){
+
+                let other_user = null;
+                if(participants.length == 2){
+                    other_user = participants.find(item => item.user_id !== user.id) || null;
+                    setOtherUser(other_user);
+                }
+                if(other_user)
+                navigation.setOptions({
+                    headerTitle:`${other_user.username}`,
+                    //Create right part of the header 
+                    headerRight: () => {
+                    return(
+                        <TouchableOpacity onPress={() => {
+                            router.push(`/profile/${other_user.user_id}`)
+                        }}>
+                            <HStack>
+                                <Center>
+                                    <Text style={{
+                                        color:theme.textColor1,
+                                        paddingHorizontal:8
+                                    }}>{other_user.username}</Text>
+                                </Center>
+                                <Avatar user_id={other_user.user_id} width={42} height={42}/>
+
+                            </HStack>
+                        </TouchableOpacity>
+                    )
+                    }
+                });
+            }
+        }
+    }, [participants])
 
     const checkForDeleteMessage = async() => {
         try{
@@ -195,79 +236,6 @@ const ConversationScreen = () => {
         }
     }
 
-    const checkForNewReactions = async() => {
-        try{
-            const last_local_reaction = await ConversationStorageDatabase.getMostRecentReaction(convId[0]);
-            const { data: last_supabase_reaction, error} = await supabase.from('message_reactions')
-                .select('created_at').eq('conversation_id', convId[0]).order('created_at', { ascending: false}).limit(1);
-            if(error){
-                console.error("Error when fetching last reaction from conversation in checkForNewreactions function in [...convId].tsx", error);
-            }else{
-                if(!last_local_reaction){
-                    //If there is no local reaction
-                    //Check for first local message
-                    //Get all reaction after date of local message (included)
-                    const first_local_message = await ConversationStorageDatabase.getOldestMessageStoredInDb(convId[0]);
-                    const { data: new_reactions_data, error: new_reaction_error} = await supabase.from('message_reactions')
-                        .select('*').eq('conversation_id', convId[0]).gte('created_at', first_local_message.created_at);
-                        if(new_reaction_error){
-                            console.error("Error when fetching reactions difference in checkForNewReactions function in [...convId].tsx (1) :", new_reactions_data);
-                        }
-                }else{
-                    //If some local reaction are already found
-                    //fetch between last date found and actual date
-                    console.log("last_local_reactions :", last_local_reaction.created_at);
-                    console.log("last_supabase_reactions :", last_supabase_reaction[0].created_at);
-                    if(last_local_reaction.created_at != last_supabase_reaction[0].created_at){
-                        const { data: new_reactions_data, error: new_reaction_error} = await supabase.from('message_reactions')
-                        .select('*').eq('conversation_id', convId[0]).gt('created_at', last_local_reaction.created_at);
-                        if(new_reaction_error){
-                            console.error("Error when fetching reactions difference in checkForNewReactions function in [...convId].tsx (2) :", new_reactions_data);
-                        }else{
-                            console.log("NEW REACTIONS :", new_reactions_data);
-                            for(const new_reaction of new_reactions_data){
-                                await ConversationStorageDatabase.insertReaction(
-                                    {   
-                                        id: new_reaction.id,
-                                        user_id: new_reaction.user_id,
-                                        reaction: new_reaction.reaction,
-                                        created_at: new_reaction.created_at
-                                    },
-                                    new_reaction.message_id,
-                                    new_reaction.conversation_id
-                                );
-                            }
-                            console.log("NEW REACTIONS UPLOADED LOCALLY");
-                        }
-                    }
-                }
-            }
-        }catch(error: unknown){
-            console.error("Error in checkForNewreactions function in [...convId].tsx", error);
-
-        }
-    }
-
-    // const checkReactionChangment = async() => {
-    //     try{
-    //         const all_local_reaction = await ConversationStorageDatabase.getAllReaction(convId[0]);
-    //         // const first_stored_reaction = await ConversationStorageDatabase.getOldestReactionStored(convId[0]);
-    //         const { data: all_reactions_comparation, error: reactions_error} = await supabase.from('message_reactions')
-    //             .select('*').eq('conversation_id', convId[0]).gt('created_at', all_local_reaction[0].created_at).order('created_at', {ascending: true});
-    //         if(reactions_error){
-    //             console.error("Error when fetching all reaction in checkReactionChangment fnction in [...convId].tsx", reactions_error);
-    //         }
-    //         if(all_local_reaction.length != all_reactions_comparation?.length){
-    //             console.warn("MIGHT BE AN ISSUE here");
-    //         }else{
-
-    //         }
-
-    //     }catch(error: unknown){
-    //         console.error("Error in reactions in checkReactionChangment in [...convId].tsx", error);
-    //     }
-    // }
-
     async function checkReactionChangements(convId: string) {
          // 1. Récupération des données
         const all_local_reaction = await ConversationStorageDatabase.getAllReaction(convId);
@@ -331,11 +299,6 @@ const ConversationScreen = () => {
         }, r.message_id, r.conversation_id);
         }
 
-        console.log("Sync terminée ✅", {
-            supprimées: toDelete.length,
-            ajoutées: toAdd.length,
-            misesAJour: toUpdate.length,
-        });
     }
     
     
