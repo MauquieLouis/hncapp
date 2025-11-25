@@ -7,7 +7,7 @@ export function useRelativeTime(dateString: string) {
   useEffect(() => {
     const interval = setInterval(() => {
       setText(formatTimeShortFR(dateString));
-    }, 60 * 1000); // refresh toutes les minutes
+    }, 60 ); // refresh toutes les minutes
     return () => clearInterval(interval);
   }, [dateString]);
 
@@ -27,5 +27,5 @@ export function formatTimeShortFR(dateString: string): string {
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d`;
   const w = Math.floor(d / 7);
-  return `${w} sem.`;
+  return `${w} w.`;
 }

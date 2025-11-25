@@ -9,10 +9,9 @@ const ConversationsStack = () => {
   const router = useRouter();
 
   return (
-    <Stack>
+    <Stack screenOptions={{headerStyle: {backgroundColor: theme?.backgroundColor2}, headerTintColor: theme?.textColor1, headerTitleAlign: 'right', headerShadowVisible: false, headerBackTitleVisible: false}}>
       <Stack.Screen name="[...convId]"
         options={{
-              // headerTitle:`Conversations`,
               headerLeft:() => {return(
                 <TouchableOpacity
                 onPress={() => {

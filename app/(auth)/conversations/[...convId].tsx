@@ -109,7 +109,8 @@ const ConversationScreen = () => {
                 }
                 if(other_user)
                 navigation.setOptions({
-                    headerTitle:`${other_user.username}`,
+                    // headerTitle:`${other_user.username}`,
+                    headerTitle:``,
                     //Create right part of the header 
                     headerRight: () => {
                     return(
