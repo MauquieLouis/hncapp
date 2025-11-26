@@ -216,12 +216,6 @@ const ConversationsListScreen = () => {
         if(newMessage.sender_id === user.id){
             is_read = true;
         }
-        // for(let participant of conv_data.participants){
-        //     const { data: check_has_read, error: error_check_has_read } = await supabase.from('message_status')
-        //         .select('*', { count: 'exact'})
-        //         .eq('message_id', newMessage.id)
-        //         .eq('user_id', participant.user_id);
-        // }
 
         // --- Calculer has_read pour chaque participant ---
         // Récupérer la liste des user_ids participants de la conversation
@@ -232,21 +226,21 @@ const ConversationsListScreen = () => {
         let usersWhoRead = new Set<string>();
 
         if (participantUserIds.length > 0) {
-        // On récupère en une seule requête tous les message_status pour ce message et ces user_ids
-        const { data: statuses, error: error_statuses } = await supabase
-            .from("message_status")
-            .select("user_id")
-            .eq("message_id", newMessage.id)
-            .in("user_id", participantUserIds);
+            // On récupère en une seule requête tous les message_status pour ce message et ces user_ids
+            const { data: statuses, error: error_statuses } = await supabase
+                .from("message_status")
+                .select("user_id")
+                .eq("message_id", newMessage.id)
+                .in("user_id", participantUserIds);
 
-        if (error_statuses) {
-            console.error("Error when fetching message_status for participants:", error_statuses);
-        } else if (statuses && statuses.length > 0) {
-            // statuses contient des objets { user_id: "..."}
-            statuses.forEach((s: any) => {
-            if (s.user_id) usersWhoRead.add(s.user_id);
-            });
-        }
+            if (error_statuses) {
+                console.error("Error when fetching message_status for participants:", error_statuses);
+            } else if (statuses && statuses.length > 0) {
+                // statuses contient des objets { user_id: "..."}
+                statuses.forEach((s: any) => {
+                if (s.user_id) usersWhoRead.add(s.user_id);
+                });
+            }
         }
 
         // Important: si un participant est l'expéditeur et que c'est l'utilisateur courant, on peut marquer has_read true

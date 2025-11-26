@@ -167,6 +167,12 @@ const ConversationListItem = (props: any) => {
                                 </Center>
 
                                 <Text style={styles.dateColor}>{relative}</Text>
+                                {isRead ?
+                                    <></>: 
+                                    <Box>
+                                        <Ionicons name="mail-unread-outline" color={theme.iconColor} size={20}/>
+                                    </Box>
+                                }
                             </HStack>
                         </VStack>
                         
