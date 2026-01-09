@@ -1,4 +1,4 @@
-LightStyle={
+const LightStyle={
     dark:true,
     backgroundColor1:'#fafaf9',
     backgroundColor2:'#f5f5f4',

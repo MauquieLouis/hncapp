@@ -1,4 +1,4 @@
-BlackStyle={
+const BlackStyle={
     dark:false,
     backgroundColor1:'#18181b',
     backgroundColor2:'#27272a',

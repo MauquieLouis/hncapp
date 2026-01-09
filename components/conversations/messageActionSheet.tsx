@@ -11,7 +11,7 @@ const MessageActionSheet = (props: any) => {
 
     const { user } = useUserContext();
     
-    items = props.items;
+    const items = props.items;
     return(
         <Actionsheet isOpen={props.showActionSheet} onClose={props.onCloseActionSheet} useRNModal={false}>
             <ActionsheetBackdrop />

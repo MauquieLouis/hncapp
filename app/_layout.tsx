@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import React, { useEffect, useState, useRef } from "react";
 import { Redirect, Slot, Stack, useRootNavigationState, useRouter } from "expo-router";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
@@ -139,7 +140,7 @@ const updateOrInsertDeviceToken = async(userId: any, device_token: any) => {
 const MainStack = () => {
   
   const [expoPushToken, setExpoPushToken] = useState('');
-  const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
+  // const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
   const { session, loading, user, theme } = useUserContext();
 
   const notificationListener = useRef<Notifications.EventSubscription>();
@@ -148,18 +149,18 @@ const MainStack = () => {
   const router = useRouter();
   const rootNavigationState = useRootNavigationState();
 
-  useEffect(() => {
-    registerForPushNotificationsAsync().then(token => setExpoPushToken(token ?? ''))
-    .catch((error: any) => setExpoPushToken(`${error}`));
+  // useEffect(() => {
+  //   registerForPushNotificationsAsync().then(token => setExpoPushToken(token ?? ''))
+  //   .catch((error: any) => setExpoPushToken(`${error}`));
     
-    notificationListener.current = Notifications.addNotificationReceivedListener(notif => { setNotification(notif);} );
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => { console.info("NoTIF ResPonse",response);});
+  //   notificationListener.current = Notifications.addNotificationReceivedListener(notif => { setNotification(notif);} );
+  //   responseListener.current = Notifications.addNotificationResponseReceivedListener(response => { console.info("NoTIF ResPonse",response);});
     
-    return () => {
-      notificationListener.current && Notifications.removeNotificationSubscription(notificationListener.current);
-      responseListener.current && Notifications.removeNotificationSubscription(responseListener.current);
-    }
-  }, []);
+  //   return () => {
+  //     notificationListener.current && Notifications.removeNotificationSubscription(notificationListener.current);
+  //     responseListener.current && Notifications.removeNotificationSubscription(responseListener.current);
+  //   }
+  // }, []);
 
   useEffect(() => {
     if(session && expoPushToken){
@@ -189,8 +190,8 @@ const MainStack = () => {
 export default function RootLayout() {
 
   return (
-    <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
+    <SafeAreaProvider>
           <UserContextProvider>
             <SignedUrlProvider>
               <AudioProvider>
@@ -200,7 +201,7 @@ export default function RootLayout() {
               </AudioProvider>
             </SignedUrlProvider>
           </UserContextProvider>
-      </GestureHandlerRootView>
     </SafeAreaProvider>
+      </GestureHandlerRootView>
   );
 }

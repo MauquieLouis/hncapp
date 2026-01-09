@@ -1,4 +1,4 @@
-WhiteStyle={
+const WhiteStyle={
     dark:true,
     backgroundColor1:'#fafafa',
     backgroundColor2:'#f5f5f5',

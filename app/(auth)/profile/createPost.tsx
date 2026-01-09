@@ -389,11 +389,11 @@ const CreatePost = () => {
                         <Ionicons name="mic-outline" size={70} color="rgba(127,127,127,0.8)" />
                         </TouchableOpacity> */}
                         { audioUrl ? 
-                        <TouchableOpacity onPress={() => {
-                            setAudioUrl(null);
-                        }}>
-                            <Ionicons name="trash-outline" size={46} color={theme.iconColor}/>
-                        </TouchableOpacity>
+                            <TouchableOpacity onPress={() => {
+                                setAudioUrl(null);
+                            }}>
+                                <Ionicons name="trash-outline" size={46} color={theme.iconColor}/>
+                            </TouchableOpacity>
                         :
                             <>
                             {/* Pour le param yDPZPos au lieu de -160 metre un pourcentage avec Dimension.screen width ect... */}

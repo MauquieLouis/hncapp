@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { TouchableOpacity, View, Image, Text, StyleSheet } from "react-native";
+import { TouchableOpacity, View, Image, Text, StyleSheet, ScrollView } from "react-native";
 import { Box } from "@/components/ui/box";
 
 
@@ -14,7 +14,7 @@ import { TextInput } from 'react-native';
 import { v6 as uuidv6 } from 'uuid';
 import 'react-native-get-random-values';
 import { supabase } from "@/libs/initSupabase";
-import { ScrollView } from "react-native-gesture-handler";
+// import { ScrollView } from "react-native-gesture-handler";
 import { Video } from "expo-av";
 import * as DocumentPicker from 'expo-document-picker';
 import { HStack } from "@/components/ui/hstack";

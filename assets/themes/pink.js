@@ -1,4 +1,4 @@
-PinkStyle={
+const PinkStyle={
     dark:true,
     backgroundColor1:'#D18E97',
     backgroundColor2:'#c3868eff',

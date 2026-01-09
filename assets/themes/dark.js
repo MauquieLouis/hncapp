@@ -1,4 +1,4 @@
-DarkStyle={
+const DarkStyle={
     dark:false,
     backgroundColor1:'#111827',
     backgroundColor2:'#1f2937',
