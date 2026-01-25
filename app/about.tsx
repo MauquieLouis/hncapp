@@ -16,16 +16,20 @@ import {
   useAudioPlayer,
   useAudioRecorder,
   AudioModule,
+  AudioRecorder,
   RecordingPresets,
   setAudioModeAsync,
   useAudioRecorderState,
   useAudioPlayerStatus
  } from 'expo-audio';
+import { AudioBubblePlayer } from '@/components/files/AudioBubblePlayer';
 
 // const DRAGGABLE_SIZE = 60;
 // const DROP_ZONE = { x: 100, y:400, width: 150, height: 150 };
 const URL = "https://gfdgytrnltsbyforfdef.supabase.co/storage/v1/object/sign/Conversations/b88f3f22-9688-4128-bef9-3e06f434237e/Audio/01753f85-8853-407f-8716-8d49fdabc550.m4a?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mNGQ3NjFhOS1mYmViLTRjODMtOGU5ZS02ZWQxMmE5ZTA4NWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJDb252ZXJzYXRpb25zL2I4OGYzZjIyLTk2ODgtNDEyOC1iZWY5LTNlMDZmNDM0MjM3ZS9BdWRpby8wMTc1M2Y4NS04ODUzLTQwN2YtODcxNi04ZDQ5ZmRhYmM1NTAubTRhIiwiaWF0IjoxNzY4NzU1NDg3LCJleHAiOjE3NjkzNjAyODd9.fN5JyG-NlC2rrO2gTJPEB9ufG_YjxUgWU5saDa0BF1A"
 export default function AboutScreen() {
+
+  const [ audio, setAudio ] = useState<AudioRecorder | null>(null);
 
   //Player
   const player = useAudioPlayer(URL);
@@ -42,6 +46,8 @@ export default function AboutScreen() {
 
   const stopRecording = async () => {
     await audioRecorder.stop();
+    console.log('Audio URI:', audioRecorder.uri);
+    setAudio(audioRecorder);
   }
 
   useEffect(() => {
@@ -57,12 +63,6 @@ export default function AboutScreen() {
     })();
   }, [])
   
-  const loadAudio = async() => {
-
-  }
-
-
-
   return(
     <View style={{flex:1}}>
       <View style={{width:"80%", marginLeft:"10%", marginTop:25}}>
@@ -81,6 +81,18 @@ export default function AboutScreen() {
           <Text>Can Record: {recorderState.canRecord ? 'Yes' : 'No'}</Text>
         </View>
       </View>
+
+      <Box>
+        {audio ? 
+          <AudioBubblePlayer
+            uri={audio.uri}
+            playButtonPosition="left"
+            variant="outgoing"
+            haptic={true}
+          />
+        : <Text>No recording available</Text>}
+      </Box>
+      
     </View>
   );
   
